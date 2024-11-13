@@ -138,6 +138,12 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         match event {
+            WindowEvent::Resized(new_size) => {
+                let state = self.state.as_mut().unwrap();
+                state.config.width = new_size.width.max(1);
+                state.config.height = new_size.height.max(1);
+                state.surface.configure(&state.device, &state.config);
+            }
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
                 event_loop.exit();
