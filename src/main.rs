@@ -2,7 +2,7 @@ use std::{borrow::Cow, sync::Arc};
 
 use futures::executor;
 use glam::Vec3;
-use vertex::{Vertex, VERTICES};
+use vertex::{Vertex, INDICES, VERTICES};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Device, Queue, RenderPipeline, Surface, VertexAttribute, VertexBufferLayout,
@@ -28,6 +28,7 @@ struct AppState {
     queue: Queue,
     render_pipeline: RenderPipeline,
     vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
     config: wgpu::SurfaceConfiguration,
 }
 
@@ -101,6 +102,12 @@ impl ApplicationHandler for App {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
+        let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("index buffer"),
+            contents: bytemuck::cast_slice(INDICES),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
@@ -157,6 +164,7 @@ impl ApplicationHandler for App {
             queue,
             render_pipeline,
             vertex_buffer,
+            index_buffer,
             config,
         })
     }
@@ -226,7 +234,8 @@ impl ApplicationHandler for App {
                     });
                     rpass.set_pipeline(&state.render_pipeline);
                     rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
-                    rpass.draw(0..3, 0..1);
+                    rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                    rpass.draw_indexed(0..INDICES.len() as u32, 0, 0..1);
                 }
 
                 state.queue.submit(Some(encoder.finish()));

@@ -26,3 +26,5 @@ pub const VERTICES: &[Vertex] = &[
         color: Vec3::new(0.0, 0.0, 1.0),
     },
 ];
+
+pub const INDICES: &[u32] = &[0, 1, 2];
