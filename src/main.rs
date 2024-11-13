@@ -80,7 +80,12 @@ impl ApplicationHandler for App {
         });
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
-        let swapchain_format = swapchain_capabilities.formats[0];
+        let swapchain_format = swapchain_capabilities
+            .formats
+            .iter()
+            .find(|f| f.is_srgb())
+            .copied()
+            .unwrap_or(swapchain_capabilities.formats[0]);
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
