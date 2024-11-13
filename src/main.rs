@@ -109,9 +109,16 @@ impl ApplicationHandler for App {
             cache: None,
         });
 
-        let config = surface
-            .get_default_config(&adapter, size.width, size.height)
-            .unwrap();
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: swapchain_format,
+            width: size.width,
+            height: size.height,
+            present_mode: swapchain_capabilities.present_modes[0],
+            desired_maximum_frame_latency: 2,
+            alpha_mode: swapchain_capabilities.alpha_modes[0],
+            view_formats: vec![],
+        };
         surface.configure(&device, &config);
 
         self.state = Some(AppState {
