@@ -1,7 +1,12 @@
 use std::{borrow::Cow, sync::Arc};
 
 use futures::executor;
-use wgpu::{Device, Queue, RenderPipeline, Surface};
+use glam::Vec3;
+use vertex::{Vertex, VERTICES};
+use wgpu::{
+    util::{BufferInitDescriptor, DeviceExt},
+    Device, Queue, RenderPipeline, Surface, VertexAttribute, VertexBufferLayout,
+};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -9,6 +14,8 @@ use winit::{
     keyboard::PhysicalKey,
     window::{Window, WindowId},
 };
+
+mod vertex;
 
 struct App {
     state: Option<AppState>,
@@ -20,6 +27,7 @@ struct AppState {
     device: Device,
     queue: Queue,
     render_pipeline: RenderPipeline,
+    vertex_buffer: wgpu::Buffer,
     config: wgpu::SurfaceConfiguration,
 }
 
@@ -87,13 +95,34 @@ impl ApplicationHandler for App {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
+        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("vertex buffer"),
+            contents: bytemuck::cast_slice(&VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[],
+                buffers: &[VertexBufferLayout {
+                    array_stride: std::mem::size_of::<Vertex>() as u64,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &[
+                        VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: 0,
+                            shader_location: 0,
+                        },
+                        VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x3,
+                            offset: std::mem::size_of::<Vec3>() as u64,
+                            shader_location: 1,
+                        },
+                    ],
+                }],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -127,6 +156,7 @@ impl ApplicationHandler for App {
             device,
             queue,
             render_pipeline,
+            vertex_buffer,
             config,
         })
     }
@@ -186,7 +216,7 @@ impl ApplicationHandler for App {
                             view: &view,
                             resolve_target: None,
                             ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
+                                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                                 store: wgpu::StoreOp::Store,
                             },
                         })],
@@ -195,6 +225,7 @@ impl ApplicationHandler for App {
                         occlusion_query_set: None,
                     });
                     rpass.set_pipeline(&state.render_pipeline);
+                    rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
                     rpass.draw(0..3, 0..1);
                 }
 
