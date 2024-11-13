@@ -164,9 +164,9 @@ impl ApplicationHandler for App {
                 // can render here instead.
                 // self.window.as_ref().unwrap().request_redraw();
 
-                let app_state = self.state.as_ref().unwrap();
+                let state = self.state.as_ref().unwrap();
 
-                let frame = app_state
+                let frame = state
                     .surface
                     .get_current_texture()
                     .expect("Failed to acquire next swap chain texture");
@@ -175,7 +175,7 @@ impl ApplicationHandler for App {
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
 
-                let mut encoder = app_state
+                let mut encoder = state
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
@@ -194,11 +194,11 @@ impl ApplicationHandler for App {
                         timestamp_writes: None,
                         occlusion_query_set: None,
                     });
-                    rpass.set_pipeline(&app_state.render_pipeline);
+                    rpass.set_pipeline(&state.render_pipeline);
                     rpass.draw(0..3, 0..1);
                 }
 
-                app_state.queue.submit(Some(encoder.finish()));
+                state.queue.submit(Some(encoder.finish()));
                 frame.present();
             }
             WindowEvent::KeyboardInput {
