@@ -56,8 +56,10 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     } else if (in.pos.x < in.bbox.x + in.border_radius.w && in.pos.y > in.bbox.w - in.border_radius.w) {
         let distance_to_corner = distance(in.pos, vec2(in.bbox.x + in.border_radius.w, in.bbox.w - in.border_radius.w));
         return select(background_color, border_color, in.border_radius.w - border_width < distance_to_corner && distance_to_corner < in.border_radius.w);
-    } else {
+    } else if (in.pos.x > in.bbox.x + border_width && in.pos.x < in.bbox.z - border_width && in.pos.y > in.bbox.y + border_width && in.pos.y < in.bbox.w - border_width) {
         return background_color;
+    } else {
+        return border_color;
     }
 
 
