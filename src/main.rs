@@ -1,7 +1,7 @@
-use std::{borrow::Cow, ffi::c_long, sync::Arc};
+use std::{borrow::Cow, sync::Arc};
 
 use futures::executor;
-use glam::Vec3;
+use glam::{Vec2, Vec3, Vec4};
 use vertex::{Vertex, INDICES};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -17,8 +17,8 @@ use winit::{
 
 mod vertex;
 
-pub const BOX_WIDTH: f32 = 128.0;
-pub const BOX_HEIGHT: f32 = 48.0;
+pub const BOX_WIDTH: f32 = 128.0 * 4.0;
+pub const BOX_HEIGHT: f32 = 236.0;
 
 pub const BOX_X: f32 = 64.0;
 pub const BOX_Y: f32 = 64.0;
@@ -109,34 +109,45 @@ impl ApplicationHandler for App {
         println!("pixel_width: {}", pixel_width);
         println!("pixel_height: {}", pixel_height);
 
+        let bbox_bottom_left = Vec2::new(BOX_X * pixel_width - 1.0, BOX_Y * pixel_height - 1.0);
+        let bbox_top_right = Vec2::new(
+            (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
+            (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
+        );
+
         let vertices = [
             Vertex {
-                pos: Vec3::new(BOX_X * pixel_width - 1.0, BOX_Y * pixel_height - 1.0, 0.0),
-                color: Vec3::new(1.0, 0.0, 0.0),
+                pos: Vec2::new(BOX_X * pixel_width - 1.0, BOX_Y * pixel_height - 1.0),
+                color: Vec4::new(1.0, 0.0, 0.0, 1.0),
+                bbox_bottom_left,
+                bbox_top_right,
             },
             Vertex {
-                pos: Vec3::new(
+                pos: Vec2::new(
                     (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
                     BOX_Y * pixel_height - 1.0,
-                    0.0,
                 ),
-                color: Vec3::new(0.0, 1.0, 0.0),
+                color: Vec4::new(0.0, 1.0, 0.0, 1.0),
+                bbox_bottom_left,
+                bbox_top_right,
             },
             Vertex {
-                pos: Vec3::new(
+                pos: Vec2::new(
                     (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
                     (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
-                    0.0,
                 ),
-                color: Vec3::new(0.0, 0.0, 1.0),
+                color: Vec4::new(0.0, 0.0, 1.0, 1.0),
+                bbox_bottom_left,
+                bbox_top_right,
             },
             Vertex {
-                pos: Vec3::new(
+                pos: Vec2::new(
                     BOX_X * pixel_width - 1.0,
                     (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
-                    0.0,
                 ),
-                color: Vec3::new(1.0, 1.0, 0.0),
+                color: Vec4::new(1.0, 1.0, 0.0, 1.0),
+                bbox_bottom_left,
+                bbox_top_right,
             },
         ];
 
@@ -163,14 +174,26 @@ impl ApplicationHandler for App {
                     step_mode: wgpu::VertexStepMode::Vertex,
                     attributes: &[
                         VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x3,
+                            format: wgpu::VertexFormat::Float32x4,
                             offset: 0,
+                            shader_location: 1,
+                        },
+                        VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: std::mem::size_of::<Vec4>() as u64,
                             shader_location: 0,
                         },
                         VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x3,
-                            offset: std::mem::size_of::<Vec3>() as u64,
-                            shader_location: 1,
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: (std::mem::size_of::<Vec4>() + std::mem::size_of::<Vec2>())
+                                as u64,
+                            shader_location: 2,
+                        },
+                        VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: (std::mem::size_of::<Vec4>() + 2 * std::mem::size_of::<Vec2>())
+                                as u64,
+                            shader_location: 3,
                         },
                     ],
                 }],

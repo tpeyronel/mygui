@@ -1,12 +1,14 @@
-use glam::Vec3;
+use glam::{Vec2, Vec4};
 
-type Color = Vec3;
+type Color = Vec4;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Vertex {
-    pub pos: Vec3,
     pub color: Color,
+    pub pos: Vec2,
+    pub bbox_bottom_left: Vec2,
+    pub bbox_top_right: Vec2,
 }
 
 unsafe impl bytemuck::Pod for Vertex {}
