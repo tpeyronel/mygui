@@ -147,37 +147,32 @@ impl ApplicationHandler for App {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
-        let bbox_bottom_left = Vec2::new(BOX_X, BOX_Y);
-        let bbox_top_right = Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT);
-        let border_radius = Vec2::splat(32.0);
+        let bbox = Vec4::new(BOX_X, BOX_Y, BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT);
+        let border_radius = Vec4::new(64.0, 48.0, 32.0, 16.0);
 
         let vertices = [
             Vertex {
                 pos: Vec2::new(BOX_X, BOX_Y),
                 color: Vec4::new(1.0, 0.0, 0.0, 1.0),
-                bbox_bottom_left,
-                bbox_top_right,
+                bbox,
                 border_radius,
             },
             Vertex {
                 pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y),
                 color: Vec4::new(0.0, 1.0, 0.0, 1.0),
-                bbox_bottom_left,
-                bbox_top_right,
+                bbox,
                 border_radius,
             },
             Vertex {
                 pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT),
                 color: Vec4::new(0.0, 0.0, 1.0, 1.0),
-                bbox_bottom_left,
-                bbox_top_right,
+                bbox,
                 border_radius,
             },
             Vertex {
                 pos: Vec2::new(BOX_X, BOX_Y + BOX_HEIGHT),
                 color: Vec4::new(1.0, 1.0, 0.0, 1.0),
-                bbox_bottom_left,
-                bbox_top_right,
+                bbox,
                 border_radius,
             },
         ];
@@ -200,40 +195,7 @@ impl ApplicationHandler for App {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[VertexBufferLayout {
-                    array_stride: std::mem::size_of::<Vertex>() as u64,
-                    step_mode: wgpu::VertexStepMode::Vertex,
-                    attributes: &[
-                        VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x4,
-                            offset: 0,
-                            shader_location: 1,
-                        },
-                        VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x2,
-                            offset: std::mem::size_of::<Vec4>() as u64,
-                            shader_location: 0,
-                        },
-                        VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x2,
-                            offset: (std::mem::size_of::<Vec4>() + std::mem::size_of::<Vec2>())
-                                as u64,
-                            shader_location: 2,
-                        },
-                        VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x2,
-                            offset: (std::mem::size_of::<Vec4>() + 2 * std::mem::size_of::<Vec2>())
-                                as u64,
-                            shader_location: 3,
-                        },
-                        VertexAttribute {
-                            format: wgpu::VertexFormat::Float32x2,
-                            offset: (std::mem::size_of::<Vec4>() + 3 * std::mem::size_of::<Vec2>())
-                                as u64,
-                            shader_location: 4,
-                        },
-                    ],
-                }],
+                buffers: &[Vertex::vertex_buffer_layout()],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {

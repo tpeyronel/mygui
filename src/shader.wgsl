@@ -6,11 +6,10 @@ struct GlobalUniform {
 @group(0) @binding(0) var<uniform> global_uniform: GlobalUniform;
 
 struct VertexIn {
-    @location(0) pos: vec2<f32>,
-    @location(1) color: vec4<f32>,
-    @location(2) bbox_bottom_left: vec2<f32>,
-    @location(3) bbox_top_right: vec2<f32>,
-    @location(4) border_radius: vec2<f32>,
+    @location(0) bbox: vec4<f32>,
+    @location(1) border_radius: vec4<f32>,
+    @location(2) color: vec4<f32>,
+    @location(3) pos: vec2<f32>,
 }
 
 struct VertexOut {
@@ -18,7 +17,7 @@ struct VertexOut {
     @location(0) pos: vec2<f32>,
     @location(1) color: vec4<f32>,
     @location(2) bbox: vec4<f32>,
-    @location(3) border_radius: vec2<f32>,
+    @location(3) border_radius: vec4<f32>,
 };
 
 @vertex
@@ -32,7 +31,7 @@ fn vs_main(in: VertexIn) -> VertexOut {
     );
     out.pos = in.pos;
     out.color = in.color;
-    out.bbox = vec4(in.bbox_bottom_left, in.bbox_top_right);
+    out.bbox = in.bbox;
     out.border_radius = in.border_radius;
     return out;
 }
@@ -43,21 +42,18 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let background_color = select(in.color, 1.0 - in.color, 100.0 < distance && distance < 200.0);
     let border_color = vec4(1.0);
 
-    let inside_left_border = in.pos.x < in.bbox.x + in.border_radius.x;
-    let inside_right_border = in.pos.x > in.bbox.z - in.border_radius.x;
-    let inside_bottom_border = in.pos.y < in.bbox.y + in.border_radius.y;
-    let inside_top_border = in.pos.y > in.bbox.w - in.border_radius.y;
-
-    if (inside_left_border && inside_bottom_border) {
-        let corner_pos = in.bbox.xy + in.border_radius;
+    if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
+        let corner_pos = in.bbox.xy + in.border_radius.x;
         let distance_to_border = distance(in.pos, corner_pos);
-        return select(background_color, border_color, in.border_radius.x - 2.0 < distance_to_border && distance_to_border < in.border_radius.x);
-    } else if (inside_left_border && inside_top_border) {
-        let corner_pos = in.bbox.xw + vec2(in.border_radius.x, -in.border_radius.y);
-        return select(background_color, border_color, distance(in.pos, corner_pos) < in.border_radius.x);
-    } else if (inside_right_border && inside_bottom_border) {
+        // return select(background_color, border_color, in.border_radius.x - 2.0 < distance_to_border && distance_to_border < in.border_radius.x);
         return border_color;
-    } else if (inside_right_border && inside_top_border) {
+    } else if (in.pos.x > in.bbox.z - in.border_radius.y && in.pos.y < in.bbox.y + in.border_radius.y) {
+        let corner_pos = in.bbox.xw + vec2(in.border_radius.x, -in.border_radius.y);
+        return border_color;
+        // return select(background_color, border_color, distance(in.pos, corner_pos) < in.border_radius.x);
+    } else if (in.pos.x > in.bbox.z - in.border_radius.z && in.pos.y > in.bbox.w - in.border_radius.z) {
+        return border_color;
+    } else if (in.pos.x < in.bbox.x + in.border_radius.w && in.pos.y > in.bbox.w - in.border_radius.w) {
         return border_color;
     } else {
         return background_color;
