@@ -1,11 +1,11 @@
 use std::{borrow::Cow, sync::Arc};
 
 use futures::executor;
-use glam::{Vec2, Vec3, Vec4};
+use glam::{Vec2, Vec4};
 use vertex::{Vertex, INDICES};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    Device, Queue, RenderPipeline, Surface, VertexAttribute, VertexBufferLayout,
+    Device, Queue, RenderPipeline, Surface,
 };
 use winit::{
     application::ApplicationHandler,
