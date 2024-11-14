@@ -102,52 +102,38 @@ impl ApplicationHandler for App {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
-        let pixel_width: f32 = 2.0 / size.width as f32;
-        let pixel_height: f32 = 2.0 / size.height as f32;
-        println!("width: {}", size.width);
-        println!("height: {}", size.height);
-        println!("pixel_width: {}", pixel_width);
-        println!("pixel_height: {}", pixel_height);
-
-        let bbox_bottom_left = Vec2::new(BOX_X * pixel_width - 1.0, BOX_Y * pixel_height - 1.0);
-        let bbox_top_right = Vec2::new(
-            (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
-            (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
-        );
+        let bbox_bottom_left = Vec2::new(BOX_X, BOX_Y);
+        let bbox_top_right = Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT);
+        let border_radius = Vec2::splat(32.0);
 
         let vertices = [
             Vertex {
-                pos: Vec2::new(BOX_X * pixel_width - 1.0, BOX_Y * pixel_height - 1.0),
+                pos: Vec2::new(BOX_X, BOX_Y),
                 color: Vec4::new(1.0, 0.0, 0.0, 1.0),
                 bbox_bottom_left,
                 bbox_top_right,
+                border_radius,
             },
             Vertex {
-                pos: Vec2::new(
-                    (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
-                    BOX_Y * pixel_height - 1.0,
-                ),
+                pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y),
                 color: Vec4::new(0.0, 1.0, 0.0, 1.0),
                 bbox_bottom_left,
                 bbox_top_right,
+                border_radius,
             },
             Vertex {
-                pos: Vec2::new(
-                    (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
-                    (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
-                ),
+                pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT),
                 color: Vec4::new(0.0, 0.0, 1.0, 1.0),
                 bbox_bottom_left,
                 bbox_top_right,
+                border_radius,
             },
             Vertex {
-                pos: Vec2::new(
-                    BOX_X * pixel_width - 1.0,
-                    (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
-                ),
+                pos: Vec2::new(BOX_X, BOX_Y + BOX_HEIGHT),
                 color: Vec4::new(1.0, 1.0, 0.0, 1.0),
                 bbox_bottom_left,
                 bbox_top_right,
+                border_radius,
             },
         ];
 
@@ -194,6 +180,12 @@ impl ApplicationHandler for App {
                             offset: (std::mem::size_of::<Vec4>() + 2 * std::mem::size_of::<Vec2>())
                                 as u64,
                             shader_location: 3,
+                        },
+                        VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: (std::mem::size_of::<Vec4>() + 3 * std::mem::size_of::<Vec2>())
+                                as u64,
+                            shader_location: 4,
                         },
                     ],
                 }],

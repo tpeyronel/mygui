@@ -9,6 +9,7 @@ pub struct Vertex {
     pub pos: Vec2,
     pub bbox_bottom_left: Vec2,
     pub bbox_top_right: Vec2,
+    pub border_radius: Vec2,
 }
 
 unsafe impl bytemuck::Pod for Vertex {}

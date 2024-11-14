@@ -3,41 +3,81 @@ struct VertexIn {
     @location(1) color: vec4<f32>,
     @location(2) bbox_bottom_left: vec2<f32>,
     @location(3) bbox_top_right: vec2<f32>,
+    @location(4) border_radius: vec2<f32>,
 }
 
-const pixel_width: f32 = 2.0 / 800.0;
-const pixel_height: f32 = 2.0 / 600.0;
+const viewport_width: f32 = 800.0;
+const viewport_height: f32 = 600.0;
 
 struct VertexOut {
     @builtin(position) _position: vec4<f32>,
     @location(0) pos: vec2<f32>,
     @location(1) color: vec4<f32>,
     @location(2) bbox: vec4<f32>,
+    @location(3) border_radius: vec2<f32>,
 };
 
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
     var out: VertexOut;
-    out._position = vec4<f32>(in.pos, 0.0, 1.0);
+    out._position = vec4<f32>(2.0 * in.pos.x / viewport_width - 1.0, 2.0 * in.pos.y / viewport_height - 1.0, 0.0, 1.0);
     out.pos = in.pos;
     out.color = in.color;
     out.bbox = vec4(in.bbox_bottom_left, in.bbox_top_right);
+    out.border_radius = in.border_radius;
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    // // if (in.pos.x < in.bbox.x + pixel_width || in.pos.y < in.bbox.y + pixel_height) {
-    if (in.pos.x < in.bbox.x + 4.0 * pixel_width
-        || in.pos.y < in.bbox.y + 4.0 * pixel_height
-        || in.pos.x > in.bbox.z - 4.0 * pixel_width
-        || in.pos.y > in.bbox.w - 4.0 * pixel_height) {
-        return vec4(1.0, 1.0, 1.0, 1.0);
+    let distance = distance(in.pos, vec2<f32>(0.5 * viewport_width, 0.5 * viewport_height));
+    let background_color = select(in.color, 1.0 - in.color, 100.0 < distance && distance < 200.0);
+    let border_color = vec4(1.0);
+
+    let inside_left_border = in.pos.x < in.bbox.x + in.border_radius.x;
+    let inside_right_border = in.pos.x > in.bbox.z - in.border_radius.x;
+    let inside_bottom_border = in.pos.y < in.bbox.y + in.border_radius.y;
+    let inside_top_border = in.pos.y > in.bbox.w - in.border_radius.y;
+
+    if (inside_left_border && inside_bottom_border) {
+        let corner_pos = in.bbox.xy + in.border_radius;
+        let distance_to_border = distance(in.pos, corner_pos);
+        return select(background_color, border_color, in.border_radius.x - 2.0 < distance_to_border && distance_to_border < in.border_radius.x);
+    } else if (inside_left_border && inside_top_border) {
+        let corner_pos = in.bbox.xw + vec2(in.border_radius.x, -in.border_radius.y);
+        return select(background_color, border_color, distance(in.pos, corner_pos) < in.border_radius.x);
+    } else if (inside_right_border && inside_bottom_border) {
+        return border_color;
+    } else if (inside_right_border && inside_top_border) {
+        return border_color;
+    } else {
+        return background_color;
     }
 
 
-    let distance = distance(in.pos, vec2<f32>(0.0, 0.0));
-    return select(in.color, 1.0 - in.color, 0.25 < distance && distance < 0.35  );
+    // if (in.bbox.x + in.border_radius.x < in.pos.x && in.pos.x < in.bbox.z - in.border_radius.x) {
+    //     return background_color;
+    // }
+
+    // if (in.bbox.y + in.border_radius.y < in.pos.y && in.pos.y < in.bbox.w - in.border_radius.y) {
+    //     return background_color;
+    // }
+
+    // return border_color;
+
+
+
+    // // if (in.pos.x < in.bbox.x + pixel_width || in.pos.y < in.bbox.y + pixel_height) {
+    // if (in.pos.x < in.bbox.x + 4.0 * pixel_width
+    //     || in.pos.y < in.bbox.y + 4.0 * pixel_height
+    //     || in.pos.x > in.bbox.z - 4.0 * pixel_width
+    //     || in.pos.y > in.bbox.w - 4.0 * pixel_height) {
+    //     return vec4(1.0, 1.0, 1.0, 1.0);
+    // }
+
+
+    // let distance = distance(in.pos, vec2<f32>(0.0, 0.0));
+    // return select(in.color, 1.0 - in.color, 0.25 < distance && distance < 0.35  );
     // return vec4(in.pos + 1.0, 0.0, 1.0);
     // return vec4(in.bbox + 1.0, 0.0, 1.0);
 
