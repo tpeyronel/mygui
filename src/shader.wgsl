@@ -1,3 +1,10 @@
+struct GlobalUniform {
+    viewport_width: f32,
+    viewport_height: f32,
+}
+
+@group(0) @binding(0) var<uniform> global_uniform: GlobalUniform;
+
 struct VertexIn {
     @location(0) pos: vec2<f32>,
     @location(1) color: vec4<f32>,
@@ -5,9 +12,6 @@ struct VertexIn {
     @location(3) bbox_top_right: vec2<f32>,
     @location(4) border_radius: vec2<f32>,
 }
-
-const viewport_width: f32 = 800.0;
-const viewport_height: f32 = 600.0;
 
 struct VertexOut {
     @builtin(position) _position: vec4<f32>,
@@ -20,7 +24,12 @@ struct VertexOut {
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
     var out: VertexOut;
-    out._position = vec4<f32>(2.0 * in.pos.x / viewport_width - 1.0, 2.0 * in.pos.y / viewport_height - 1.0, 0.0, 1.0);
+    out._position = vec4<f32>(
+        2.0 * in.pos.x / global_uniform.viewport_width - 1.0,
+        2.0 * in.pos.y / global_uniform.viewport_height - 1.0,
+        0.0,
+        1.0,
+    );
     out.pos = in.pos;
     out.color = in.color;
     out.bbox = vec4(in.bbox_bottom_left, in.bbox_top_right);
@@ -30,7 +39,7 @@ fn vs_main(in: VertexIn) -> VertexOut {
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    let distance = distance(in.pos, vec2<f32>(0.5 * viewport_width, 0.5 * viewport_height));
+    let distance = distance(in.pos, vec2<f32>(0.5 * global_uniform.viewport_width, 0.5 * global_uniform.viewport_height));
     let background_color = select(in.color, 1.0 - in.color, 100.0 < distance && distance < 200.0);
     let border_color = vec4(1.0);
 

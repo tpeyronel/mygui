@@ -23,6 +23,13 @@ pub const BOX_HEIGHT: f32 = 236.0;
 pub const BOX_X: f32 = 64.0;
 pub const BOX_Y: f32 = 64.0;
 
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct GlobalUniform {
+    viewport_width: f32,
+    viewport_height: f32,
+}
+
 struct App {
     state: Option<AppState>,
 }
@@ -35,6 +42,9 @@ struct AppState {
     render_pipeline: RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
+    global_uniform: GlobalUniform,
+    global_uniform_buffer: wgpu::Buffer,
+    global_uniform_bind_group: wgpu::BindGroup,
     config: wgpu::SurfaceConfiguration,
 }
 
@@ -88,9 +98,44 @@ impl ApplicationHandler for App {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
         });
 
+        let global_uniform = GlobalUniform {
+            viewport_width: size.width as f32,
+            viewport_height: size.height as f32,
+        };
+
+        let global_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("global uniform buffer"),
+            contents: bytemuck::cast_slice(&[global_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let global_uniform_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("global uniform group layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+
+        let global_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("global uniform group"),
+            layout: &global_uniform_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: global_uniform_buffer.as_entire_binding(),
+            }],
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[],
+            bind_group_layouts: &[&global_uniform_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -224,6 +269,9 @@ impl ApplicationHandler for App {
             render_pipeline,
             vertex_buffer,
             index_buffer,
+            global_uniform,
+            global_uniform_bind_group,
+            global_uniform_buffer,
             config,
         })
     }
@@ -239,6 +287,8 @@ impl ApplicationHandler for App {
                 let state = self.state.as_mut().unwrap();
                 state.config.width = new_size.width.max(1);
                 state.config.height = new_size.height.max(1);
+                state.global_uniform.viewport_width = state.config.width as f32;
+                state.global_uniform.viewport_height = state.config.height as f32;
                 state.surface.configure(&state.device, &state.config);
             }
             WindowEvent::CloseRequested => {
@@ -262,6 +312,12 @@ impl ApplicationHandler for App {
                 // self.window.as_ref().unwrap().request_redraw();
 
                 let state = self.state.as_ref().unwrap();
+
+                state.queue.write_buffer(
+                    &state.global_uniform_buffer,
+                    0,
+                    bytemuck::cast_slice(&[state.global_uniform]),
+                );
 
                 let frame = state
                     .surface
@@ -292,6 +348,7 @@ impl ApplicationHandler for App {
                         occlusion_query_set: None,
                     });
                     rpass.set_pipeline(&state.render_pipeline);
+                    rpass.set_bind_group(0, &state.global_uniform_bind_group, &[]);
                     rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
                     rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                     rpass.draw_indexed(0..INDICES.len() as u32, 0, 0..1);
