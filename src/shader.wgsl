@@ -61,32 +61,4 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     } else {
         return border_color;
     }
-
-
-    // if (in.bbox.x + in.border_radius.x < in.pos.x && in.pos.x < in.bbox.z - in.border_radius.x) {
-    //     return background_color;
-    // }
-
-    // if (in.bbox.y + in.border_radius.y < in.pos.y && in.pos.y < in.bbox.w - in.border_radius.y) {
-    //     return background_color;
-    // }
-
-    // return border_color;
-
-
-
-    // // if (in.pos.x < in.bbox.x + pixel_width || in.pos.y < in.bbox.y + pixel_height) {
-    // if (in.pos.x < in.bbox.x + 4.0 * pixel_width
-    //     || in.pos.y < in.bbox.y + 4.0 * pixel_height
-    //     || in.pos.x > in.bbox.z - 4.0 * pixel_width
-    //     || in.pos.y > in.bbox.w - 4.0 * pixel_height) {
-    //     return vec4(1.0, 1.0, 1.0, 1.0);
-    // }
-
-
-    // let distance = distance(in.pos, vec2<f32>(0.0, 0.0));
-    // return select(in.color, 1.0 - in.color, 0.25 < distance && distance < 0.35  );
-    // return vec4(in.pos + 1.0, 0.0, 1.0);
-    // return vec4(in.bbox + 1.0, 0.0, 1.0);
-
 }
