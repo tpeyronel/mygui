@@ -20,6 +20,8 @@ struct VertexOut {
     @location(3) border_radius: vec4<f32>,
 };
 
+const border_width: f32 = 4.0;
+
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
     var out: VertexOut;
@@ -44,16 +46,16 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 
     if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
         let distance_to_corner = distance(in.pos, in.bbox.xy + in.border_radius.x);
-        return select(background_color, border_color, in.border_radius.x - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.x);
+        return select(background_color, border_color, in.border_radius.x - border_width < distance_to_corner && distance_to_corner < in.border_radius.x);
     } else if (in.pos.x > in.bbox.z - in.border_radius.y && in.pos.y < in.bbox.y + in.border_radius.y) {
         let distance_to_corner = distance(in.pos, vec2(in.bbox.z - in.border_radius.y, in.bbox.y + in.border_radius.y));
-        return select(background_color, border_color, in.border_radius.y - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.y);
+        return select(background_color, border_color, in.border_radius.y - border_width < distance_to_corner && distance_to_corner < in.border_radius.y);
     } else if (in.pos.x > in.bbox.z - in.border_radius.z && in.pos.y > in.bbox.w - in.border_radius.z) {
         let distance_to_corner = distance(in.pos, in.bbox.zw - in.border_radius.z);
-        return select(background_color, border_color, in.border_radius.z - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.z);
+        return select(background_color, border_color, in.border_radius.z - border_width < distance_to_corner && distance_to_corner < in.border_radius.z);
     } else if (in.pos.x < in.bbox.x + in.border_radius.w && in.pos.y > in.bbox.w - in.border_radius.w) {
         let distance_to_corner = distance(in.pos, vec2(in.bbox.x + in.border_radius.w, in.bbox.w - in.border_radius.w));
-        return select(background_color, border_color, in.border_radius.w - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.w);
+        return select(background_color, border_color, in.border_radius.w - border_width < distance_to_corner && distance_to_corner < in.border_radius.w);
     } else {
         return background_color;
     }
