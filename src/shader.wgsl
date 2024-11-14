@@ -40,21 +40,20 @@ fn vs_main(in: VertexIn) -> VertexOut {
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let distance = distance(in.pos, vec2<f32>(0.5 * global_uniform.viewport_width, 0.5 * global_uniform.viewport_height));
     let background_color = select(in.color, 1.0 - in.color, 100.0 < distance && distance < 200.0);
-    let border_color = vec4(1.0);
+    let border_color = vec4(0.0, 0.0, 1.0, 1.0);
 
     if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
-        let corner_pos = in.bbox.xy + in.border_radius.x;
-        let distance_to_border = distance(in.pos, corner_pos);
-        // return select(background_color, border_color, in.border_radius.x - 2.0 < distance_to_border && distance_to_border < in.border_radius.x);
-        return border_color;
+        let distance_to_corner = distance(in.pos, in.bbox.xy + in.border_radius.x);
+        return select(background_color, border_color, in.border_radius.x - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.x);
     } else if (in.pos.x > in.bbox.z - in.border_radius.y && in.pos.y < in.bbox.y + in.border_radius.y) {
-        let corner_pos = in.bbox.xw + vec2(in.border_radius.x, -in.border_radius.y);
-        return border_color;
-        // return select(background_color, border_color, distance(in.pos, corner_pos) < in.border_radius.x);
+        let distance_to_corner = distance(in.pos, vec2(in.bbox.z - in.border_radius.y, in.bbox.y + in.border_radius.y));
+        return select(background_color, border_color, in.border_radius.y - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.y);
     } else if (in.pos.x > in.bbox.z - in.border_radius.z && in.pos.y > in.bbox.w - in.border_radius.z) {
-        return border_color;
+        let distance_to_corner = distance(in.pos, in.bbox.zw - in.border_radius.z);
+        return select(background_color, border_color, in.border_radius.z - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.z);
     } else if (in.pos.x < in.bbox.x + in.border_radius.w && in.pos.y > in.bbox.w - in.border_radius.w) {
-        return border_color;
+        let distance_to_corner = distance(in.pos, vec2(in.bbox.x + in.border_radius.w, in.bbox.w - in.border_radius.w));
+        return select(background_color, border_color, in.border_radius.w - 2.0 < distance_to_corner && distance_to_corner < in.border_radius.w);
     } else {
         return background_color;
     }
