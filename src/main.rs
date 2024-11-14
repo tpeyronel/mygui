@@ -1,8 +1,8 @@
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, ffi::c_long, sync::Arc};
 
 use futures::executor;
 use glam::Vec3;
-use vertex::{Vertex, INDICES, VERTICES};
+use vertex::{Vertex, INDICES};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Device, Queue, RenderPipeline, Surface, VertexAttribute, VertexBufferLayout,
@@ -16,6 +16,12 @@ use winit::{
 };
 
 mod vertex;
+
+pub const BOX_WIDTH: f32 = 128.0;
+pub const BOX_HEIGHT: f32 = 48.0;
+
+pub const BOX_X: f32 = 64.0;
+pub const BOX_Y: f32 = 64.0;
 
 struct App {
     state: Option<AppState>,
@@ -96,9 +102,47 @@ impl ApplicationHandler for App {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
+        let pixel_width: f32 = 2.0 / size.width as f32;
+        let pixel_height: f32 = 2.0 / size.height as f32;
+        println!("width: {}", size.width);
+        println!("height: {}", size.height);
+        println!("pixel_width: {}", pixel_width);
+        println!("pixel_height: {}", pixel_height);
+
+        let vertices = [
+            Vertex {
+                pos: Vec3::new(BOX_X * pixel_width - 1.0, BOX_Y * pixel_height - 1.0, 0.0),
+                color: Vec3::new(1.0, 0.0, 0.0),
+            },
+            Vertex {
+                pos: Vec3::new(
+                    (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
+                    BOX_Y * pixel_height - 1.0,
+                    0.0,
+                ),
+                color: Vec3::new(0.0, 1.0, 0.0),
+            },
+            Vertex {
+                pos: Vec3::new(
+                    (BOX_X + BOX_WIDTH) * pixel_width - 1.0,
+                    (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
+                    0.0,
+                ),
+                color: Vec3::new(0.0, 0.0, 1.0),
+            },
+            Vertex {
+                pos: Vec3::new(
+                    BOX_X * pixel_width - 1.0,
+                    (BOX_Y + BOX_HEIGHT) * pixel_height - 1.0,
+                    0.0,
+                ),
+                color: Vec3::new(1.0, 1.0, 0.0),
+            },
+        ];
+
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("vertex buffer"),
-            contents: bytemuck::cast_slice(&VERTICES),
+            contents: bytemuck::cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
 

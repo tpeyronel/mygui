@@ -5,26 +5,12 @@ type Color = Vec3;
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Vertex {
-    pos: Vec3,
-    color: Color,
+    pub pos: Vec3,
+    pub color: Color,
 }
 
 unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
 
-pub const VERTICES: &[Vertex] = &[
-    Vertex {
-        pos: Vec3::new(0.0, 1.0, 0.0),
-        color: Vec3::new(1.0, 0.0, 0.0),
-    },
-    Vertex {
-        pos: Vec3::new(-1.0, -1.0, 0.0),
-        color: Vec3::new(0.0, 1.0, 0.0),
-    },
-    Vertex {
-        pos: Vec3::new(1.0, -1.0, 0.0),
-        color: Vec3::new(0.0, 0.0, 1.0),
-    },
-];
 
-pub const INDICES: &[u32] = &[0, 1, 2];
+pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];
