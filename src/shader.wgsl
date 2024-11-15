@@ -83,8 +83,8 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let delta = fwidth(distance);
     let alpha = double_smoothstep(80.0 - delta, 80.0, 100.0 - delta, 100.0, distance);
     // let background_color = mix(in.color, 1.0 - in.color, alpha);
-    let background_color = vec4(0.3);
-    let border_color = vec4(0.0, 1.0, 0.0, 0.0);
+    let background_color = vec4(vec3(0.3), 0.5);
+    let border_color = vec4(0.0, 1.0, 0.0, 0.5);
 
     if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
         return smooth_corner(in.pos, in.bbox.xy + in.border_radius.x, in.border_radius.x, in.border_width.wx, background_color, border_color);
