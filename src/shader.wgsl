@@ -82,35 +82,17 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let delta = fwidth(distance);
     let alpha = double_smoothstep(80.0 - delta, 80.0, 100.0 - delta, 100.0, distance);
     // let background_color = mix(in.color, 1.0 - in.color, alpha);
-    let background_color = vec4(1.0);
+    let background_color = vec4(0.3);
     let border_color = vec4(0.0, 1.0, 0.0, 0.0);
 
     if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
         return smooth_corner(in.pos, in.bbox.xy + in.border_radius.x, in.border_radius.x, in.border_width.wx, background_color, border_color);
     } else if (in.pos.x > in.bbox.z - in.border_radius.y && in.pos.y < in.bbox.y + in.border_radius.y) {
-        let corner_to_frag = in.pos - vec2(in.bbox.z - in.border_radius.y, in.bbox.y + in.border_radius.y);
-        let distance_to_corner = length(corner_to_frag);
-        let border_width = mix(in.border_width.x, in.border_width.y, square(corner_to_frag.x / distance_to_corner));
-
-        let delta = fwidth(distance_to_corner) * 0.3;
-        let alpha = double_smoothstep(in.border_radius.y - border_width - delta, in.border_radius.y - border_width + delta, in.border_radius.y - delta, in.border_radius.y + delta, distance_to_corner);
-        return mix(background_color, border_color, alpha);
+        return smooth_corner(in.pos, vec2(in.bbox.z - in.border_radius.y, in.bbox.y + in.border_radius.y), in.border_radius.y, in.border_width.yx, background_color, border_color);
     } else if (in.pos.x > in.bbox.z - in.border_radius.z && in.pos.y > in.bbox.w - in.border_radius.z) {
-        let corner_to_frag = in.pos - (in.bbox.zw - in.border_radius.z);
-        let distance_to_corner = length(corner_to_frag);
-        let border_width = mix(in.border_width.y, in.border_width.z, square(corner_to_frag.y / distance_to_corner));
-
-        let delta = fwidth(distance_to_corner) * 0.3;
-        let alpha = double_smoothstep(in.border_radius.z - border_width - delta, in.border_radius.z - border_width + delta, in.border_radius.z - delta, in.border_radius.z + delta, distance_to_corner);
-        return mix(background_color, border_color, alpha);
+        return smooth_corner(in.pos, in.bbox.zw - in.border_radius.z, in.border_radius.z, in.border_width.yz, background_color, border_color);
     } else if (in.pos.x < in.bbox.x + in.border_radius.w && in.pos.y > in.bbox.w - in.border_radius.w) {
-        let corner_to_frag = in.pos - vec2(in.bbox.x + in.border_radius.w, in.bbox.w - in.border_radius.w);
-        let distance_to_corner = length(corner_to_frag);
-        let border_width = mix(in.border_width.z, in.border_width.w, square(-corner_to_frag.x / distance_to_corner));
-
-        let delta = fwidth(distance_to_corner) * 0.3;
-        let alpha = double_smoothstep(in.border_radius.w - border_width - delta, in.border_radius.w - border_width + delta, in.border_radius.w - delta, in.border_radius.w + delta, distance_to_corner);
-        return mix(background_color, border_color, alpha);
+        return smooth_corner(in.pos, vec2(in.bbox.x + in.border_radius.w, in.bbox.w - in.border_radius.w), in.border_radius.w, in.border_width.wz, background_color, border_color);
     } else if (in.pos.y < in.bbox.y + in.border_width.x || in.pos.x > in.bbox.z - in.border_width.y || in.pos.y > in.bbox.w - in.border_width.z || in.pos.x < in.bbox.x + in.border_width.w) {
         return border_color;
     } else {
