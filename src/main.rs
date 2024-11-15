@@ -5,7 +5,7 @@ use glam::{Vec2, Vec4};
 use vertex::{Vertex, INDICES};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    Device, Queue, RenderPipeline, Surface,
+    Device, Extent3d, Queue, RenderPipeline, Surface,
 };
 use winit::{
     application::ApplicationHandler,
@@ -45,6 +45,7 @@ struct AppState {
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
+    multisampled_framebuffer_view: wgpu::TextureView,
     config: wgpu::SurfaceConfiguration,
 }
 
@@ -82,7 +83,7 @@ impl ApplicationHandler for App {
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
-                required_features: wgpu::Features::empty(),
+                required_features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
                 required_limits:
                     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
@@ -147,6 +148,9 @@ impl ApplicationHandler for App {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
+        println!("{:#?}", adapter.get_texture_format_features(swapchain_format).flags);
+
+
         let bbox = Vec4::new(BOX_X, BOX_Y, BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT);
         let border_radius = Vec4::new(64.0, 48.0, 32.0, 16.0);
         let border_width = Vec4::new(2.0, 4.0, 8.0, 16.0);
@@ -194,6 +198,8 @@ impl ApplicationHandler for App {
             usage: wgpu::BufferUsages::INDEX,
         });
 
+        let sample_count = 8;
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
@@ -211,10 +217,30 @@ impl ApplicationHandler for App {
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                ..Default::default()
+            },
             multiview: None,
             cache: None,
         });
+
+        let multisampled_framebuffer_view = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("multisampled framebuffer"),
+                size: Extent3d {
+                    width: size.width,
+                    height: size.height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count,
+                dimension: wgpu::TextureDimension::D2,
+                format: swapchain_format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -239,6 +265,7 @@ impl ApplicationHandler for App {
             global_uniform,
             global_uniform_bind_group,
             global_uniform_buffer,
+            multisampled_framebuffer_view,
             config,
         })
     }
@@ -303,8 +330,8 @@ impl ApplicationHandler for App {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
+                            view: &state.multisampled_framebuffer_view,
+                            resolve_target: Some(&view),
                             ops: wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                                 store: wgpu::StoreOp::Store,
