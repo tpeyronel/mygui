@@ -10,7 +10,7 @@ use wgpu::{
 };
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{ElementState, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::PhysicalKey,
     window::{Window, WindowId},
@@ -387,7 +387,11 @@ impl ApplicationHandler for App {
                 event,
                 is_synthetic,
             } => match event.physical_key {
-                PhysicalKey::Code(winit::keyboard::KeyCode::Escape) => event_loop.exit(),
+                PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
+                    if event.state == ElementState::Released =>
+                {
+                    event_loop.exit()
+                }
                 _ => {}
             },
             _ => (),
