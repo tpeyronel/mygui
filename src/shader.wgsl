@@ -3,7 +3,15 @@ struct GlobalUniform {
     viewport_height: f32,
 }
 
+struct RectangleData {
+    bbox: vec4<f32>,
+    color: vec4<f32>,
+    border_radius: vec4<f32>,
+    border_width: vec4<f32>,
+}
+
 @group(0) @binding(0) var<uniform> global_uniform: GlobalUniform;
+@group(1) @binding(0) var<storage, read> rectangle_data: array<RectangleData>;
 
 struct VertexIn {
     @location(0) bbox: vec4<f32>,
@@ -83,8 +91,8 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let delta = fwidth(distance);
     let alpha = double_smoothstep(80.0 - delta, 80.0, 100.0 - delta, 100.0, distance);
     // let background_color = mix(in.color, 1.0 - in.color, alpha);
-    let background_color = vec4(vec3(0.3), 0.5);
-    let border_color = vec4(0.0, 1.0, 0.0, 0.5);
+    let background_color = rectangle_data[0].color;
+    let border_color = vec4(0.0, 0.0, 0.0, 0.85);
 
     if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
         return smooth_corner(in.pos, in.bbox.xy + in.border_radius.x, in.border_radius.x, in.border_width.wx, background_color, border_color);

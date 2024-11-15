@@ -2,6 +2,7 @@ use std::{borrow::Cow, sync::Arc};
 
 use futures::executor;
 use glam::{Vec2, Vec4};
+use rectangle::Rectangle;
 use vertex::{Vertex, INDICES};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -15,6 +16,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
+mod rectangle;
 mod vertex;
 
 pub const BOX_WIDTH: f32 = 128.0 * 4.0;
@@ -45,6 +47,9 @@ struct AppState {
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
+    rectangles: Vec<Rectangle>,
+    rectangle_data_uniform_buffer: wgpu::Buffer,
+    rectangle_data_uniform_bind_group: wgpu::BindGroup,
     config: wgpu::SurfaceConfiguration,
 }
 
@@ -78,14 +83,21 @@ impl ApplicationHandler for App {
         }))
         .expect("Failed to find an appropriate adapter");
 
+        // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
+        let mut required_limits =
+            wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits());
+        required_limits.max_storage_buffers_per_shader_stage =
+            wgpu::Limits::default().max_storage_buffers_per_shader_stage;
+        required_limits.max_storage_buffer_binding_size =
+            wgpu::Limits::default().max_storage_buffer_binding_size;
+
         // Create the logical device and command queue
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
-                required_features: wgpu::Features::empty(),
-                // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
-                required_limits:
-                    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
+                required_features: wgpu::Features::BUFFER_BINDING_ARRAY
+                    | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY, // TODO: apparently not needed?
+                required_limits,
                 memory_hints: wgpu::MemoryHints::MemoryUsage,
             },
             None,
@@ -133,9 +145,61 @@ impl ApplicationHandler for App {
             }],
         });
 
+        let rectangles = vec![
+            Rectangle {
+                position: Vec2::new(16.0, 16.0),
+                size: Vec2::new(64.0, 64.0),
+                color: Vec4::new(0.1, 1.0, 0.1, 1.0),
+                border_radius: Vec4::splat(8.0),
+                border_width: Vec4::splat(2.0),
+            },
+            Rectangle {
+                position: Vec2::new(16.0, 16.0 + 64.0 + 16.0),
+                size: Vec2::new(64.0, 64.0),
+                color: Vec4::new(1.0, 0.1, 0.1, 1.0),
+                border_radius: Vec4::splat(8.0),
+                border_width: Vec4::splat(2.0),
+            },
+        ];
+
+        let rectangle_data_uniform_buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("rectangle data uniform buffer"),
+                contents: bytemuck::cast_slice(rectangles.as_slice()),
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            });
+
+        let rectangle_data_uniform_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("rectangle data uniform group layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+
+        let rectangle_data_uniform_bind_group =
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("rectangle data uniform group"),
+                layout: &rectangle_data_uniform_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: rectangle_data_uniform_buffer.as_entire_binding(),
+                }],
+            });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[&global_uniform_bind_group_layout],
+            bind_group_layouts: &[
+                &global_uniform_bind_group_layout,
+                &rectangle_data_uniform_bind_group_layout,
+            ],
             push_constant_ranges: &[],
         });
 
@@ -158,6 +222,7 @@ impl ApplicationHandler for App {
                 bbox,
                 border_radius,
                 border_width,
+                padding: Vec2::ZERO,
             },
             Vertex {
                 pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y),
@@ -165,6 +230,7 @@ impl ApplicationHandler for App {
                 bbox,
                 border_radius,
                 border_width,
+                padding: Vec2::ZERO,
             },
             Vertex {
                 pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT),
@@ -172,6 +238,7 @@ impl ApplicationHandler for App {
                 bbox,
                 border_radius,
                 border_width,
+                padding: Vec2::ZERO,
             },
             Vertex {
                 pos: Vec2::new(BOX_X, BOX_Y + BOX_HEIGHT),
@@ -179,6 +246,7 @@ impl ApplicationHandler for App {
                 bbox,
                 border_radius,
                 border_width,
+                padding: Vec2::ZERO,
             },
         ];
 
@@ -250,6 +318,9 @@ impl ApplicationHandler for App {
             global_uniform,
             global_uniform_bind_group,
             global_uniform_buffer,
+            rectangles,
+            rectangle_data_uniform_bind_group,
+            rectangle_data_uniform_buffer,
             config,
         })
     }
@@ -332,6 +403,7 @@ impl ApplicationHandler for App {
                     });
                     rpass.set_pipeline(&state.render_pipeline);
                     rpass.set_bind_group(0, &state.global_uniform_bind_group, &[]);
+                    rpass.set_bind_group(1, &state.rectangle_data_uniform_bind_group, &[]);
                     rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
                     rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                     rpass.draw_indexed(0..INDICES.len() as u32, 0, 0..1);

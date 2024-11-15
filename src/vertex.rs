@@ -1,15 +1,16 @@
 use glam::{Vec2, Vec4};
 
-type Color = Vec4;
+pub type Color = Vec4;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub bbox: Vec4,          // x: left, y: bottom, z: top, w: right
     pub border_radius: Vec4, // x: bottom left, y: bottom right, z: top right, w: top left (CCW)
     pub border_width: Vec4,  // x: bottom, y: right, z: top, w: left (CCW)
     pub color: Color,
     pub pos: Vec2,
+    pub padding: Vec2,
 }
 
 impl Vertex {
@@ -49,8 +50,5 @@ impl Vertex {
         }
     }
 }
-
-unsafe impl bytemuck::Pod for Vertex {}
-unsafe impl bytemuck::Zeroable for Vertex {}
 
 pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];
