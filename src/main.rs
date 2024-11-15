@@ -149,6 +149,7 @@ impl ApplicationHandler for App {
 
         let bbox = Vec4::new(BOX_X, BOX_Y, BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT);
         let border_radius = Vec4::new(64.0, 48.0, 32.0, 16.0);
+        let border_width = Vec4::new(2.0, 4.0, 8.0, 16.0);
 
         let vertices = [
             Vertex {
@@ -156,24 +157,28 @@ impl ApplicationHandler for App {
                 color: Vec4::new(1.0, 0.0, 0.0, 1.0),
                 bbox,
                 border_radius,
+                border_width,
             },
             Vertex {
                 pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y),
                 color: Vec4::new(0.0, 1.0, 0.0, 1.0),
                 bbox,
                 border_radius,
+                border_width,
             },
             Vertex {
                 pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT),
                 color: Vec4::new(0.0, 0.0, 1.0, 1.0),
                 bbox,
                 border_radius,
+                border_width,
             },
             Vertex {
                 pos: Vec2::new(BOX_X, BOX_Y + BOX_HEIGHT),
                 color: Vec4::new(1.0, 1.0, 0.0, 1.0),
                 bbox,
                 border_radius,
+                border_width,
             },
         ];
 
