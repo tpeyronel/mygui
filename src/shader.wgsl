@@ -61,7 +61,8 @@ fn smooth_corner(
     let distance_to_corner = length(corner_to_frag);
     let mixed_thickness = mix(thickness.y, thickness.x, square(abs(corner_to_frag.x) / distance_to_corner));
 
-    let delta = fwidth(distance_to_corner) * 0.3;
+    // let delta = fwidth(distance_to_corner) * 0.3; // <- this doesn't work correctly for fragments that are at the edge of the corner
+    let delta = 0.5;
 
     let outer_radius = radius;
     let inner_radius = outer_radius - mixed_thickness;
