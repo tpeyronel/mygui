@@ -7,7 +7,8 @@ use crate::vertex::{Color, Vertex};
 pub struct Rectangle {
     pub position: Vec2,
     pub size: Vec2,
-    pub color: Color,
+    pub fill_color: Color,
+    pub border_color: Color,
     pub border_radius: Vec4,
     pub border_width: Vec4,
 }
