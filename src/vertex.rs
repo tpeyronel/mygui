@@ -50,5 +50,3 @@ impl Vertex {
         }
     }
 }
-
-pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];

@@ -3,7 +3,7 @@ use std::{borrow::Cow, sync::Arc};
 use futures::executor;
 use glam::{Vec2, Vec4};
 use rectangle::Rectangle;
-use vertex::{Vertex, INDICES};
+use vertex::Vertex;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Device, Queue, RenderPipeline, Surface,
@@ -19,17 +19,24 @@ use winit::{
 mod rectangle;
 mod vertex;
 
-pub const BOX_WIDTH: f32 = 128.0 * 4.0;
-pub const BOX_HEIGHT: f32 = 236.0;
-
-pub const BOX_X: f32 = 64.0;
-pub const BOX_Y: f32 = 64.0;
-
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct GlobalUniform {
     viewport_width: f32,
     viewport_height: f32,
+}
+
+fn rectangles_to_vertices_and_indices(rectangles: &[Rectangle]) -> (Vec<Vertex>, Vec<u32>) {
+    let mut vertices = vec![];
+    let mut indices = vec![];
+
+    for r in rectangles {
+        let i = vertices.len() as u32;
+        indices.extend([i, i + 1, i + 2, i, i + 2, i + 3]);
+        vertices.extend(r.to_vertices());
+    }
+
+    (vertices, indices)
 }
 
 struct App {
@@ -155,7 +162,7 @@ impl ApplicationHandler for App {
             },
             Rectangle {
                 position: Vec2::new(16.0, 16.0 + 64.0 + 16.0),
-                size: Vec2::new(64.0, 64.0),
+                size: Vec2::new(128.0 * 4.0, 236.0),
                 color: Vec4::new(1.0, 0.1, 0.1, 1.0),
                 border_radius: Vec4::splat(8.0),
                 border_width: Vec4::splat(2.0),
@@ -211,44 +218,7 @@ impl ApplicationHandler for App {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
-        let bbox = Vec4::new(BOX_X, BOX_Y, BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT);
-        let border_radius = Vec4::new(64.0, 48.0, 32.0, 16.0);
-        let border_width = Vec4::new(2.0, 4.0, 8.0, 16.0);
-
-        let vertices = [
-            Vertex {
-                pos: Vec2::new(BOX_X, BOX_Y),
-                color: Vec4::new(1.0, 0.0, 0.0, 1.0),
-                bbox,
-                border_radius,
-                border_width,
-                padding: Vec2::ZERO,
-            },
-            Vertex {
-                pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y),
-                color: Vec4::new(0.0, 1.0, 0.0, 1.0),
-                bbox,
-                border_radius,
-                border_width,
-                padding: Vec2::ZERO,
-            },
-            Vertex {
-                pos: Vec2::new(BOX_X + BOX_WIDTH, BOX_Y + BOX_HEIGHT),
-                color: Vec4::new(0.0, 0.0, 1.0, 1.0),
-                bbox,
-                border_radius,
-                border_width,
-                padding: Vec2::ZERO,
-            },
-            Vertex {
-                pos: Vec2::new(BOX_X, BOX_Y + BOX_HEIGHT),
-                color: Vec4::new(1.0, 1.0, 0.0, 1.0),
-                bbox,
-                border_radius,
-                border_width,
-                padding: Vec2::ZERO,
-            },
-        ];
+        let (vertices, indices) = rectangles_to_vertices_and_indices(&rectangles);
 
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("vertex buffer"),
@@ -258,7 +228,7 @@ impl ApplicationHandler for App {
 
         let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("index buffer"),
-            contents: bytemuck::cast_slice(INDICES),
+            contents: bytemuck::cast_slice(&indices),
             usage: wgpu::BufferUsages::INDEX,
         });
 
@@ -406,7 +376,7 @@ impl ApplicationHandler for App {
                     rpass.set_bind_group(1, &state.rectangle_data_uniform_bind_group, &[]);
                     rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
                     rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-                    rpass.draw_indexed(0..INDICES.len() as u32, 0, 0..1);
+                    rpass.draw_indexed(0..(state.rectangles.len() * 6) as u32, 0, 0..1);
                 }
 
                 state.queue.submit(Some(encoder.finish()));

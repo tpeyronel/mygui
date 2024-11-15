@@ -13,7 +13,7 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    fn to_vertices(self) -> Vec<Vertex> {
+    pub fn to_vertices(self) -> Vec<Vertex> {
         let bl = self.position;
         let br = Vec2::new(self.position.x + self.size.x, self.position.y);
         let tr = self.position + self.size;
