@@ -4,7 +4,8 @@ struct GlobalUniform {
 }
 
 struct RectangleData {
-    bbox: vec4<f32>,
+    pos: vec2<f32>,
+    size: vec2<f32>,
     color: vec4<f32>,
     border_radius: vec4<f32>,
     border_width: vec4<f32>,
@@ -14,24 +15,17 @@ struct RectangleData {
 @group(1) @binding(0) var<storage, read> rectangle_data: array<RectangleData>;
 
 struct VertexIn {
-    @location(0) bbox: vec4<f32>,
-    @location(1) border_radius: vec4<f32>,
-    @location(2) border_width: vec4<f32>,
-    @location(3) color: vec4<f32>,
-    @location(4) pos: vec2<f32>,
+    @location(0) pos: vec2<f32>,
 }
 
 struct VertexOut {
     @builtin(position) _position: vec4<f32>,
     @location(0) pos: vec2<f32>,
-    @location(1) color: vec4<f32>,
-    @location(2) bbox: vec4<f32>,
-    @location(3) border_radius: vec4<f32>,
-    @location(4) border_width: vec4<f32>,
+    @location(1) rectangle_idx: u32,
 };
 
 @vertex
-fn vs_main(in: VertexIn) -> VertexOut {
+fn vs_main(@builtin(vertex_index) vertex_idx: u32, in: VertexIn) -> VertexOut {
     var out: VertexOut;
     out._position = vec4<f32>(
         2.0 * in.pos.x / global_uniform.viewport_width - 1.0,
@@ -40,10 +34,7 @@ fn vs_main(in: VertexIn) -> VertexOut {
         1.0,
     );
     out.pos = in.pos;
-    out.color = in.color;
-    out.bbox = in.bbox;
-    out.border_radius = in.border_radius;
-    out.border_width = in.border_width;
+    out.rectangle_idx = vertex_idx / 4;
     return out;
 }
 
@@ -90,19 +81,23 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let distance = distance(in.pos, center);
     let delta = fwidth(distance);
     let alpha = double_smoothstep(80.0 - delta, 80.0, 100.0 - delta, 100.0, distance);
-    // let background_color = mix(in.color, 1.0 - in.color, alpha);
-    let background_color = rectangle_data[0].color;
-    let border_color = vec4(0.0, 0.0, 0.0, 0.85);
 
-    if (in.pos.x < in.bbox.x + in.border_radius.x && in.pos.y < in.bbox.y + in.border_radius.x) {
-        return smooth_corner(in.pos, in.bbox.xy + in.border_radius.x, in.border_radius.x, in.border_width.wx, background_color, border_color);
-    } else if (in.pos.x > in.bbox.z - in.border_radius.y && in.pos.y < in.bbox.y + in.border_radius.y) {
-        return smooth_corner(in.pos, vec2(in.bbox.z - in.border_radius.y, in.bbox.y + in.border_radius.y), in.border_radius.y, in.border_width.yx, background_color, border_color);
-    } else if (in.pos.x > in.bbox.z - in.border_radius.z && in.pos.y > in.bbox.w - in.border_radius.z) {
-        return smooth_corner(in.pos, in.bbox.zw - in.border_radius.z, in.border_radius.z, in.border_width.yz, background_color, border_color);
-    } else if (in.pos.x < in.bbox.x + in.border_radius.w && in.pos.y > in.bbox.w - in.border_radius.w) {
-        return smooth_corner(in.pos, vec2(in.bbox.x + in.border_radius.w, in.bbox.w - in.border_radius.w), in.border_radius.w, in.border_width.wz, background_color, border_color);
-    } else if (in.pos.y < in.bbox.y + in.border_width.x || in.pos.x > in.bbox.z - in.border_width.y || in.pos.y > in.bbox.w - in.border_width.z || in.pos.x < in.bbox.x + in.border_width.w) {
+    let data = rectangle_data[in.rectangle_idx];
+
+    // let background_color = mix(in.color, 1.0 - in.color, alpha);
+    let background_color = data.color;
+    let border_color = vec4(0.0, 0.0, 0.0, 0.85);
+    let bbox = vec4(data.pos, data.pos + data.size);
+
+    if (in.pos.x < bbox.x + data.border_radius.x && in.pos.y < bbox.y + data.border_radius.x) {
+        return smooth_corner(in.pos, bbox.xy + data.border_radius.x, data.border_radius.x, data.border_width.wx, background_color, border_color);
+    } else if (in.pos.x > bbox.z - data.border_radius.y && in.pos.y < bbox.y + data.border_radius.y) {
+        return smooth_corner(in.pos, vec2(bbox.z - data.border_radius.y, bbox.y + data.border_radius.y), data.border_radius.y, data.border_width.yx, background_color, border_color);
+    } else if (in.pos.x > bbox.z - data.border_radius.z && in.pos.y > bbox.w - data.border_radius.z) {
+        return smooth_corner(in.pos, bbox.zw - data.border_radius.z, data.border_radius.z, data.border_width.yz, background_color, border_color);
+    } else if (in.pos.x < bbox.x + data.border_radius.w && in.pos.y > bbox.w - data.border_radius.w) {
+        return smooth_corner(in.pos, vec2(bbox.x + data.border_radius.w, bbox.w - data.border_radius.w), data.border_radius.w, data.border_width.wz, background_color, border_color);
+    } else if (in.pos.y < bbox.y + data.border_width.x || in.pos.x > bbox.z - data.border_width.y || in.pos.y > bbox.w - data.border_width.z || in.pos.x < bbox.x + data.border_width.w) {
         return border_color;
     } else {
         return background_color;
