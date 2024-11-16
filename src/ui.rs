@@ -2,12 +2,12 @@ use glam::{Vec2, Vec4};
 
 use crate::{rectangle::Rectangle, vertex::Color};
 
-enum Extent {
+pub enum Extent {
     FillParent,
     Px(f32),
 }
 
-struct BorderThickness {
+pub struct BorderThickness {
     pub bottom: f32,
     pub right: f32,
     pub top: f32,
@@ -31,7 +31,7 @@ impl From<&BorderThickness> for Vec4 {
     }
 }
 
-struct BorderRadius {
+pub struct BorderRadius {
     pub bottom_left: f32,
     pub bottom_right: f32,
     pub top_right: f32,
