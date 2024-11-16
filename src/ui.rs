@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4};
+use glam::{Vec2, Vec4, Vec4Swizzles};
 
 use crate::{rectangle::Rectangle, vertex::Color};
 
@@ -64,6 +64,7 @@ pub enum UiNode {
     Box {
         width: Extent,
         height: Extent,
+        padding: Vec4,
         fill_color: Color,
         border_color: Color,
         border_thickness: BorderThickness,
@@ -83,6 +84,7 @@ impl UiNode {
             UiNode::Box {
                 width,
                 height,
+                padding,
                 fill_color,
                 border_color,
                 border_thickness,
@@ -115,7 +117,11 @@ impl UiNode {
 
                 draw_data.push(rectangle);
                 for c in children {
-                    c.to_draw_data(computed_pos, computed_size, draw_data);
+                    c.to_draw_data(
+                        computed_pos + padding.xw(),
+                        computed_size - padding.xw() - padding.yz(),
+                        draw_data,
+                    );
                 }
             }
         }
@@ -126,18 +132,29 @@ pub fn example_ui() -> UiNode {
     return UiNode::Box {
         width: Extent::FillParent,
         height: Extent::FillParent,
-        fill_color: Color::new(1.0, 0.1, 0.1, 0.25),
-        border_color: Color::new(1.0, 0.1, 0.1, 0.9),
-        border_thickness: BorderThickness::all(4.0),
-        border_radius: BorderRadius::all(8.0),
+        padding: Vec4::splat(16.0),
+        fill_color: Color::ZERO,
+        border_color: Color::ZERO,
+        border_thickness: BorderThickness::all(0.0),
+        border_radius: BorderRadius::all(0.0),
         children: vec![UiNode::Box {
-            width: Extent::Px(80.0),
-            height: Extent::Px(80.0),
-            fill_color: Color::new(0.1, 1.0, 0.1, 0.25),
-            border_color: Color::new(0.1, 1.0, 0.1, 0.9),
-            border_thickness: BorderThickness::all(1.0),
-            border_radius: BorderRadius::all(4.0),
-            children: vec![],
+            width: Extent::FillParent,
+            height: Extent::FillParent,
+            padding: Vec4::ZERO,
+            fill_color: Color::new(1.0, 0.1, 0.1, 0.25),
+            border_color: Color::new(1.0, 0.1, 0.1, 0.9),
+            border_thickness: BorderThickness::all(4.0),
+            border_radius: BorderRadius::all(8.0),
+            children: vec![UiNode::Box {
+                width: Extent::Px(80.0),
+                height: Extent::Px(80.0),
+                padding: Vec4::ZERO,
+                fill_color: Color::new(0.1, 1.0, 0.1, 0.25),
+                border_color: Color::new(0.1, 1.0, 0.1, 0.9),
+                border_thickness: BorderThickness::all(1.0),
+                border_radius: BorderRadius::all(4.0),
+                children: vec![],
+            }],
         }],
     };
 }
