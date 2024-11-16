@@ -101,8 +101,11 @@ impl UiNode {
 
                 let computed_size = Vec2::new(computed_width, computed_height);
 
+                let parent_center = parent_pos + (parent_size * 0.5);
+                let computed_pos = parent_center - (computed_size * 0.5);
+
                 let rectangle = Rectangle {
-                    position: parent_pos,
+                    position: computed_pos,
                     size: computed_size,
                     fill_color: *fill_color,
                     border_color: *border_color,
@@ -112,7 +115,7 @@ impl UiNode {
 
                 draw_data.push(rectangle);
                 for c in children {
-                    c.to_draw_data(parent_pos, computed_size, draw_data);
+                    c.to_draw_data(computed_pos, computed_size, draw_data);
                 }
             }
         }
