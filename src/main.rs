@@ -167,15 +167,23 @@ impl ApplicationHandler for App {
                 fill_color: Vec4::new(1.0, 0.1, 0.1, 1.0),
                 border_color: Vec4::new(1.0, 1.0, 1.0, 0.8),
                 border_radius: Vec4::new(64.0, 48.0, 32.0, 16.0),
-                border_width: Vec4::new(2.0, 4.0, 8.0, 16.0),
+                border_width: Vec4::new(-16.0, 4.0, 8.0, 16.0),
             },
             Rectangle {
                 position: Vec2::new(16.0, 16.0 + 64.0 + 16.0 + 236.0 + 16.0),
                 size: Vec2::new(128.0 * 4.0, 236.0),
                 fill_color: Vec4::new(0.0, 0.0, 0.0, 0.4),
-                border_color: Vec4::new(1.0, 1.0, 1.0, 0.8),
+                border_color: Vec4::new(1.0, 1.0, 1.0, 0.5),
                 border_radius: Vec4::new(4.0, 8.0, 16.0, 24.0),
                 border_width: Vec4::splat(2.0),
+            },
+            Rectangle {
+                position: Vec2::new(16.0 + 512.0 + 16.0, 16.0 + 64.0 + 16.0 + 236.0 + 16.00),
+                size: Vec2::new(16.0 * 4.0, 236.0),
+                fill_color: Vec4::new(0.0, 0.0, 0.0, 0.4),
+                border_color: Vec4::new(1.0, 1.0, 1.0, 0.5),
+                border_radius: Vec4::new(4.0, 8.0, 16.0, 24.0),
+                border_width: Vec4::splat(0.0),
             },
         ];
 

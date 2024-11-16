@@ -67,7 +67,10 @@ fn smooth_corner(
     let outer_radius = radius;
     let inner_radius = outer_radius - mixed_thickness;
 
-    if (distance_to_corner >= outer_radius - delta) {
+    if (outer_radius <= inner_radius) {
+        let alpha = smoothstep(outer_radius - delta, outer_radius + delta, distance_to_corner);
+        return mix(fill_color, vec4(0.0), alpha);
+    } if (distance_to_corner >= outer_radius - delta) {
         let alpha = smoothstep(outer_radius - delta, outer_radius + delta, distance_to_corner);
         return mix(border_color, vec4(0.0), alpha);
     } else {
