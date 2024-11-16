@@ -41,14 +41,6 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, in: VertexIn) -> VertexOut {
 
 fn square(v: f32) -> f32 { return v * v; }
 
-fn double_smoothstep(edge0: f32, edge1: f32, edge2: f32, edge3: f32, value: f32) -> f32 {
-    if (value <= edge1) {
-        return smoothstep(edge0, edge1, value);
-    } else {
-        return smoothstep(edge3, edge2, value);
-    }
-}
-
 fn smooth_corner(
     frag_pos: vec2<f32>,
     corner_pos: vec2<f32>,
