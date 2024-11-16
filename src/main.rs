@@ -3,6 +3,7 @@ use std::{borrow::Cow, sync::Arc};
 use futures::executor;
 use glam::{Vec2, Vec4};
 use rectangle::Rectangle;
+use ui::example_ui;
 use vertex::Vertex;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -17,6 +18,7 @@ use winit::{
 };
 
 mod rectangle;
+mod ui;
 mod vertex;
 
 #[repr(C)]
@@ -152,40 +154,49 @@ impl ApplicationHandler for App {
             }],
         });
 
-        let rectangles = vec![
-            Rectangle {
-                position: Vec2::new(16.0, 16.0),
-                size: Vec2::new(64.0, 64.0),
-                fill_color: Vec4::new(0.1, 1.0, 0.1, 1.0),
-                border_color: Vec4::new(1.0, 1.0, 1.0, 0.8),
-                border_radius: Vec4::splat(8.0),
-                border_width: Vec4::splat(2.0),
-            },
-            Rectangle {
-                position: Vec2::new(16.0, 16.0 + 64.0 + 16.0),
-                size: Vec2::new(128.0 * 4.0, 236.0),
-                fill_color: Vec4::new(1.0, 0.1, 0.1, 1.0),
-                border_color: Vec4::new(1.0, 1.0, 1.0, 0.8),
-                border_radius: Vec4::new(64.0, 48.0, 32.0, 16.0),
-                border_width: Vec4::new(-16.0, 4.0, 8.0, 16.0),
-            },
-            Rectangle {
-                position: Vec2::new(16.0, 16.0 + 64.0 + 16.0 + 236.0 + 16.0),
-                size: Vec2::new(128.0 * 4.0, 236.0),
-                fill_color: Vec4::new(0.0, 0.0, 0.0, 0.4),
-                border_color: Vec4::new(1.0, 1.0, 1.0, 0.5),
-                border_radius: Vec4::new(4.0, 8.0, 16.0, 24.0),
-                border_width: Vec4::splat(2.0),
-            },
-            Rectangle {
-                position: Vec2::new(16.0 + 512.0 + 16.0, 16.0 + 64.0 + 16.0 + 236.0 + 16.00),
-                size: Vec2::new(16.0 * 4.0, 236.0),
-                fill_color: Vec4::new(0.0, 0.0, 0.0, 0.4),
-                border_color: Vec4::new(1.0, 1.0, 1.0, 0.5),
-                border_radius: Vec4::new(4.0, 8.0, 16.0, 24.0),
-                border_width: Vec4::splat(0.0),
-            },
-        ];
+        let ui = example_ui();
+
+        let mut rectangles = vec![];
+        ui.to_draw_data(
+            Vec2::ZERO,
+            Vec2::new(size.width as f32, size.height as f32),
+            &mut rectangles,
+        );
+
+        // let rectangles = vec![
+        //     Rectangle {
+        //         position: Vec2::new(16.0, 16.0),
+        //         size: Vec2::new(64.0, 64.0),
+        //         fill_color: Vec4::new(0.1, 1.0, 0.1, 1.0),
+        //         border_color: Vec4::new(1.0, 1.0, 1.0, 0.8),
+        //         border_radius: Vec4::splat(8.0),
+        //         border_width: Vec4::splat(2.0),
+        //     },
+        //     Rectangle {
+        //         position: Vec2::new(16.0, 16.0 + 64.0 + 16.0),
+        //         size: Vec2::new(128.0 * 4.0, 236.0),
+        //         fill_color: Vec4::new(1.0, 0.1, 0.1, 1.0),
+        //         border_color: Vec4::new(1.0, 1.0, 1.0, 0.8),
+        //         border_radius: Vec4::new(64.0, 48.0, 32.0, 16.0),
+        //         border_width: Vec4::new(-16.0, 4.0, 8.0, 16.0),
+        //     },
+        //     Rectangle {
+        //         position: Vec2::new(16.0, 16.0 + 64.0 + 16.0 + 236.0 + 16.0),
+        //         size: Vec2::new(128.0 * 4.0, 236.0),
+        //         fill_color: Vec4::new(0.0, 0.0, 0.0, 0.4),
+        //         border_color: Vec4::new(1.0, 1.0, 1.0, 0.5),
+        //         border_radius: Vec4::new(4.0, 8.0, 16.0, 24.0),
+        //         border_width: Vec4::splat(2.0),
+        //     },
+        //     Rectangle {
+        //         position: Vec2::new(16.0 + 512.0 + 16.0, 16.0 + 64.0 + 16.0 + 236.0 + 16.00),
+        //         size: Vec2::new(16.0 * 4.0, 236.0),
+        //         fill_color: Vec4::new(0.0, 0.0, 0.0, 0.4),
+        //         border_color: Vec4::new(1.0, 1.0, 1.0, 0.5),
+        //         border_radius: Vec4::new(4.0, 8.0, 16.0, 24.0),
+        //         border_width: Vec4::splat(0.0),
+        //     },
+        // ];
 
         let rectangle_data_uniform_buffer =
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
