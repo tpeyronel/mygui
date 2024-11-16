@@ -25,6 +25,17 @@ impl BorderThickness {
     }
 }
 
+impl Default for BorderThickness {
+    fn default() -> Self {
+        Self {
+            bottom: 0.0,
+            right: 0.0,
+            top: 0.0,
+            left: 0.0,
+        }
+    }
+}
+
 impl From<&BorderThickness> for Vec4 {
     fn from(value: &BorderThickness) -> Self {
         Self::new(value.bottom, value.right, value.top, value.left)
@@ -49,6 +60,17 @@ impl BorderRadius {
     }
 }
 
+impl Default for BorderRadius {
+    fn default() -> Self {
+        Self {
+            bottom_left: 0.0,
+            bottom_right: 0.0,
+            top_right: 0.0,
+            top_left: 0.0,
+        }
+    }
+}
+
 impl From<&BorderRadius> for Vec4 {
     fn from(value: &BorderRadius) -> Self {
         Self::new(
@@ -60,17 +82,34 @@ impl From<&BorderRadius> for Vec4 {
     }
 }
 
+pub struct BoxProps {
+    width: Extent,
+    height: Extent,
+    padding: Vec4,
+    fill_color: Color,
+    border_color: Color,
+    border_thickness: BorderThickness,
+    border_radius: BorderRadius,
+    children: Vec<UiNode>,
+}
+
+impl Default for BoxProps {
+    fn default() -> Self {
+        Self {
+            width: Extent::FillParent,
+            height: Extent::FillParent,
+            padding: Vec4::ZERO,
+            fill_color: Color::ZERO,
+            border_color: Color::ZERO,
+            border_thickness: Default::default(),
+            border_radius: Default::default(),
+            children: Vec::new(),
+        }
+    }
+}
+
 pub enum UiNode {
-    Box {
-        width: Extent,
-        height: Extent,
-        padding: Vec4,
-        fill_color: Color,
-        border_color: Color,
-        border_thickness: BorderThickness,
-        border_radius: BorderRadius,
-        children: Vec<UiNode>,
-    },
+    Box(BoxProps),
 }
 
 impl UiNode {
@@ -81,7 +120,7 @@ impl UiNode {
         draw_data: &mut Vec<Rectangle>,
     ) {
         match self {
-            UiNode::Box {
+            UiNode::Box(BoxProps {
                 width,
                 height,
                 padding,
@@ -90,7 +129,7 @@ impl UiNode {
                 border_thickness,
                 border_radius,
                 children,
-            } => {
+            }) => {
                 let computed_width = match width {
                     Extent::FillParent => parent_size.x,
                     Extent::Px(px) => *px,
@@ -129,15 +168,11 @@ impl UiNode {
 }
 
 pub fn example_ui() -> UiNode {
-    return UiNode::Box {
+    return UiNode::Box(BoxProps {
         width: Extent::FillParent,
         height: Extent::FillParent,
         padding: Vec4::splat(16.0),
-        fill_color: Color::ZERO,
-        border_color: Color::ZERO,
-        border_thickness: BorderThickness::all(0.0),
-        border_radius: BorderRadius::all(0.0),
-        children: vec![UiNode::Box {
+        children: vec![UiNode::Box(BoxProps {
             width: Extent::FillParent,
             height: Extent::FillParent,
             padding: Vec4::ZERO,
@@ -145,7 +180,7 @@ pub fn example_ui() -> UiNode {
             border_color: Color::new(1.0, 0.1, 0.1, 0.9),
             border_thickness: BorderThickness::all(4.0),
             border_radius: BorderRadius::all(8.0),
-            children: vec![UiNode::Box {
+            children: vec![UiNode::Box(BoxProps {
                 width: Extent::Px(80.0),
                 height: Extent::Px(80.0),
                 padding: Vec4::ZERO,
@@ -154,7 +189,8 @@ pub fn example_ui() -> UiNode {
                 border_thickness: BorderThickness::all(1.0),
                 border_radius: BorderRadius::all(4.0),
                 children: vec![],
-            }],
-        }],
-    };
+            })],
+        })],
+        ..Default::default()
+    });
 }
