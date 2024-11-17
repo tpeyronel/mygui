@@ -1,9 +1,9 @@
 use std::{borrow::Cow, sync::Arc};
 
 use futures::executor;
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use rectangle::Rectangle;
-use ui::example_ui;
+use ui::{example_ui, UiNode};
 use vertex::Vertex;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -56,6 +56,7 @@ struct AppState {
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
+    ui: UiNode,
     rectangles: Vec<Rectangle>,
     rectangle_data_uniform_buffer: wgpu::Buffer,
     rectangle_data_uniform_bind_group: wgpu::BindGroup,
@@ -72,7 +73,12 @@ impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes())
+                .create_window(Window::default_attributes().with_inner_size(
+                    winit::dpi::Size::Physical(winit::dpi::PhysicalSize {
+                        width: 1280,
+                        height: 720,
+                    }),
+                ))
                 .unwrap(),
         );
 
@@ -252,13 +258,13 @@ impl ApplicationHandler for App {
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("vertex buffer"),
             contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("index buffer"),
             contents: bytemuck::cast_slice(&indices),
-            usage: wgpu::BufferUsages::INDEX,
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -317,6 +323,7 @@ impl ApplicationHandler for App {
             global_uniform,
             global_uniform_bind_group,
             global_uniform_buffer,
+            ui,
             rectangles,
             rectangle_data_uniform_bind_group,
             rectangle_data_uniform_buffer,
@@ -338,6 +345,29 @@ impl ApplicationHandler for App {
                 state.global_uniform.viewport_width = state.config.width as f32;
                 state.global_uniform.viewport_height = state.config.height as f32;
                 state.surface.configure(&state.device, &state.config);
+
+                state.rectangles.clear();
+                state.ui.to_draw_data(
+                    Vec2::ZERO,
+                    Vec2::new(
+                        state.global_uniform.viewport_width,
+                        state.global_uniform.viewport_height,
+                    ),
+                    &mut state.rectangles,
+                );
+
+                let (vertices, indices) = rectangles_to_vertices_and_indices(&state.rectangles);
+                state
+                    .queue
+                    .write_buffer(&state.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+                state
+                    .queue
+                    .write_buffer(&state.index_buffer, 0, bytemuck::cast_slice(&indices));
+                state.queue.write_buffer(
+                    &state.rectangle_data_uniform_buffer,
+                    0,
+                    bytemuck::cast_slice(&state.rectangles),
+                );
             }
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
