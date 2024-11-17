@@ -140,10 +140,10 @@ impl UiNode {
                     Extent::Px(px) => *px,
                 };
 
-                let computed_size = Vec2::new(computed_width, computed_height);
+                let computed_size = Vec2::new(computed_width, computed_height).round();
 
                 let parent_center = parent_pos + (parent_size * 0.5);
-                let computed_pos = parent_center - (computed_size * 0.5);
+                let computed_pos = (parent_center - (computed_size * 0.5)).round();
 
                 let rectangle = Rectangle {
                     position: computed_pos,
@@ -157,8 +157,8 @@ impl UiNode {
                 draw_data.push(rectangle);
                 for c in children {
                     c.to_draw_data(
-                        computed_pos + padding.xw(),
-                        computed_size - padding.xw() - padding.yz(),
+                        computed_pos + padding.xw().round(),
+                        computed_size - padding.xw().round() - padding.yz().round(),
                         draw_data,
                     );
                 }
