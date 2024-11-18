@@ -119,12 +119,7 @@ impl BorderRadius {
     }
 
     fn to_vec4(&self) -> Vec4 {
-        Vec4::new(
-            self.bottom_left,
-            self.bottom_right,
-            self.top_right,
-            self.top_left,
-        )
+        Vec4::new(self.bottom_left, self.bottom_right, self.top_right, self.top_left)
     }
 }
 
@@ -168,46 +163,42 @@ pub enum UiNode {
 }
 
 impl UiNode {
-    pub fn to_draw_data(
-        &self,
+    pub fn to_draw_data(&self, parent_pos: Vec2, parent_size: Vec2, draw_data: &mut Vec<Rectangle>) {
+        match self {
+            UiNode::Box(props) => Self::process_box(props, parent_pos, parent_size, draw_data),
+        }
+    }
+
+    fn process_box(
+        BoxProps { modifiers, children }: &BoxProps,
         mut parent_pos: Vec2,
         mut parent_size: Vec2,
         draw_data: &mut Vec<Rectangle>,
     ) {
-        match self {
-            UiNode::Box(BoxProps {
-                modifiers,
-                children,
-            }) => {
-                let mut p = RectangleProps::default();
+        let mut p = RectangleProps::default();
 
-                for m in &modifiers.0 {
-                    match *m {
-                        Modifier::Width(w) => p.width = w,
-                        Modifier::Height(h) => p.height = h,
-                        Modifier::FillColor(c) => p.fill_color = c,
-                        Modifier::BorderColor(c) => p.border_color = c,
-                        Modifier::BorderThickness(t) => p.border_thickness = t,
-                        Modifier::BorderRadius(r) => p.border_radius = r,
-                        Modifier::Padding(padding) => {
-                            let (computed_pos, computed_size) =
-                                Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
+        for m in &modifiers.0 {
+            match *m {
+                Modifier::Width(width) => p.width = width,
+                Modifier::Height(height) => p.height = height,
+                Modifier::FillColor(fill_color) => p.fill_color = fill_color,
+                Modifier::BorderColor(border_color) => p.border_color = border_color,
+                Modifier::BorderThickness(border_thickness) => p.border_thickness = border_thickness,
+                Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
+                Modifier::Padding(padding) => {
+                    let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
-                            p = Default::default();
-                            parent_pos = computed_pos + padding.xw().round();
-                            parent_size =
-                                computed_size - padding.xw().round() - padding.yz().round();
-                        }
-                    }
-                }
-
-                let (computed_pos, computed_size) =
-                    Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
-
-                for c in children {
-                    c.to_draw_data(computed_pos, computed_size, draw_data);
+                    p = Default::default();
+                    parent_pos = computed_pos + padding.xw().round();
+                    parent_size = computed_size - padding.xw().round() - padding.yz().round();
                 }
             }
+        }
+
+        let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
+
+        for c in children {
+            c.to_draw_data(computed_pos, computed_size, draw_data);
         }
     }
 
