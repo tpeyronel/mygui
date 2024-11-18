@@ -153,6 +153,16 @@ impl Default for BoxProps {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct RectangleProps {
+    pub width: Extent,
+    pub height: Extent,
+    pub fill_color: Color,
+    pub border_color: Color,
+    pub border_radius: BorderRadius,
+    pub border_thickness: BorderThickness,
+}
+
 pub enum UiNode {
     Box(BoxProps),
 }
@@ -169,91 +179,71 @@ impl UiNode {
                 modifiers,
                 children,
             }) => {
-                let mut width = Extent::default();
-                let mut height = Extent::default();
-                let mut fill_color = Color::default();
-                let mut border_color = Color::default();
-                let mut border_thickness = BorderThickness::default();
-                let mut border_radius = BorderRadius::default();
+                let mut p = RectangleProps::default();
 
                 for m in &modifiers.0 {
                     match *m {
-                        Modifier::Width(w) => width = w,
-                        Modifier::Height(h) => height = h,
+                        Modifier::Width(w) => p.width = w,
+                        Modifier::Height(h) => p.height = h,
+                        Modifier::FillColor(c) => p.fill_color = c,
+                        Modifier::BorderColor(c) => p.border_color = c,
+                        Modifier::BorderThickness(t) => p.border_thickness = t,
+                        Modifier::BorderRadius(r) => p.border_radius = r,
                         Modifier::Padding(padding) => {
-                            let computed_width = match width {
-                                Extent::FillParent => parent_size.x,
-                                Extent::Px(px) => px,
-                            };
+                            let (computed_pos, computed_size) =
+                                Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
-                            let computed_height = match height {
-                                Extent::FillParent => parent_size.y,
-                                Extent::Px(px) => px,
-                            };
-
-                            let computed_size = Vec2::new(computed_width, computed_height).round();
-
-                            let parent_center = parent_pos + (parent_size * 0.5);
-                            let computed_pos = (parent_center - (computed_size * 0.5)).round();
-
-                            let rectangle = Rectangle {
-                                position: computed_pos,
-                                size: computed_size,
-                                fill_color,
-                                border_color,
-                                border_radius: border_radius.to_vec4(),
-                                border_width: border_thickness.to_vec4(),
-                            };
-
-                            draw_data.push(rectangle);
-
-                            width = Default::default();
-                            height = Default::default();
-                            fill_color = Default::default();
-                            border_color = Default::default();
-                            border_thickness = Default::default();
-                            border_radius = Default::default();
+                            p = Default::default();
                             parent_pos = computed_pos + padding.xw().round();
                             parent_size =
                                 computed_size - padding.xw().round() - padding.yz().round();
                         }
-                        Modifier::FillColor(c) => fill_color = c,
-                        Modifier::BorderColor(c) => border_color = c,
-                        Modifier::BorderThickness(t) => border_thickness = t,
-                        Modifier::BorderRadius(r) => border_radius = r,
                     }
                 }
 
-                let computed_width = match width {
-                    Extent::FillParent => parent_size.x,
-                    Extent::Px(px) => px,
-                };
+                let (computed_pos, computed_size) =
+                    Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
-                let computed_height = match height {
-                    Extent::FillParent => parent_size.y,
-                    Extent::Px(px) => px,
-                };
-
-                let computed_size = Vec2::new(computed_width, computed_height).round();
-
-                let parent_center = parent_pos + (parent_size * 0.5);
-                let computed_pos = (parent_center - (computed_size * 0.5)).round();
-
-                let rectangle = Rectangle {
-                    position: computed_pos,
-                    size: computed_size,
-                    fill_color,
-                    border_color,
-                    border_radius: border_radius.to_vec4(),
-                    border_width: border_thickness.to_vec4(),
-                };
-
-                draw_data.push(rectangle);
                 for c in children {
                     c.to_draw_data(computed_pos, computed_size, draw_data);
                 }
             }
         }
+    }
+
+    fn emit_rectangle(
+        p: &RectangleProps,
+        parent_pos: Vec2,
+        parent_size: Vec2,
+        out: &mut Vec<Rectangle>,
+    ) -> (Vec2, Vec2) {
+        let computed_width = match p.width {
+            Extent::FillParent => parent_size.x,
+            Extent::Px(px) => px,
+        };
+
+        let computed_height = match p.height {
+            Extent::FillParent => parent_size.y,
+            Extent::Px(px) => px,
+        };
+
+        let computed_size = Vec2::new(computed_width, computed_height).round();
+
+        let parent_center = parent_pos + (parent_size * 0.5);
+        let computed_pos = (parent_center - (computed_size * 0.5)).round();
+
+        let rectangle = Rectangle {
+            position: computed_pos,
+            size: computed_size,
+            fill_color: p.fill_color,
+            border_color: p.border_color,
+            border_radius: p.border_radius.to_vec4(),
+            border_width: p.border_thickness.to_vec4(),
+        };
+
+        out.push(rectangle);
+
+        (computed_pos, computed_size)
     }
 }
 
