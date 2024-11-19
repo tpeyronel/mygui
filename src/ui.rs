@@ -189,8 +189,8 @@ impl UiNode {
                     let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
                     p = Default::default();
-                    parent_pos = computed_pos + padding.xw().round();
-                    parent_size = computed_size - padding.xw().round() - padding.yz().round();
+                    parent_pos = (computed_pos + padding.xw().round()).min(parent_pos + parent_size * 0.5);
+                    parent_size = (computed_size - padding.xw().round() - padding.yz().round()).max(Vec2::ZERO);
                 }
             }
         }

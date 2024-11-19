@@ -3,7 +3,7 @@ use glam::{Vec2, Vec4};
 use crate::vertex::{Color, Vertex};
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Rectangle {
     pub position: Vec2,
     pub size: Vec2,
