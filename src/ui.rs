@@ -272,3 +272,124 @@ pub fn example_ui() -> UiNode {
         ..Default::default()
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[Rectangle]) {
+        let mut draw_data = vec![];
+        ui.to_draw_data(Vec2::ZERO, Vec2::new(width, height), &mut draw_data);
+        assert_eq!(expected, &draw_data);
+    }
+
+    #[test]
+    fn default_box() {
+        test_converter(
+            32.0,
+            32.0,
+            UiNode::Box(BoxProps {
+                modifiers: Modifiers::new(),
+                children: vec![],
+            }),
+            &[Rectangle {
+                position: Vec2::new(0.0, 0.0),
+                size: Vec2::new(32.0, 32.0),
+                fill_color: Color::ZERO,
+                border_color: Color::ZERO,
+                border_radius: Vec4::ZERO,
+                border_width: Vec4::ZERO,
+            }],
+        )
+    }
+
+    #[test]
+    fn padding() {
+        test_converter(
+            32.0,
+            32.0,
+            UiNode::Box(BoxProps {
+                modifiers: Modifiers::new().padding(Vec4::splat(8.0)),
+                children: vec![],
+            }),
+            &[
+                Rectangle {
+                    position: Vec2::new(0.0, 0.0),
+                    size: Vec2::new(32.0, 32.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+                Rectangle {
+                    position: Vec2::new(8.0, 8.0),
+                    size: Vec2::new(16.0, 16.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+            ],
+        )
+    }
+
+    #[test]
+    fn full_padding() {
+        test_converter(
+            32.0,
+            32.0,
+            UiNode::Box(BoxProps {
+                modifiers: Modifiers::new().padding(Vec4::splat(16.0)),
+                children: vec![],
+            }),
+            &[
+                Rectangle {
+                    position: Vec2::new(0.0, 0.0),
+                    size: Vec2::new(32.0, 32.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+                Rectangle {
+                    position: Vec2::new(16.0, 16.0),
+                    size: Vec2::new(0.0, 0.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+            ],
+        )
+    }
+
+    #[test]
+    fn too_much_padding() {
+        test_converter(
+            32.0,
+            32.0,
+            UiNode::Box(BoxProps {
+                modifiers: Modifiers::new().padding(Vec4::splat(24.0)),
+                children: vec![],
+            }),
+            &[
+                Rectangle {
+                    position: Vec2::new(0.0, 0.0),
+                    size: Vec2::new(32.0, 32.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+                Rectangle {
+                    position: Vec2::new(16.0, 16.0),
+                    size: Vec2::new(0.0, 0.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+            ],
+        )
+    }
+}
