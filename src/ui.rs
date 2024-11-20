@@ -301,17 +301,107 @@ pub fn example_ui() -> UiNode {
                 .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
                 .border_thickness(BorderThickness::all(4.0))
                 .border_radius(BorderRadius::all(8.0)),
-            children: vec![UiNode::Box(BoxProps {
-                modifiers: Modifiers::new()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
-                    .padding(Vec4::ZERO)
-                    .fill_color(Color::new(0.1, 1.0, 0.1, 0.25))
-                    .border_color(Color::new(0.1, 1.0, 0.1, 0.9))
-                    .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0)),
-                children: vec![],
-            })],
+            children: vec![
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::Center)
+                        .fill_color(Color::new(1.0, 1.0, 1.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::Right)
+                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::TopRight)
+                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::Top)
+                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::TopLeft)
+                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::Left)
+                        .fill_color(Color::new(0.0, 0.0, 0.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::BottomLeft)
+                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::Bottom)
+                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(80.0))
+                        .height(Extent::Px(80.0))
+                        .self_alignment(Alignment::BottomRight)
+                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.25))
+                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(BorderThickness::all(1.0))
+                        .border_radius(BorderRadius::all(4.0)),
+                    children: vec![],
+                }),
+            ],
         })],
         ..Default::default()
     });
