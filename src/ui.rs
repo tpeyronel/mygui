@@ -11,6 +11,7 @@ enum Modifier {
     BorderColor(Color),
     BorderThickness(BorderThickness),
     BorderRadius(BorderRadius),
+    SelfAlignment(Alignment),
 }
 
 pub struct Modifiers(Vec<Modifier>);
@@ -46,6 +47,10 @@ impl Modifiers {
 
     pub fn border_radius(self, border_radius: BorderRadius) -> Self {
         self.add(Modifier::BorderRadius(border_radius))
+    }
+
+    pub fn self_alignment(self, alignment: Alignment) -> Self {
+        self.add(Modifier::SelfAlignment(alignment))
     }
 
     fn add(mut self, modifier: Modifier) -> Self {
@@ -148,6 +153,25 @@ impl Default for BoxProps {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Alignment {
+    Center,
+    Right,
+    TopRight,
+    Top,
+    TopLeft,
+    Left,
+    BottomLeft,
+    Bottom,
+    BottomRight,
+}
+
+impl Default for Alignment {
+    fn default() -> Self {
+        Self::Center
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct RectangleProps {
     pub width: Extent,
@@ -156,6 +180,7 @@ pub struct RectangleProps {
     pub border_color: Color,
     pub border_radius: BorderRadius,
     pub border_thickness: BorderThickness,
+    pub alignment: Alignment,
 }
 
 pub enum UiNode {
@@ -185,6 +210,7 @@ impl UiNode {
                 Modifier::BorderColor(border_color) => p.border_color = border_color,
                 Modifier::BorderThickness(border_thickness) => p.border_thickness = border_thickness,
                 Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
+                Modifier::SelfAlignment(alignment) => p.alignment = alignment,
                 Modifier::Padding(padding) => {
                     let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
@@ -218,10 +244,28 @@ impl UiNode {
             Extent::Px(px) => px,
         };
 
+        let parent_center = parent_pos + (parent_size * 0.5);
         let computed_size = Vec2::new(computed_width, computed_height).round();
 
-        let parent_center = parent_pos + (parent_size * 0.5);
-        let computed_pos = (parent_center - (computed_size * 0.5)).round();
+        let computed_pos = match p.alignment {
+            Alignment::Center => (parent_center - 0.5 * computed_size).round(),
+            Alignment::Right => Vec2::new(
+                parent_pos.x + parent_size.x - computed_size.x,
+                parent_center.y - 0.5 * computed_size.y,
+            )
+            .round(),
+            Alignment::TopRight => (parent_pos + parent_size - computed_size).round(),
+            Alignment::Top => Vec2::new(
+                parent_center.x - 0.5 * computed_size.x,
+                parent_pos.y + parent_size.y - computed_size.y,
+            )
+            .round(),
+            Alignment::TopLeft => Vec2::new(parent_pos.x, parent_pos.y + parent_size.y - computed_size.y).round(),
+            Alignment::Left => Vec2::new(parent_pos.x, parent_center.y - 0.5 * computed_size.y).round(),
+            Alignment::BottomLeft => parent_pos.round(),
+            Alignment::Bottom => Vec2::new(parent_center.x - 0.5 * computed_size.x, parent_pos.y).round(),
+            Alignment::BottomRight => Vec2::new(parent_pos.x + parent_size.x - computed_size.x, parent_pos.y).round(),
+        };
 
         let rectangle = Rectangle {
             position: computed_pos,
