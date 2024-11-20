@@ -392,4 +392,71 @@ mod tests {
             ],
         )
     }
+
+    fn test_self_alignment_basic(alignment: Alignment, expected_position: Vec2) {
+        test_converter(
+            32.0,
+            32.0,
+            UiNode::Box(BoxProps {
+                modifiers: Modifiers::new()
+                    .width(Extent::Px(8.0))
+                    .height(Extent::Px(8.0))
+                    .self_alignment(alignment),
+                children: vec![],
+            }),
+            &[Rectangle {
+                position: expected_position,
+                size: Vec2::new(8.0, 8.0),
+                fill_color: Color::ZERO,
+                border_color: Color::ZERO,
+                border_radius: Vec4::ZERO,
+                border_width: Vec4::ZERO,
+            }],
+        )
+    }
+
+    #[test]
+    fn self_alignment_center() {
+        test_self_alignment_basic(Alignment::Center, Vec2::new(12.0, 12.0));
+    }
+
+    #[test]
+    fn self_alignment_right() {
+        test_self_alignment_basic(Alignment::Right, Vec2::new(24.0, 12.0));
+    }
+
+    #[test]
+    fn self_alignment_top_right() {
+        test_self_alignment_basic(Alignment::TopRight, Vec2::new(24.0, 24.0));
+    }
+
+    #[test]
+    fn self_alignment_top() {
+        test_self_alignment_basic(Alignment::Top, Vec2::new(12.0, 24.0));
+    }
+
+    #[test]
+    fn self_alignment_top_left() {
+        test_self_alignment_basic(Alignment::TopLeft, Vec2::new(0.0, 24.0));
+    }
+
+    #[test]
+    fn self_alignment_left() {
+        test_self_alignment_basic(Alignment::Left, Vec2::new(0.0, 12.0));
+    }
+
+    #[test]
+    fn self_alignment_bottom_left() {
+        test_self_alignment_basic(Alignment::BottomLeft, Vec2::new(0.0, 0.0));
+    }
+
+    #[test]
+    fn self_alignment_bottom() {
+        test_self_alignment_basic(Alignment::Bottom, Vec2::new(12.0, 0.0));
+    }
+
+    #[test]
+    fn self_alignment_bottom_right() {
+        test_self_alignment_basic(Alignment::BottomRight, Vec2::new(24.0, 0.0));
+    }
 }
