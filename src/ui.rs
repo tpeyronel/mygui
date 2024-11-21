@@ -14,6 +14,7 @@ enum Modifier {
     SelfAlignment(Alignment),
 }
 
+#[derive(Debug, Clone)]
 pub struct Modifiers(Vec<Modifier>);
 
 impl Modifiers {
@@ -139,6 +140,7 @@ impl Default for BorderRadius {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BoxProps {
     modifiers: Modifiers,
     children: Vec<UiNode>,
@@ -183,6 +185,7 @@ pub struct RectangleProps {
     pub alignment: Alignment,
 }
 
+#[derive(Debug, Clone)]
 pub enum UiNode {
     Box(BoxProps),
 }
@@ -562,6 +565,88 @@ mod tests {
         test_self_alignment_basic(Alignment::BottomRight, Vec2::new(24.0, 0.0));
     }
 
+    #[test]
+    fn subpixel_alignment() {
+        let ui: UiNode = UiNode::Box(BoxProps {
+            modifiers: Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)),
+            children: vec![],
+        });
 
+        test_converter(
+            15.0,
+            15.0,
+            ui.clone(),
+            &[Rectangle {
+                position: Vec2::new(4.0, 4.0),
+                size: Vec2::new(8.0, 8.0),
+                fill_color: Color::ZERO,
+                border_color: Color::ZERO,
+                border_radius: Vec4::splat(0.0),
+                border_width: Vec4::splat(0.0),
+            }],
+        );
 
+        test_converter(
+            17.0,
+            17.0,
+            ui,
+            &[Rectangle {
+                position: Vec2::new(5.0, 5.0),
+                size: Vec2::new(8.0, 8.0),
+                fill_color: Color::ZERO,
+                border_color: Color::ZERO,
+                border_radius: Vec4::splat(0.0),
+                border_width: Vec4::splat(0.0),
+            }],
+        );
+    }
+
+    #[test]
+    fn self_alignment_with_parent_border_thickness() {
+        fn test_self_alignment_basic(alignment: Alignment, expected_position: Vec2) {
+            test_converter(
+                32.0,
+                32.0,
+                UiNode::Box(BoxProps {
+                    // Border thickness of 4.0 makes the parent container equivalent to a 24.0 size container.
+                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(4.0)),
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new()
+                            .width(Extent::Px(8.0))
+                            .height(Extent::Px(8.0))
+                            .self_alignment(alignment),
+                        children: vec![],
+                    })],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::ZERO,
+                        size: Vec2::new(32.0, 32.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::splat(4.0),
+                    },
+                    Rectangle {
+                        position: expected_position,
+                        size: Vec2::new(8.0, 8.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                ],
+            )
+        }
+
+        test_self_alignment_basic(Alignment::Center, Vec2::new(12.0, 12.0));
+        test_self_alignment_basic(Alignment::Right, Vec2::new(20.0, 12.0));
+        test_self_alignment_basic(Alignment::TopRight, Vec2::new(20.0, 20.0));
+        test_self_alignment_basic(Alignment::Top, Vec2::new(12.0, 20.0));
+        test_self_alignment_basic(Alignment::TopLeft, Vec2::new(4.0, 20.0));
+        test_self_alignment_basic(Alignment::Left, Vec2::new(4.0, 12.0));
+        test_self_alignment_basic(Alignment::BottomLeft, Vec2::new(4.0, 4.0));
+        test_self_alignment_basic(Alignment::Bottom, Vec2::new(12.0, 4.0));
+        test_self_alignment_basic(Alignment::BottomRight, Vec2::new(20.0, 4.0));
+    }
 }
