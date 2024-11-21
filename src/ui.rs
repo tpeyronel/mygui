@@ -226,8 +226,21 @@ impl UiNode {
 
         let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
+        let inner_pos = Vec2::new(
+            computed_pos.x + p.border_thickness.left,
+            computed_pos.y + p.border_thickness.bottom,
+        )
+        .round();
+
+        let inner_size = Vec2::new(
+            computed_size.x - p.border_thickness.left - p.border_thickness.right,
+            computed_size.y - p.border_thickness.bottom - p.border_thickness.right,
+        )
+        .max(Vec2::ZERO)
+        .round();
+
         for c in children {
-            c.to_draw_data(computed_pos, computed_size, draw_data);
+            c.to_draw_data(inner_pos, inner_size, draw_data);
         }
     }
 
