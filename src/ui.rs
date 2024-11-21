@@ -203,6 +203,9 @@ impl UiNode {
         mut parent_size: Vec2,
         draw_data: &mut Vec<Rectangle>,
     ) {
+        assert_eq!(parent_pos, parent_pos.round());
+        assert_eq!(parent_size, parent_size.round());
+
         let mut p = RectangleProps::default();
 
         for m in &modifiers.0 {
