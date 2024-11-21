@@ -192,6 +192,9 @@ pub enum UiNode {
 
 impl UiNode {
     pub fn to_draw_data(&self, parent_pos: Vec2, parent_size: Vec2, draw_data: &mut Vec<Rectangle>) {
+        assert_eq!(parent_pos, parent_pos.round());
+        assert_eq!(parent_size, parent_size.round());
+
         match self {
             UiNode::Box(props) => Self::process_box(props, parent_pos, parent_size, draw_data),
         }
@@ -203,9 +206,6 @@ impl UiNode {
         mut parent_size: Vec2,
         draw_data: &mut Vec<Rectangle>,
     ) {
-        assert_eq!(parent_pos, parent_pos.round());
-        assert_eq!(parent_size, parent_size.round());
-
         let mut p = RectangleProps::default();
 
         for m in &modifiers.0 {
