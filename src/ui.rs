@@ -6,7 +6,7 @@ use crate::{rectangle::Rectangle, vertex::Color};
 enum Modifier {
     Width(Extent),
     Height(Extent),
-    Padding(Vec4),
+    Padding(Padding),
     FillColor(Color),
     BorderColor(Color),
     BorderThickness(BorderThickness),
@@ -30,7 +30,7 @@ impl Modifiers {
         self.add(Modifier::Height(height))
     }
 
-    pub fn padding(self, padding: Vec4) -> Self {
+    pub fn padding(self, padding: Padding) -> Self {
         self.add(Modifier::Padding(padding))
     }
 
@@ -140,6 +140,40 @@ impl Default for BorderRadius {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Padding {
+    pub bottom: f32,
+    pub right: f32,
+    pub top: f32,
+    pub left: f32,
+}
+
+impl Padding {
+    fn all(x: f32) -> Self {
+        Self {
+            bottom: x,
+            right: x,
+            top: x,
+            left: x,
+        }
+    }
+
+    fn to_vec4(&self) -> Vec4 {
+        Vec4::new(self.bottom, self.right, self.top, self.left)
+    }
+}
+
+impl Default for Padding {
+    fn default() -> Self {
+        Self {
+            bottom: 0.0,
+            right: 0.0,
+            top: 0.0,
+            left: 0.0,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct BoxProps {
     modifiers: Modifiers,
@@ -235,6 +269,7 @@ impl UiNode {
                 Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
                 Modifier::SelfAlignment(alignment) => p.alignment = alignment,
                 Modifier::Padding(padding) => {
+                    let padding = padding.to_vec4();
                     let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
                     p = Default::default();
@@ -282,6 +317,7 @@ impl UiNode {
                 Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
                 Modifier::SelfAlignment(alignment) => p.alignment = alignment,
                 Modifier::Padding(padding) => {
+                    let padding = padding.to_vec4();
                     let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
                     p = Default::default();
@@ -406,6 +442,7 @@ impl UiNode {
                 Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
                 Modifier::SelfAlignment(alignment) => p.alignment = alignment,
                 Modifier::Padding(padding) => {
+                    let padding = padding.to_vec4();
                     inner_size -= Vec2::new(
                         padding.y.round() + padding.w.round(),
                         padding.x.round() + padding.z.round(),
@@ -445,15 +482,15 @@ pub fn example_ui() -> UiNode {
             .width(Extent::FillParent)
             .height(Extent::FillParent)
             .fill_color(Color::new(0.1, 0.1, 1.0, 1.0))
-            .padding(Vec4::splat(16.0))
+            .padding(Padding::all(16.0))
             .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
             .border_radius(BorderRadius::all(16.0))
-            .padding(Vec4::splat(16.0)),
+            .padding(Padding::all(16.0)),
         children: vec![UiNode::Box(BoxProps {
             modifiers: Modifiers::new()
                 .width(Extent::FillParent)
                 .height(Extent::FillParent)
-                .padding(Vec4::ZERO)
+                .padding(Padding::all(0.0))
                 .fill_color(Color::new(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
                 .border_thickness(BorderThickness::all(4.0))
@@ -644,7 +681,7 @@ mod tests {
             32.0,
             32.0,
             UiNode::Box(BoxProps {
-                modifiers: Modifiers::new().padding(Vec4::splat(8.0)),
+                modifiers: Modifiers::new().padding(Padding::all(8.0)),
                 children: vec![],
             }),
             &[
@@ -674,7 +711,7 @@ mod tests {
             32.0,
             32.0,
             UiNode::Box(BoxProps {
-                modifiers: Modifiers::new().padding(Vec4::splat(16.0)),
+                modifiers: Modifiers::new().padding(Padding::all(16.0)),
                 children: vec![],
             }),
             &[
@@ -704,7 +741,7 @@ mod tests {
             32.0,
             32.0,
             UiNode::Box(BoxProps {
-                modifiers: Modifiers::new().padding(Vec4::splat(24.0)),
+                modifiers: Modifiers::new().padding(Padding::all(24.0)),
                 children: vec![],
             }),
             &[
