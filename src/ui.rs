@@ -253,10 +253,12 @@ impl UiNode {
 
     fn process_box(
         BoxProps { modifiers, children }: &BoxProps,
-        mut parent_pos: Vec2,
-        mut parent_size: Vec2,
+        parent_pos: Vec2,
+        parent_size: Vec2,
         draw_data: &mut Vec<Rectangle>,
     ) {
+        let mut boundary_pos = parent_pos;
+        let mut boundary_size = parent_size;
         let mut p = RectangleProps::default();
 
         for m in &modifiers.0 {
@@ -273,13 +275,13 @@ impl UiNode {
                     let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
 
                     p = Default::default();
-                    parent_pos = (computed_pos + padding.xw().round()).min(parent_pos + parent_size * 0.5);
-                    parent_size = (computed_size - padding.xw().round() - padding.yz().round()).max(Vec2::ZERO);
+                    boundary_pos = (computed_pos + padding.xw().round()).min(parent_pos + parent_size * 0.5);
+                    boundary_size = (computed_size - padding.xw().round() - padding.yz().round()).max(Vec2::ZERO);
                 }
             }
         }
 
-        let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
+        let (computed_pos, computed_size) = Self::emit_rectangle(&p, boundary_pos, boundary_size, draw_data);
 
         let inner_pos = Vec2::new(
             computed_pos.x + p.border_thickness.left,
@@ -372,41 +374,43 @@ impl UiNode {
 
     fn emit_rectangle(
         p: &RectangleProps,
-        parent_pos: Vec2,
-        parent_size: Vec2,
+        boundary_pos: Vec2,
+        boundary_size: Vec2,
         out: &mut Vec<Rectangle>,
     ) -> (Vec2, Vec2) {
         let computed_width = match p.width {
-            Extent::FillParent => parent_size.x,
+            Extent::FillParent => boundary_size.x,
             Extent::Px(px) => px,
         };
 
         let computed_height = match p.height {
-            Extent::FillParent => parent_size.y,
+            Extent::FillParent => boundary_size.y,
             Extent::Px(px) => px,
         };
 
-        let parent_center = parent_pos + (parent_size * 0.5);
+        let boundary_center = boundary_pos + (boundary_size * 0.5);
         let computed_size = Vec2::new(computed_width, computed_height).round();
 
         let computed_pos = match p.alignment {
-            Alignment::Center => (parent_center - 0.5 * computed_size).round(),
+            Alignment::Center => (boundary_center - 0.5 * computed_size).round(),
             Alignment::Right => Vec2::new(
-                parent_pos.x + parent_size.x - computed_size.x,
-                parent_center.y - 0.5 * computed_size.y,
+                boundary_pos.x + boundary_size.x - computed_size.x,
+                boundary_center.y - 0.5 * computed_size.y,
             )
             .round(),
-            Alignment::TopRight => (parent_pos + parent_size - computed_size).round(),
+            Alignment::TopRight => (boundary_pos + boundary_size - computed_size).round(),
             Alignment::Top => Vec2::new(
-                parent_center.x - 0.5 * computed_size.x,
-                parent_pos.y + parent_size.y - computed_size.y,
+                boundary_center.x - 0.5 * computed_size.x,
+                boundary_pos.y + boundary_size.y - computed_size.y,
             )
             .round(),
-            Alignment::TopLeft => Vec2::new(parent_pos.x, parent_pos.y + parent_size.y - computed_size.y).round(),
-            Alignment::Left => Vec2::new(parent_pos.x, parent_center.y - 0.5 * computed_size.y).round(),
-            Alignment::BottomLeft => parent_pos.round(),
-            Alignment::Bottom => Vec2::new(parent_center.x - 0.5 * computed_size.x, parent_pos.y).round(),
-            Alignment::BottomRight => Vec2::new(parent_pos.x + parent_size.x - computed_size.x, parent_pos.y).round(),
+            Alignment::TopLeft => Vec2::new(boundary_pos.x, boundary_pos.y + boundary_size.y - computed_size.y).round(),
+            Alignment::Left => Vec2::new(boundary_pos.x, boundary_center.y - 0.5 * computed_size.y).round(),
+            Alignment::BottomLeft => boundary_pos.round(),
+            Alignment::Bottom => Vec2::new(boundary_center.x - 0.5 * computed_size.x, boundary_pos.y).round(),
+            Alignment::BottomRight => {
+                Vec2::new(boundary_pos.x + boundary_size.x - computed_size.x, boundary_pos.y).round()
+            }
         };
 
         let rectangle = Rectangle {
