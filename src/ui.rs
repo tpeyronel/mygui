@@ -615,6 +615,17 @@ pub fn example_ui() -> UiNode {
                         }),
                         UiNode::Box(BoxProps {
                             modifiers: Modifiers::new()
+                                .width(Extent::Px(96.0))
+                                .height(Extent::Px(64.0))
+                                .padding(Padding::all(2.0))
+                                .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
+                                .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                                .border_thickness(BorderThickness::all(1.0))
+                                .border_radius(BorderRadius::all(8.0)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
                                 .height(Extent::Px(32.0))
                                 .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
                                 .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
