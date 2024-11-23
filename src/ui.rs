@@ -437,22 +437,6 @@ impl UiNode {
     }
 
     fn measure(&self, boundary_size: Vec2) -> Vec2 {
-        fn compute_inner_size(inner_size: &Vec2, width: &Extent, height: &Extent, border_thickness: &BorderThickness, padding: &Padding) -> Vec2 {
-            let padding = padding.to_vec4();
-            Vec2::new(
-                width.resolve(inner_size.x),
-                height.resolve(inner_size.y),
-            ) - Vec2::new(
-                border_thickness.left.round() + border_thickness.right.round(),
-                border_thickness.bottom.round() + border_thickness.top.round(),
-            ) - Vec2::new(
-                padding.y.round() + padding.w.round(),
-                padding.x.round() + padding.z.round(),
-            )
-        }
-
-        let mut inner_size = boundary_size;
-
         let modifiers = match self {
             UiNode::Box(props) => &props.modifiers,
             UiNode::Column(props) => &props.modifiers,
@@ -460,27 +444,20 @@ impl UiNode {
 
         let mut width = Extent::default();
         let mut height = Extent::default();
-        let mut border_thickness = BorderThickness::all(0.0);
         for m in &modifiers.0 {
             match *m {
                 Modifier::Width(w) => width = w,
                 Modifier::Height(h) => height = h,
                 Modifier::FillColor(_) => (),
                 Modifier::BorderColor(_) => (),
-                Modifier::BorderThickness(t) => border_thickness = t,
+                Modifier::BorderThickness(_) => (),
                 Modifier::BorderRadius(_) => (),
                 Modifier::SelfAlignment(_) => (),
-                Modifier::Padding(padding) => {
-                    inner_size = compute_inner_size(&inner_size, &width, &height, &border_thickness, &padding);
-
-                    width = Default::default();
-                    height = Default::default();
-                    border_thickness = Default::default();
-                }
+                Modifier::Padding(_) => break,
             }
         }
 
-        return compute_inner_size(&inner_size, &width, &height, &border_thickness, &Padding::default());
+        return Vec2::new(width.resolve(boundary_size.x), height.resolve(boundary_size.y));
     }
 }
 
