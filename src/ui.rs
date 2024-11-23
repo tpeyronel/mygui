@@ -66,6 +66,15 @@ pub enum Extent {
     Px(f32),
 }
 
+impl Extent {
+    fn resolve(&self, parent_extent: f32) -> f32 {
+        match self {
+            Extent::FillParent => parent_extent,
+            Extent::Px(px) => px.round(),
+        }
+    }
+}
+
 impl Default for Extent {
     fn default() -> Self {
         Self::FillParent
@@ -428,6 +437,20 @@ impl UiNode {
     }
 
     fn measure(&self, boundary_size: Vec2) -> Vec2 {
+        fn compute_inner_size(inner_size: &Vec2, width: &Extent, height: &Extent, border_thickness: &BorderThickness, padding: &Padding) -> Vec2 {
+            let padding = padding.to_vec4();
+            Vec2::new(
+                width.resolve(inner_size.x),
+                height.resolve(inner_size.y),
+            ) - Vec2::new(
+                border_thickness.left.round() + border_thickness.right.round(),
+                border_thickness.bottom.round() + border_thickness.top.round(),
+            ) - Vec2::new(
+                padding.y.round() + padding.w.round(),
+                padding.x.round() + padding.z.round(),
+            )
+        }
+
         let mut inner_size = boundary_size;
 
         let modifiers = match self {
@@ -435,48 +458,29 @@ impl UiNode {
             UiNode::Column(props) => &props.modifiers,
         };
 
-        let mut p = RectangleProps::default();
+        let mut width = Extent::default();
+        let mut height = Extent::default();
+        let mut border_thickness = BorderThickness::all(0.0);
         for m in &modifiers.0 {
             match *m {
-                Modifier::Width(width) => p.width = width,
-                Modifier::Height(height) => p.height = height,
-                Modifier::FillColor(fill_color) => p.fill_color = fill_color,
-                Modifier::BorderColor(border_color) => p.border_color = border_color,
-                Modifier::BorderThickness(border_thickness) => p.border_thickness = border_thickness,
-                Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
-                Modifier::SelfAlignment(alignment) => p.alignment = alignment,
+                Modifier::Width(w) => width = w,
+                Modifier::Height(h) => height = h,
+                Modifier::FillColor(_) => (),
+                Modifier::BorderColor(_) => (),
+                Modifier::BorderThickness(t) => border_thickness = t,
+                Modifier::BorderRadius(_) => (),
+                Modifier::SelfAlignment(_) => (),
                 Modifier::Padding(padding) => {
-                    let padding = padding.to_vec4();
-                    inner_size -= Vec2::new(
-                        padding.y.round() + padding.w.round(),
-                        padding.x.round() + padding.z.round(),
-                    );
-                    inner_size -= Vec2::new(
-                        p.border_thickness.left.round() + p.border_thickness.right.round(),
-                        p.border_thickness.bottom.round() + p.border_thickness.top.round(),
-                    );
+                    inner_size = compute_inner_size(&inner_size, &width, &height, &border_thickness, &padding);
 
-                    p = Default::default();
+                    width = Default::default();
+                    height = Default::default();
+                    border_thickness = Default::default();
                 }
             }
         }
 
-        inner_size -= Vec2::new(
-            p.border_thickness.left.round() + p.border_thickness.right.round(),
-            p.border_thickness.bottom.round() + p.border_thickness.top.round(),
-        );
-
-        let computed_width = match p.width {
-            Extent::FillParent => boundary_size.x,
-            Extent::Px(px) => px,
-        };
-
-        let computed_height = match p.height {
-            Extent::FillParent => boundary_size.y,
-            Extent::Px(px) => px,
-        };
-
-        return Vec2::new(computed_width, computed_height).round();
+        return compute_inner_size(&inner_size, &width, &height, &border_thickness, &Padding::default());
     }
 }
 
