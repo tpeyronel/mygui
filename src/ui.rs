@@ -927,4 +927,43 @@ mod tests {
             ],
         );
     }
+
+    #[test]
+    fn basic_column_child_with_padding() {
+        test_converter(
+            32.0,
+            128.0,
+            UiNode::Column(ColumnProps {
+                modifiers: Modifiers::new(),
+                children: vec![
+                    UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new().height(Extent::Px(24.0)).padding(Padding::all(2.0)),
+                        children: vec![],
+                    }),
+                    UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new().height(Extent::Px(48.0)),
+                        children: vec![],
+                    }),
+                ],
+            }),
+            &[
+                Rectangle {
+                    position: Vec2::new(0.0, 128.0 - 24.0),
+                    size: Vec2::new(32.0, 24.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::splat(0.0),
+                    border_width: Vec4::splat(0.0),
+                },
+                Rectangle {
+                    position: Vec2::new(0.0, 128.0 - 24.0 - 48.0),
+                    size: Vec2::new(32.0, 48.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::splat(0.0),
+                    border_width: Vec4::splat(0.0),
+                },
+            ],
+        );
+    }
 }
