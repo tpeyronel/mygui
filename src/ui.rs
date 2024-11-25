@@ -387,6 +387,7 @@ pub fn example_ui() -> UiNode {
             .width(Extent::FillParent)
             .height(Extent::FillParent)
             .fill_color(Color::new(0.1, 0.1, 1.0, 1.0))
+            .margin(Padding::all(8.0))
             .padding(Padding::all(16.0))
             .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
             .border_radius(BorderRadius::all(16.0))
@@ -416,6 +417,7 @@ pub fn example_ui() -> UiNode {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(80.0))
                         .height(Extent::Px(80.0))
+                        .margin(Padding::all(4.0))
                         .self_alignment(Alignment::Right)
                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
@@ -537,12 +539,22 @@ pub fn example_ui() -> UiNode {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(96.0))
                                 .height(Extent::Px(64.0))
-                                .padding(Padding::all(2.0))
+                                .margin(Padding::all(8.0))
+                                .padding(Padding::all(8.0))
                                 .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
                                 .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                .border_thickness(BorderThickness::all(1.0))
+                                .border_thickness(BorderThickness::all(4.0))
                                 .border_radius(BorderRadius::all(8.0)),
-                            children: vec![],
+                            children: vec![UiNode::Box(BoxProps {
+                                modifiers: Modifiers::new()
+                                    .width(Extent::FillParent)
+                                    .height(Extent::FillParent)
+                                    .fill_color(Color::new(1.0, 1.0, 1.0, 0.5))
+                                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                                    .border_thickness(BorderThickness::all(1.0))
+                                    .border_radius(BorderRadius::all(8.0)),
+                                children: vec![],
+                            })],
                         }),
                         UiNode::Box(BoxProps {
                             modifiers: Modifiers::new()
