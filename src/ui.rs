@@ -2,61 +2,61 @@ use glam::{Vec2, Vec4, Vec4Swizzles};
 
 use crate::{rectangle::Rectangle, vertex::Color};
 
-#[derive(Debug, Clone, Copy)]
-enum Modifier {
-    Width(Extent),
-    Height(Extent),
-    Padding(Padding),
-    FillColor(Color),
-    BorderColor(Color),
-    BorderThickness(BorderThickness),
-    BorderRadius(BorderRadius),
-    SelfAlignment(Alignment),
+#[derive(Default, Debug, Clone)]
+pub struct Modifiers {
+    width: Extent,
+    height: Extent,
+    margin: Padding,
+    padding: Padding,
+    fill_color: Color,
+    border_color: Color,
+    border_thickness: BorderThickness,
+    border_radius: BorderRadius,
+    self_alignment: Alignment,
 }
-
-#[derive(Debug, Clone)]
-pub struct Modifiers(Vec<Modifier>);
 
 impl Modifiers {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self::default()
     }
 
     pub fn width(self, width: Extent) -> Self {
-        self.add(Modifier::Width(width))
+        Self { width, ..self }
     }
 
     pub fn height(self, height: Extent) -> Self {
-        self.add(Modifier::Height(height))
+        Self { height, ..self }
+    }
+
+    pub fn margin(self, margin: Padding) -> Self {
+        Self { margin, ..self }
     }
 
     pub fn padding(self, padding: Padding) -> Self {
-        self.add(Modifier::Padding(padding))
+        Self { padding, ..self }
     }
 
     pub fn fill_color(self, fill_color: Color) -> Self {
-        self.add(Modifier::FillColor(fill_color))
+        Self { fill_color, ..self }
     }
 
     pub fn border_color(self, border_color: Color) -> Self {
-        self.add(Modifier::BorderColor(border_color))
+        Self { border_color, ..self }
     }
 
     pub fn border_thickness(self, border_thickness: BorderThickness) -> Self {
-        self.add(Modifier::BorderThickness(border_thickness))
+        Self {
+            border_thickness,
+            ..self
+        }
     }
 
     pub fn border_radius(self, border_radius: BorderRadius) -> Self {
-        self.add(Modifier::BorderRadius(border_radius))
+        Self { border_radius, ..self }
     }
 
-    pub fn self_alignment(self, alignment: Alignment) -> Self {
-        self.add(Modifier::SelfAlignment(alignment))
-    }
-
-    fn add(mut self, modifier: Modifier) -> Self {
-        self.0.push(modifier);
-        Self(self.0)
+    pub fn self_alignment(self, self_alignment: Alignment) -> Self {
+        Self { self_alignment, ..self }
     }
 }
 
@@ -266,44 +266,25 @@ impl UiNode {
         parent_size: Vec2,
         draw_data: &mut Vec<Rectangle>,
     ) {
-        let mut boundary_pos = parent_pos;
-        let mut boundary_size = parent_size;
-        let mut p = RectangleProps::default();
+        let margin = modifiers.margin.to_vec4().round();
+        let parent_pos: Vec2 = parent_pos + margin.xw();
+        let parent_size = parent_size - margin.xw() - margin.yz();
 
-        for m in &modifiers.0 {
-            match *m {
-                Modifier::Width(width) => p.width = width,
-                Modifier::Height(height) => p.height = height,
-                Modifier::FillColor(fill_color) => p.fill_color = fill_color,
-                Modifier::BorderColor(border_color) => p.border_color = border_color,
-                Modifier::BorderThickness(border_thickness) => p.border_thickness = border_thickness,
-                Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
-                Modifier::SelfAlignment(alignment) => p.alignment = alignment,
-                Modifier::Padding(padding) => {
-                    let padding = padding.to_vec4();
-                    let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
+        let (computed_pos, computed_size) = Self::emit_rectangle(modifiers, parent_pos, parent_size, draw_data);
 
-                    p = Default::default();
-                    boundary_pos = (computed_pos + padding.xw().round()).min(parent_pos + parent_size * 0.5);
-                    boundary_size = (computed_size - padding.xw().round() - padding.yz().round()).max(Vec2::ZERO);
-                }
-            }
-        }
-
-        let (computed_pos, computed_size) = Self::emit_rectangle(&p, boundary_pos, boundary_size, draw_data);
+        let padding = modifiers.padding.to_vec4().round();
 
         let inner_pos = Vec2::new(
-            computed_pos.x + p.border_thickness.left,
-            computed_pos.y + p.border_thickness.bottom,
-        )
-        .round();
+            computed_pos.x + modifiers.border_thickness.left.round(),
+            computed_pos.y + modifiers.border_thickness.bottom.round(),
+        ) + padding.xw();
 
-        let inner_size = Vec2::new(
-            computed_size.x - p.border_thickness.left - p.border_thickness.right,
-            computed_size.y - p.border_thickness.bottom - p.border_thickness.right,
-        )
-        .max(Vec2::ZERO)
-        .round();
+        let inner_size = (Vec2::new(
+            computed_size.x - modifiers.border_thickness.left.round() - modifiers.border_thickness.right.round(),
+            computed_size.y - modifiers.border_thickness.bottom.round() - modifiers.border_thickness.right.round(),
+        ) - padding.xw()
+            - padding.yz())
+        .max(Vec2::ZERO);
 
         for c in children {
             c.to_draw_data(inner_pos, inner_size, draw_data);
@@ -312,64 +293,11 @@ impl UiNode {
 
     fn process_column(
         ColumnProps { modifiers, children }: &ColumnProps,
-        mut parent_pos: Vec2,
-        mut parent_size: Vec2,
+        parent_pos: Vec2,
+        parent_size: Vec2,
         draw_data: &mut Vec<Rectangle>,
     ) {
-        let mut p = RectangleProps::default();
-
-        for m in &modifiers.0 {
-            match *m {
-                Modifier::Width(width) => p.width = width,
-                Modifier::Height(height) => p.height = height,
-                Modifier::FillColor(fill_color) => p.fill_color = fill_color,
-                Modifier::BorderColor(border_color) => p.border_color = border_color,
-                Modifier::BorderThickness(border_thickness) => p.border_thickness = border_thickness,
-                Modifier::BorderRadius(border_radius) => p.border_radius = border_radius,
-                Modifier::SelfAlignment(alignment) => p.alignment = alignment,
-                Modifier::Padding(padding) => {
-                    let padding = padding.to_vec4();
-                    let (computed_pos, computed_size) = Self::emit_rectangle(&p, parent_pos, parent_size, draw_data);
-
-                    p = Default::default();
-                    parent_pos = (computed_pos + padding.xw().round()).min(parent_pos + parent_size * 0.5);
-                    parent_size = (computed_size - padding.xw().round() - padding.yz().round()).max(Vec2::ZERO);
-                }
-            }
-        }
-
-        let computed_width = match p.width {
-            Extent::FillParent => parent_size.x,
-            Extent::Px(px) => px,
-        };
-
-        let computed_height = match p.height {
-            Extent::FillParent => parent_size.y,
-            Extent::Px(px) => px,
-        };
-
-        let parent_center = parent_pos + (parent_size * 0.5);
-        let computed_size = Vec2::new(computed_width, computed_height).round();
-
-        let computed_pos = match p.alignment {
-            Alignment::Center => (parent_center - 0.5 * computed_size).round(),
-            Alignment::Right => Vec2::new(
-                parent_pos.x + parent_size.x - computed_size.x,
-                parent_center.y - 0.5 * computed_size.y,
-            )
-            .round(),
-            Alignment::TopRight => (parent_pos + parent_size - computed_size).round(),
-            Alignment::Top => Vec2::new(
-                parent_center.x - 0.5 * computed_size.x,
-                parent_pos.y + parent_size.y - computed_size.y,
-            )
-            .round(),
-            Alignment::TopLeft => Vec2::new(parent_pos.x, parent_pos.y + parent_size.y - computed_size.y).round(),
-            Alignment::Left => Vec2::new(parent_pos.x, parent_center.y - 0.5 * computed_size.y).round(),
-            Alignment::BottomLeft => parent_pos.round(),
-            Alignment::Bottom => Vec2::new(parent_center.x - 0.5 * computed_size.x, parent_pos.y).round(),
-            Alignment::BottomRight => Vec2::new(parent_pos.x + parent_size.x - computed_size.x, parent_pos.y).round(),
-        };
+        let (computed_pos, computed_size) = Self::emit_rectangle(modifiers, parent_pos, parent_size, draw_data);
 
         let mut vertical_offset = 0.0;
 
@@ -382,17 +310,17 @@ impl UiNode {
     }
 
     fn emit_rectangle(
-        p: &RectangleProps,
+        modifiers: &Modifiers,
         boundary_pos: Vec2,
         boundary_size: Vec2,
         out: &mut Vec<Rectangle>,
     ) -> (Vec2, Vec2) {
-        let computed_width = match p.width {
+        let computed_width = match modifiers.width {
             Extent::FillParent => boundary_size.x,
             Extent::Px(px) => px,
         };
 
-        let computed_height = match p.height {
+        let computed_height = match modifiers.height {
             Extent::FillParent => boundary_size.y,
             Extent::Px(px) => px,
         };
@@ -400,7 +328,7 @@ impl UiNode {
         let boundary_center = boundary_pos + (boundary_size * 0.5);
         let computed_size = Vec2::new(computed_width, computed_height).round();
 
-        let computed_pos = match p.alignment {
+        let computed_pos = match modifiers.self_alignment {
             Alignment::Center => (boundary_center - 0.5 * computed_size).round(),
             Alignment::Right => Vec2::new(
                 boundary_pos.x + boundary_size.x - computed_size.x,
@@ -425,10 +353,10 @@ impl UiNode {
         let rectangle = Rectangle {
             position: computed_pos,
             size: computed_size,
-            fill_color: p.fill_color,
-            border_color: p.border_color,
-            border_radius: p.border_radius.to_vec4(),
-            border_width: p.border_thickness.to_vec4(),
+            fill_color: modifiers.fill_color,
+            border_color: modifiers.border_color,
+            border_radius: modifiers.border_radius.to_vec4(),
+            border_width: modifiers.border_thickness.to_vec4(),
         };
 
         out.push(rectangle);
@@ -442,22 +370,14 @@ impl UiNode {
             UiNode::Column(props) => &props.modifiers,
         };
 
-        let mut width = Extent::default();
-        let mut height = Extent::default();
-        for m in &modifiers.0 {
-            match *m {
-                Modifier::Width(w) => width = w,
-                Modifier::Height(h) => height = h,
-                Modifier::FillColor(_) => (),
-                Modifier::BorderColor(_) => (),
-                Modifier::BorderThickness(_) => (),
-                Modifier::BorderRadius(_) => (),
-                Modifier::SelfAlignment(_) => (),
-                Modifier::Padding(_) => break,
-            }
-        }
+        let margin = modifiers.margin.to_vec4().round();
+        let boundary_size = boundary_size - margin.xw() - margin.yz();
 
-        return Vec2::new(width.resolve(boundary_size.x), height.resolve(boundary_size.y));
+        return Vec2::new(
+            modifiers.width.resolve(boundary_size.x),
+            modifiers.height.resolve(boundary_size.y),
+        ) + margin.xw()
+            + margin.yz();
     }
 }
 
