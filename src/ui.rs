@@ -947,4 +947,37 @@ mod tests {
             ],
         );
     }
+
+    #[test]
+    fn basic_column_single_child_with_margin() {
+        test_converter(
+            32.0,
+            128.0,
+            UiNode::Column(ColumnProps {
+                modifiers: Modifiers::new(),
+                children: vec![UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new().height(Extent::Px(16.0)).margin(Padding::all(2.0)),
+                    children: vec![],
+                })],
+            }),
+            &[
+                Rectangle {
+                    position: Vec2::new(0.0, 0.0),
+                    size: Vec2::new(32.0, 128.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::splat(0.0),
+                    border_width: Vec4::splat(0.0),
+                },
+                Rectangle {
+                    position: Vec2::new(0.0 + 2.0, 128.0 - 16.0 - 2.0),
+                    size: Vec2::new(32.0 - 4.0, 16.0),
+                    fill_color: Color::ZERO,
+                    border_color: Color::ZERO,
+                    border_radius: Vec4::splat(0.0),
+                    border_width: Vec4::splat(0.0),
+                },
+            ],
+        );
+    }
 }
