@@ -274,10 +274,11 @@ impl UiNode {
 
         let padding = modifiers.padding.to_vec4().round();
 
-        let inner_pos = Vec2::new(
-            computed_pos.x + modifiers.border_thickness.left.round(),
-            computed_pos.y + modifiers.border_thickness.bottom.round(),
-        ) + padding.xw();
+        let mut inner_pos = computed_pos;
+        inner_pos += Vec2::new(modifiers.border_thickness.left, modifiers.border_thickness.bottom).round();
+        inner_pos += padding.xw();
+        // Don't allow inner_pos to go past the parent's center.
+        inner_pos = inner_pos.min((parent_pos + parent_size * 0.5).round());
 
         let inner_size = (Vec2::new(
             computed_size.x - modifiers.border_thickness.left.round() - modifiers.border_thickness.right.round(),
