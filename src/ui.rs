@@ -379,7 +379,7 @@ impl UiNode {
         let boundary_size = boundary_size - margin_delta_size;
 
         // TODO: only compute when necessary
-        let min_intrinsic_children_sizes: Vec<Measurements> = Self::compute_children_sizes(Vec2::ZERO, children);
+        let min_intrinsic_children_sizes: Vec<Measurements> = Self::measure_children(Vec2::ZERO, children);
 
         let computed_width = match modifiers.width {
             Extent::FillParent => boundary_size.x,
@@ -423,7 +423,7 @@ impl UiNode {
         }
     }
 
-    fn compute_children_sizes(parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
+    fn measure_children(parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
         return children.iter().map(|c| c.measure(parent_size)).collect();
     }
 }
