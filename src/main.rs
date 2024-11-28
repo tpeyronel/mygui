@@ -163,11 +163,8 @@ impl ApplicationHandler for App {
         let ui = example_ui();
 
         let mut rectangles = vec![];
-        ui.to_draw_data(
-            Vec2::ZERO,
-            Vec2::new(size.width as f32, size.height as f32),
-            &mut rectangles,
-        );
+        let layout = ui.compute_layout(Vec2::ZERO, Vec2::new(size.width as f32, size.height as f32));
+        ui.to_draw_data(&layout, &mut rectangles);
 
         // let rectangles = vec![
         //     Rectangle {
@@ -347,14 +344,12 @@ impl ApplicationHandler for App {
                 state.surface.configure(&state.device, &state.config);
 
                 state.rectangles.clear();
-                state.ui.to_draw_data(
-                    Vec2::ZERO,
-                    Vec2::new(
-                        state.global_uniform.viewport_width,
-                        state.global_uniform.viewport_height,
-                    ),
-                    &mut state.rectangles,
-                );
+                let layout = state.ui.compute_layout(Vec2::ZERO, Vec2::new(
+                    state.global_uniform.viewport_width,
+                    state.global_uniform.viewport_height,
+                ));
+                state.ui.to_draw_data(&layout, &mut state.rectangles);
+
 
                 let (vertices, indices) = rectangles_to_vertices_and_indices(&state.rectangles);
                 state

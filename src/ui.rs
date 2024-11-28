@@ -226,17 +226,6 @@ impl Default for Alignment {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct RectangleProps {
-    pub width: Extent,
-    pub height: Extent,
-    pub fill_color: Color,
-    pub border_color: Color,
-    pub border_radius: BorderRadius,
-    pub border_thickness: BorderThickness,
-    pub alignment: Alignment,
-}
-
 #[derive(Debug, Clone)]
 pub enum UiNode {
     Box(BoxProps),
@@ -244,115 +233,131 @@ pub enum UiNode {
 }
 
 impl UiNode {
-    pub fn to_draw_data(&self, parent_pos: Vec2, parent_size: Vec2, draw_data: &mut Vec<Rectangle>) {
-        assert_eq!(parent_pos, parent_pos.round());
-        assert_eq!(parent_size, parent_size.round());
+    pub fn to_draw_data(&self, layout_node: &UiNodeLayout, draw_data: &mut Vec<Rectangle>) {
+        let (modifiers, children) = match self {
+            UiNode::Box(props) => (&props.modifiers, &props.children),
+            UiNode::Column(props) => (&props.modifiers, &props.children),
+        };
 
+        let layout = &layout_node.layout;
+        let measurements = &layout.measurements;
+
+        Self::emit_rectangle(
+            layout.border_position,
+            measurements.border_size,
+            modifiers.fill_color,
+            modifiers.border_color,
+            modifiers.border_thickness,
+            modifiers.border_radius,
+            draw_data,
+        );
+
+        for (i, c) in children.iter().enumerate() {
+            c.to_draw_data(&layout_node.children[i], draw_data);
+        }
+    }
+
+    pub fn compute_layout(
+        &self,
+        parent_content_pos: Vec2,
+        parent_content_size: Vec2,
+        // parent_children_alignment: Alignment,
+    ) -> UiNodeLayout {
+        let (modifiers, children) = match self {
+            UiNode::Box(props) => (&props.modifiers, &props.children),
+            UiNode::Column(props) => (&props.modifiers, &props.children),
+        };
+
+        let measurements = self.measure(parent_content_size);
+
+        let alignment = modifiers.self_alignment;
+
+        let parent_content_center = parent_content_pos + (parent_content_size * 0.5);
+        let margin_size = measurements.margin_size;
+
+        let margin_position = match alignment {
+            Alignment::Center => (parent_content_center - 0.5 * margin_size).round(),
+            Alignment::Right => Vec2::new(
+                parent_content_pos.x + parent_content_size.x - margin_size.x,
+                parent_content_center.y - 0.5 * margin_size.y,
+            )
+            .round(),
+            Alignment::TopRight => (parent_content_pos + parent_content_size - margin_size).round(),
+            Alignment::Top => Vec2::new(
+                parent_content_center.x - 0.5 * margin_size.x,
+                parent_content_pos.y + parent_content_size.y - margin_size.y,
+            )
+            .round(),
+            Alignment::TopLeft => Vec2::new(
+                parent_content_pos.x,
+                parent_content_pos.y + parent_content_size.y - margin_size.y,
+            )
+            .round(),
+            Alignment::Left => Vec2::new(parent_content_pos.x, parent_content_center.y - 0.5 * margin_size.y).round(),
+            Alignment::BottomLeft => parent_content_pos.round(),
+            Alignment::Bottom => Vec2::new(parent_content_center.x - 0.5 * margin_size.x, parent_content_pos.y).round(),
+            Alignment::BottomRight => Vec2::new(
+                parent_content_pos.x + parent_content_size.x - margin_size.x,
+                parent_content_pos.y,
+            )
+            .round(),
+        };
+
+        let margin_delta_position = modifiers.margin.to_vec4().wx().round();
+        let border_delta_position = modifiers.border_thickness.to_vec4().wx().round();
+        let padding_delta_position = modifiers.padding.to_vec4().wx().round();
+        let border_position = margin_position + margin_delta_position;
+        let content_position = border_position + border_delta_position + padding_delta_position; // TODO: clamp
+
+        let children_layouts = Self::compute_children_layouts(&self, content_position, &measurements);
+
+        UiNodeLayout {
+            layout: Layout {
+                measurements,
+                margin_position,
+                border_position,
+            },
+            children: children_layouts,
+        }
+    }
+
+    fn compute_children_layouts(&self, content_position: Vec2, measurements: &Measurements) -> Vec<UiNodeLayout> {
         match self {
-            UiNode::Box(props) => Self::process_box(self, props, parent_pos, parent_size, draw_data),
-            UiNode::Column(props) => Self::process_column(self, props, parent_pos, parent_size, draw_data),
-        }
-    }
-
-    fn process_box(
-        &self,
-        BoxProps { modifiers, children }: &BoxProps,
-        parent_pos: Vec2,
-        parent_size: Vec2,
-        draw_data: &mut Vec<Rectangle>,
-    ) {
-        let margin = modifiers.margin.to_vec4().round();
-        let parent_pos: Vec2 = parent_pos + margin.xw();
-        let parent_size = parent_size - margin.xw() - margin.yz();
-
-        let NodeMeasurements { border_size, .. } = self.measure(parent_size);
-        let computed_pos = Self::emit_rectangle(modifiers, border_size, parent_pos, parent_size, draw_data);
-
-        let padding = modifiers.padding.to_vec4().round();
-
-        let mut inner_pos = computed_pos;
-        inner_pos += Vec2::new(modifiers.border_thickness.left, modifiers.border_thickness.bottom).round();
-        inner_pos += padding.xw();
-        // Don't allow inner_pos to go past the parent's center.
-        inner_pos = inner_pos.min((parent_pos + parent_size * 0.5).round());
-
-        let inner_size = (Vec2::new(
-            border_size.x - modifiers.border_thickness.left.round() - modifiers.border_thickness.right.round(),
-            border_size.y - modifiers.border_thickness.bottom.round() - modifiers.border_thickness.right.round(),
-        ) - padding.xw()
-            - padding.yz())
-        .max(Vec2::ZERO);
-
-        for c in children {
-            c.to_draw_data(inner_pos, inner_size, draw_data);
-        }
-    }
-
-    fn process_column(
-        &self,
-        ColumnProps { modifiers, children }: &ColumnProps,
-        parent_pos: Vec2,
-        parent_size: Vec2,
-        draw_data: &mut Vec<Rectangle>,
-    ) {
-        let NodeMeasurements { border_size, .. } = self.measure(parent_size);
-
-        let computed_pos = Self::emit_rectangle(modifiers, border_size, parent_pos, parent_size, draw_data);
-
-        let mut vertical_offset = 0.0;
-
-        for c in children {
-            let child_measurements = c.measure(border_size);
-            vertical_offset += child_measurements.margin_size.y;
-            let child_pos = Vec2::new(computed_pos.x, computed_pos.y + border_size.y - vertical_offset);
-            c.to_draw_data(child_pos, child_measurements.margin_size, draw_data);
+            UiNode::Box(props) => props
+                .children
+                .iter()
+                .map(|c| c.compute_layout(content_position, measurements.content_size))
+                .collect(),
+            UiNode::Column(props) => props
+                .children
+                .iter()
+                .map(|c| c.compute_layout(content_position, measurements.content_size))
+                .collect(),
         }
     }
 
     fn emit_rectangle(
-        modifiers: &Modifiers,
+        position: Vec2,
         size: Vec2,
-        boundary_pos: Vec2,
-        boundary_size: Vec2,
+        fill_color: Color,
+        border_color: Color,
+        border_thickness: BorderThickness,
+        border_radius: BorderRadius,
         out: &mut Vec<Rectangle>,
-    ) -> Vec2 {
-        let boundary_center = boundary_pos + (boundary_size * 0.5);
-
-        let computed_pos = match modifiers.self_alignment {
-            Alignment::Center => (boundary_center - 0.5 * size).round(),
-            Alignment::Right => Vec2::new(
-                boundary_pos.x + boundary_size.x - size.x,
-                boundary_center.y - 0.5 * size.y,
-            )
-            .round(),
-            Alignment::TopRight => (boundary_pos + boundary_size - size).round(),
-            Alignment::Top => Vec2::new(
-                boundary_center.x - 0.5 * size.x,
-                boundary_pos.y + boundary_size.y - size.y,
-            )
-            .round(),
-            Alignment::TopLeft => Vec2::new(boundary_pos.x, boundary_pos.y + boundary_size.y - size.y).round(),
-            Alignment::Left => Vec2::new(boundary_pos.x, boundary_center.y - 0.5 * size.y).round(),
-            Alignment::BottomLeft => boundary_pos.round(),
-            Alignment::Bottom => Vec2::new(boundary_center.x - 0.5 * size.x, boundary_pos.y).round(),
-            Alignment::BottomRight => Vec2::new(boundary_pos.x + boundary_size.x - size.x, boundary_pos.y).round(),
-        };
-
+    ) {
         let rectangle = Rectangle {
-            position: computed_pos,
+            position,
             size,
-            fill_color: modifiers.fill_color,
-            border_color: modifiers.border_color,
-            border_radius: modifiers.border_radius.to_vec4(),
-            border_width: modifiers.border_thickness.to_vec4(),
+            fill_color,
+            border_color,
+            border_radius: border_radius.to_vec4(),
+            border_width: border_thickness.to_vec4(),
         };
 
         out.push(rectangle);
-
-        computed_pos
     }
 
-    fn measure(&self, boundary_size: Vec2) -> NodeMeasurements {
+    fn measure(&self, boundary_size: Vec2) -> Measurements {
         let modifiers = match self {
             UiNode::Box(props) => &props.modifiers,
             UiNode::Column(props) => &props.modifiers,
@@ -369,7 +374,7 @@ impl UiNode {
         let boundary_size = boundary_size - margin_delta_size;
 
         // TODO: only compute when necessary
-        let min_intrinsic_children_sizes: Vec<NodeMeasurements> = Self::compute_children_sizes(Vec2::ZERO, children);
+        let min_intrinsic_children_sizes: Vec<Measurements> = Self::compute_children_sizes(Vec2::ZERO, children);
 
         let computed_width = match modifiers.width {
             Extent::FillParent => boundary_size.x,
@@ -399,34 +404,41 @@ impl UiNode {
         let border_size = Vec2::new(computed_width, computed_height);
         let margin_size = border_size + margin_delta_size;
 
-        NodeMeasurements {
+        let border_thickness = modifiers.border_thickness.to_vec4().round();
+        let border_delta_size = border_thickness.yx() + border_thickness.wz();
+        let padding_size = (border_size - border_delta_size).max(Vec2::ZERO);
+        let padding = modifiers.padding.to_vec4().round();
+        let padding_delta_size = padding.xw() + padding.yz();
+        let content_size = (padding_size - padding_delta_size).max(Vec2::ZERO);
+
+        Measurements {
             margin_size,
             border_size,
+            content_size,
         }
     }
 
-    fn compute_children_sizes(parent_size: Vec2, children: &[UiNode]) -> Vec<NodeMeasurements> {
+    fn compute_children_sizes(parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
         return children.iter().map(|c| c.measure(parent_size)).collect();
-    }
-
-    fn compute_inner_size(outer_size: &Vec2, modifiers: &Modifiers) -> Vec2 {
-        let padding = modifiers.padding.to_vec4();
-        let inner_size = (Vec2::new(
-            outer_size.x - modifiers.border_thickness.left.round() - modifiers.border_thickness.right.round(),
-            outer_size.y - modifiers.border_thickness.bottom.round() - modifiers.border_thickness.right.round(),
-        ) - padding.xw()
-            - padding.yz())
-        .max(Vec2::ZERO);
-
-        return inner_size;
     }
 }
 
-struct NodeMeasurements {
+pub struct UiNodeLayout {
+    layout: Layout,
+    children: Vec<UiNodeLayout>,
+}
+
+struct Layout {
+    measurements: Measurements,
+    margin_position: Vec2,
+    border_position: Vec2,
+}
+
+struct Measurements {
     margin_size: Vec2,
     border_size: Vec2,
     // padding_size: Vec2,
-    // content_size: Vec2,
+    content_size: Vec2,
 }
 
 pub fn example_ui() -> UiNode {
@@ -627,7 +639,8 @@ mod tests {
 
     fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[Rectangle]) {
         let mut draw_data = vec![];
-        ui.to_draw_data(Vec2::ZERO, Vec2::new(width, height), &mut draw_data);
+        let layout = ui.compute_layout(Vec2::ZERO, Vec2::new(width, height));
+        ui.to_draw_data(&layout, &mut draw_data);
         assert_eq!(expected, &draw_data);
     }
 
