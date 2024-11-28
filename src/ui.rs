@@ -233,7 +233,12 @@ pub enum UiNode {
 }
 
 impl UiNode {
-    pub fn to_draw_data(&self, layout_node: &UiNodeLayout, draw_data: &mut Vec<Rectangle>) {
+    pub fn to_draw_data(&self, boundary_pos: Vec2, boundary_size: Vec2, out: &mut Vec<Rectangle>) {
+        let layout = self.compute_layout(boundary_pos, boundary_size);
+        self.to_draw_data_rec(&layout, out);
+    }
+
+    fn to_draw_data_rec(&self, layout_node: &UiNodeLayout, draw_data: &mut Vec<Rectangle>) {
         let (modifiers, children) = match self {
             UiNode::Box(props) => (&props.modifiers, &props.children),
             UiNode::Column(props) => (&props.modifiers, &props.children),
@@ -253,11 +258,11 @@ impl UiNode {
         );
 
         for (i, c) in children.iter().enumerate() {
-            c.to_draw_data(&layout_node.children[i], draw_data);
+            c.to_draw_data_rec(&layout_node.children[i], draw_data);
         }
     }
 
-    pub fn compute_layout(
+    fn compute_layout(
         &self,
         parent_content_pos: Vec2,
         parent_content_size: Vec2,
@@ -639,8 +644,7 @@ mod tests {
 
     fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[Rectangle]) {
         let mut draw_data = vec![];
-        let layout = ui.compute_layout(Vec2::ZERO, Vec2::new(width, height));
-        ui.to_draw_data(&layout, &mut draw_data);
+        ui.to_draw_data(Vec2::ZERO, Vec2::new(width, height), &mut draw_data);
         assert_eq!(expected, &draw_data);
     }
 

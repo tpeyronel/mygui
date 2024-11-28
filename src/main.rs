@@ -73,12 +73,12 @@ impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes().with_inner_size(
-                    winit::dpi::Size::Physical(winit::dpi::PhysicalSize {
+                .create_window(Window::default_attributes().with_inner_size(winit::dpi::Size::Physical(
+                    winit::dpi::PhysicalSize {
                         width: 1280,
                         height: 720,
-                    }),
-                ))
+                    },
+                )))
                 .unwrap(),
         );
 
@@ -99,12 +99,10 @@ impl ApplicationHandler for App {
         .expect("Failed to find an appropriate adapter");
 
         // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
-        let mut required_limits =
-            wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits());
+        let mut required_limits = wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits());
         required_limits.max_storage_buffers_per_shader_stage =
             wgpu::Limits::default().max_storage_buffers_per_shader_stage;
-        required_limits.max_storage_buffer_binding_size =
-            wgpu::Limits::default().max_storage_buffer_binding_size;
+        required_limits.max_storage_buffer_binding_size = wgpu::Limits::default().max_storage_buffer_binding_size;
 
         // Create the logical device and command queue
         let (device, queue) = executor::block_on(adapter.request_device(
@@ -136,20 +134,19 @@ impl ApplicationHandler for App {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let global_uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("global uniform group layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
+        let global_uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("global uniform group layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
 
         let global_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("global uniform group"),
@@ -163,8 +160,11 @@ impl ApplicationHandler for App {
         let ui = example_ui();
 
         let mut rectangles = vec![];
-        let layout = ui.compute_layout(Vec2::ZERO, Vec2::new(size.width as f32, size.height as f32));
-        ui.to_draw_data(&layout, &mut rectangles);
+        ui.to_draw_data(
+            Vec2::ZERO,
+            Vec2::new(size.width as f32, size.height as f32),
+            &mut rectangles,
+        );
 
         // let rectangles = vec![
         //     Rectangle {
@@ -201,12 +201,11 @@ impl ApplicationHandler for App {
         //     },
         // ];
 
-        let rectangle_data_uniform_buffer =
-            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("rectangle data uniform buffer"),
-                contents: bytemuck::cast_slice(rectangles.as_slice()),
-                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-            });
+        let rectangle_data_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("rectangle data uniform buffer"),
+            contents: bytemuck::cast_slice(rectangles.as_slice()),
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        });
 
         let rectangle_data_uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -223,15 +222,14 @@ impl ApplicationHandler for App {
                 }],
             });
 
-        let rectangle_data_uniform_bind_group =
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("rectangle data uniform group"),
-                layout: &rectangle_data_uniform_bind_group_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: rectangle_data_uniform_buffer.as_entire_binding(),
-                }],
-            });
+        let rectangle_data_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("rectangle data uniform group"),
+            layout: &rectangle_data_uniform_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: rectangle_data_uniform_buffer.as_entire_binding(),
+            }],
+        });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
@@ -328,12 +326,7 @@ impl ApplicationHandler for App {
         })
     }
 
-    fn window_event(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        window_id: WindowId,
-        event: WindowEvent,
-    ) {
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::Resized(new_size) => {
                 let state = self.state.as_mut().unwrap();
@@ -344,12 +337,14 @@ impl ApplicationHandler for App {
                 state.surface.configure(&state.device, &state.config);
 
                 state.rectangles.clear();
-                let layout = state.ui.compute_layout(Vec2::ZERO, Vec2::new(
-                    state.global_uniform.viewport_width,
-                    state.global_uniform.viewport_height,
-                ));
-                state.ui.to_draw_data(&layout, &mut state.rectangles);
-
+                state.ui.to_draw_data(
+                    Vec2::ZERO,
+                    Vec2::new(
+                        state.global_uniform.viewport_width,
+                        state.global_uniform.viewport_height,
+                    ),
+                    &mut state.rectangles,
+                );
 
                 let (vertices, indices) = rectangles_to_vertices_and_indices(&state.rectangles);
                 state
@@ -397,9 +392,7 @@ impl ApplicationHandler for App {
                     .get_current_texture()
                     .expect("Failed to acquire next swap chain texture");
 
-                let view = frame
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
+                let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
                 let mut encoder = state
                     .device
@@ -441,9 +434,7 @@ impl ApplicationHandler for App {
                 event,
                 is_synthetic,
             } => match event.physical_key {
-                PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
-                    if event.state == ElementState::Released =>
-                {
+                PhysicalKey::Code(winit::keyboard::KeyCode::Escape) if event.state == ElementState::Released => {
                     event_loop.exit()
                 }
                 _ => {}
