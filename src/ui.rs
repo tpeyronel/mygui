@@ -401,7 +401,12 @@ impl UiNode {
                     .map(|cs| cs.margin_size.y)
                     .max_by(|a, b| a.partial_cmp(b).unwrap())
                     .unwrap_or(0.0),
-                UiNode::Column(_) => min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum(),
+                UiNode::Column(_) => {
+                    let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
+                    let children_sizes =
+                        Self::measure_children(Vec2::new(computed_width, min_intrinsic_height), children);
+                    children_sizes.iter().map(|cs| cs.margin_size.y).sum()
+                }
             },
             Extent::Px(px) => px.round(),
         };
