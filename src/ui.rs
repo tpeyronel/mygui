@@ -386,7 +386,7 @@ impl UiNode {
         let margin = modifiers.margin.to_vec4().round();
         let margin_delta_size = margin.xw() + margin.yz();
         // We subtract it here as the only special case is Extent::FillParent.
-        let boundary_size = boundary_size - margin_delta_size;
+        let boundary_size = (boundary_size - margin_delta_size).max(Vec2::ZERO);
 
         let mut children_boundary_size = Vec2::ZERO;
         // TODO: only compute when necessary
@@ -409,7 +409,7 @@ impl UiNode {
         let padding = modifiers.padding.to_vec4().round();
         let padding_delta_size = padding.xw() + padding.yz();
 
-        children_boundary_size.x = computed_width - border_delta_size.x - padding_delta_size.x;
+        children_boundary_size.x = (computed_width - border_delta_size.x - padding_delta_size.x).max(0.0);
 
         let computed_height = match modifiers.height {
             Extent::FillParent => boundary_size.y,
