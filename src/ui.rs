@@ -234,7 +234,7 @@ pub enum UiNode {
 
 impl UiNode {
     pub fn to_draw_data(&self, boundary_pos: Vec2, boundary_size: Vec2, out: &mut Vec<Rectangle>) {
-        let layout = self.compute_layout(boundary_pos, boundary_size);
+        let layout = self.compute_layout(boundary_pos, boundary_size, None);
         self.to_draw_data_rec(&layout, out);
     }
 
@@ -266,7 +266,7 @@ impl UiNode {
         &self,
         parent_content_pos: Vec2,
         parent_content_size: Vec2,
-        // parent_children_alignment: Alignment,
+        forced_alignment: Option<Alignment>,
     ) -> UiNodeLayout {
         let (modifiers, children) = match self {
             UiNode::Box(props) => (&props.modifiers, &props.children),
@@ -275,7 +275,7 @@ impl UiNode {
 
         let measurements = self.measure(parent_content_size);
 
-        let alignment = modifiers.self_alignment;
+        let alignment = forced_alignment.unwrap_or(modifiers.self_alignment);
 
         let parent_content_center = parent_content_pos + (parent_content_size * 0.5);
         let margin_size = measurements.margin_size;
@@ -331,13 +331,40 @@ impl UiNode {
             UiNode::Box(props) => props
                 .children
                 .iter()
-                .map(|c| c.compute_layout(content_position, measurements.content_size))
+                .map(|c| c.compute_layout(content_position, measurements.content_size, None))
                 .collect(),
-            UiNode::Column(props) => props
-                .children
-                .iter()
-                .map(|c| c.compute_layout(content_position, measurements.content_size))
-                .collect(),
+            UiNode::Column(props) => {
+                let mut vertical_offset = 0.0;
+                let column_top_left = content_position + Vec2::new(0.0, measurements.content_size.y);
+                props
+                    .children
+                    .iter()
+                    .map(|c| {
+                        let child_measurements = c.measure(measurements.content_size);
+                        vertical_offset += child_measurements.margin_size.y;
+                        let child_position = column_top_left - Vec2::new(0.0, vertical_offset);
+
+                        let child_alignment = match c {
+                            UiNode::Box(box_props) => box_props.modifiers.self_alignment,
+                            UiNode::Column(column_props) => column_props.modifiers.self_alignment,
+                        };
+
+                        let forced_alignment = match child_alignment {
+                            Alignment::Center => Alignment::Bottom,
+                            Alignment::Right => Alignment::BottomRight,
+                            Alignment::TopRight => Alignment::BottomRight,
+                            Alignment::Top => Alignment::Bottom,
+                            Alignment::TopLeft => Alignment::BottomLeft,
+                            Alignment::Left => Alignment::BottomLeft,
+                            Alignment::BottomLeft => Alignment::BottomLeft,
+                            Alignment::Bottom => Alignment::Bottom,
+                            Alignment::BottomRight => Alignment::BottomRight,
+                        };
+
+                        c.compute_layout(child_position, measurements.content_size, Some(forced_alignment))
+                    })
+                    .collect()
+            }
         }
     }
 
@@ -444,6 +471,7 @@ struct Layout {
     border_position: Vec2,
 }
 
+#[derive(Debug)]
 struct Measurements {
     margin_size: Vec2,
     border_size: Vec2,
@@ -611,6 +639,7 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::Px(64.0))
                                 .margin(Margin::all(8.0))
                                 .padding(Padding::all(8.0))
+                                .self_alignment(Alignment::TopLeft)
                                 .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
                                 .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                 .border_thickness(BorderThickness::all(4.0))
