@@ -1132,5 +1132,42 @@ mod tests {
                 ],
             );
         }
+
+        #[test]
+        fn column_fit_content_single_child_fill_parent_with_margin() {
+            test_converter(
+                32.0,
+                128.0,
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .self_alignment(Alignment::BottomLeft)
+                        .width(Extent::FitContent)
+                        .height(Extent::FitContent)
+                        .margin(Margin::all(4.0)),
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
+                        children: vec![],
+                    })],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(8.0, 8.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(4.0, 4.0),
+                        size: Vec2::new(0.0, 0.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                ],
+            );
+        }
     }
 }
