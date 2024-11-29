@@ -1142,10 +1142,12 @@ mod tests {
                     modifiers: Modifiers::new()
                         .self_alignment(Alignment::BottomLeft)
                         .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .margin(Margin::all(4.0)),
+                        .height(Extent::FitContent),
                     children: vec![UiNode::Box(BoxProps {
-                        modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
+                        modifiers: Modifiers::new()
+                            .width(Extent::FillParent)
+                            .height(Extent::FillParent)
+                            .margin(Margin::all(4.0)),
                         children: vec![],
                     })],
                 }),
