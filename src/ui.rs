@@ -340,7 +340,12 @@ impl UiNode {
                     .children
                     .iter()
                     .map(|c| {
-                        let child_measurements = c.measure(measurements.content_size);
+                        let min_intrinsic_children_sizes: Vec<Measurements> =
+                            Self::measure_children(Vec2::ZERO, &props.children);
+                        let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
+                        let min_intrinsinc_size = Vec2::new(measurements.content_size.x, min_intrinsic_height);
+
+                        let child_measurements = c.measure(min_intrinsinc_size);
                         vertical_offset += child_measurements.margin_size.y;
                         let child_position = column_top_left - Vec2::new(0.0, vertical_offset);
 
@@ -361,7 +366,7 @@ impl UiNode {
                             Alignment::BottomRight => Alignment::BottomRight,
                         };
 
-                        c.compute_layout(child_position, measurements.content_size, Some(forced_alignment))
+                        c.compute_layout(child_position, min_intrinsinc_size, Some(forced_alignment))
                     })
                     .collect()
             }
@@ -432,7 +437,9 @@ impl UiNode {
                     let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
                     let children_sizes =
                         Self::measure_children(Vec2::new(computed_width, min_intrinsic_height), children);
-                    children_sizes.iter().map(|cs| cs.margin_size.y).sum()
+                    children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
+                        + modifiers.border_thickness.to_vec4().x.round()
+                        + modifiers.border_thickness.to_vec4().z.round()
                 }
             },
             Extent::Px(px) => px.round(),
@@ -602,8 +609,10 @@ pub fn example_ui() -> UiNode {
                 }),
                 UiNode::Column(ColumnProps {
                     modifiers: Modifiers::new()
-                        .width(Extent::Px(128.0))
-                        .height(Extent::Px(64.0))
+                        .width(Extent::Px(256.0))
+                        .height(Extent::FitContent)
+                        .border_thickness(BorderThickness::all(4.0))
+                        .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
                         .self_alignment(Alignment::Center),
                     children: vec![
                         UiNode::Box(BoxProps {
@@ -639,7 +648,7 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::Px(64.0))
                                 .margin(Margin::all(8.0))
                                 .padding(Padding::all(8.0))
-                                .self_alignment(Alignment::TopLeft)
+                                .self_alignment(Alignment::Center)
                                 .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
                                 .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                 .border_thickness(BorderThickness::all(4.0))
