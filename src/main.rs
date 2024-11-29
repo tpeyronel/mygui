@@ -56,7 +56,6 @@ struct AppState {
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
-    ui: UiNode,
     rectangles: Vec<Rectangle>,
     rectangle_data_uniform_buffer: wgpu::Buffer,
     rectangle_data_uniform_bind_group: wgpu::BindGroup,
@@ -318,7 +317,6 @@ impl ApplicationHandler for App {
             global_uniform,
             global_uniform_bind_group,
             global_uniform_buffer,
-            ui,
             rectangles,
             rectangle_data_uniform_bind_group,
             rectangle_data_uniform_buffer,
@@ -337,7 +335,7 @@ impl ApplicationHandler for App {
                 state.surface.configure(&state.device, &state.config);
 
                 state.rectangles.clear();
-                state.ui.to_draw_data(
+                example_ui().to_draw_data(
                     Vec2::ZERO,
                     Vec2::new(
                         state.global_uniform.viewport_width,
