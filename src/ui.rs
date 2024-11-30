@@ -1652,5 +1652,61 @@ mod tests {
                 ],
             );
         }
+
+        #[test]
+        fn column_fit_content_hor_child_fill_parent() {
+            test_converter(
+                256.0,
+                256.0,
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .self_alignment(Alignment::BottomLeft)
+                        .width(Extent::FitContent)
+                        .height(Extent::Px(48.0)),
+                    children: vec![
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::FillParent)
+                                .height(Extent::FillParent)
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::Px(64.0))
+                                .height(Extent::FillParent)
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0)),
+                            children: vec![],
+                        }),
+                    ],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(64.0, 48.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(64.0, 48.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, -48.0),
+                        size: Vec2::new(64.0, 48.0),
+                        fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                ],
+            );
+        }
     }
 }
