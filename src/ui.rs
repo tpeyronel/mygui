@@ -195,11 +195,14 @@ impl Padding {
     }
 
     fn delta_size(&self) -> Vec2 {
-        Vec2::new(self.left.round() + self.right.round(), self.bottom.round() + self.top.round())
+        Vec2::new(
+            self.left.round() + self.right.round(),
+            self.bottom.round() + self.top.round(),
+        )
     }
 
     fn delta_position(&self) -> Vec2 {
-        Vec2::new(self.left, self.bottom).round()
+        Vec2::new(self.left.round(), self.bottom.round())
     }
 }
 
