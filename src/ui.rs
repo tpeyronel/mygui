@@ -94,6 +94,14 @@ impl BorderThickness {
     fn to_vec4(&self) -> Vec4 {
         Vec4::new(self.bottom, self.right, self.top, self.left)
     }
+
+    fn delta_size(&self) -> Vec2 {
+        Vec2::new(self.left + self.right, self.bottom + self.right).round()
+    }
+
+    fn delta_position(&self) -> Vec2 {
+        Vec2::new(self.left, self.bottom).round()
+    }
 }
 
 impl Default for BorderThickness {
@@ -161,6 +169,14 @@ impl Padding {
 
     fn to_vec4(&self) -> Vec4 {
         Vec4::new(self.bottom, self.right, self.top, self.left)
+    }
+
+    fn delta_size(&self) -> Vec2 {
+        Vec2::new(self.left + self.right, self.bottom + self.right).round()
+    }
+
+    fn delta_position(&self) -> Vec2 {
+        Vec2::new(self.left, self.bottom).round()
     }
 }
 
@@ -341,13 +357,10 @@ impl UiNode {
                         .round(),
                     };
 
-                    let child_margin_delta_position = child_modifiers.margin.to_vec4().wx().round();
-                    let child_border_delta_position = child_modifiers.border_thickness.to_vec4().wx().round();
-                    let child_padding_delta_position = child_modifiers.padding.to_vec4().wx().round();
-
-                    let child_border_position = child_margin_position + child_margin_delta_position;
-                    let child_padding_position = child_border_position + child_border_delta_position;
-                    let child_content_position = child_padding_position + child_padding_delta_position; // TODO: clamp
+                    let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
+                    let child_padding_position =
+                        child_border_position + child_modifiers.border_thickness.delta_position();
+                    let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
 
                     let child_layout = Layout {
                         measurements: child_measurements,
@@ -389,13 +402,10 @@ impl UiNode {
                             ),
                         };
 
-                        let child_margin_delta_position = child_modifiers.margin.to_vec4().wx().round();
-                        let child_border_delta_position = child_modifiers.border_thickness.to_vec4().wx().round();
-                        let child_padding_delta_position = child_modifiers.padding.to_vec4().wx().round();
-
-                        let child_border_position = child_margin_position + child_margin_delta_position;
-                        let child_padding_position = child_border_position + child_border_delta_position;
-                        let child_content_position = child_padding_position + child_padding_delta_position; // TODO: clamp
+                        let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
+                        let child_padding_position =
+                            child_border_position + child_modifiers.border_thickness.delta_position();
+                        let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
 
                         let child_layout = Layout {
                             measurements: child_measurements,
@@ -421,16 +431,8 @@ impl UiNode {
             UiNode::Box(props) => &props.children,
             UiNode::Column(props) => &props.children,
         };
-
-        let margin = modifiers.margin.to_vec4().round();
-        let margin_delta_size = margin.xw() + margin.yz();
         // We subtract it here as the only special case is Extent::FillParent.
-        let boundary_size = (boundary_size - margin_delta_size).max(Vec2::ZERO);
-
-        let border_thickness = modifiers.border_thickness.to_vec4().round();
-        let border_delta_size = border_thickness.yx() + border_thickness.wz();
-        let padding = modifiers.padding.to_vec4().round();
-        let padding_delta_size = padding.xw() + padding.yz();
+        let boundary_size = (boundary_size - modifiers.margin.delta_size()).max(Vec2::ZERO);
 
         let mut children_boundary_size = Vec2::new(
             match modifiers.width {
@@ -444,8 +446,9 @@ impl UiNode {
                 Extent::Px(px) => px.round(),
             },
         );
-        children_boundary_size.x = (children_boundary_size.x - border_delta_size.x - padding_delta_size.x).max(0.0);
-        children_boundary_size.y = (children_boundary_size.y - border_delta_size.y - padding_delta_size.y).max(0.0);
+        children_boundary_size =
+            (children_boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size())
+                .max(Vec2::ZERO);
         // TODO: only compute when necessary
         let min_intrinsic_children_sizes: Vec<Measurements> = Self::measure_children(children_boundary_size, children);
 
@@ -487,17 +490,16 @@ impl UiNode {
                     children_boundary_size.y = min_intrinsic_height;
                     let children_sizes = Self::measure_children(children_boundary_size, children);
                     children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
-                        + modifiers.border_thickness.to_vec4().x.round()
-                        + modifiers.border_thickness.to_vec4().z.round()
+                        + modifiers.border_thickness.delta_size().y
                 }
             },
             Extent::Px(px) => px.round(),
         };
 
         let border_size = Vec2::new(computed_width, computed_height);
-        let margin_size = border_size + margin_delta_size;
-        let padding_size = (border_size - border_delta_size).max(Vec2::ZERO);
-        let content_size = (padding_size - padding_delta_size).max(Vec2::ZERO);
+        let margin_size = border_size + modifiers.margin.delta_size();
+        let padding_size = (border_size - modifiers.border_thickness.delta_size()).max(Vec2::ZERO);
+        let content_size = (padding_size - modifiers.padding.delta_size()).max(Vec2::ZERO);
 
         Measurements {
             margin_size,
