@@ -1060,6 +1060,39 @@ mod tests {
         use super::*;
 
         #[test]
+        fn box_different_padding_values() {
+            test_converter(
+                32.0,
+                32.0,
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)),
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        children: vec![],
+                    })],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(32.0, 32.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    Rectangle {
+                        position: Vec2::new(8.0, 1.0),
+                        size: Vec2::new(32.0 - 10.0, 32.0 - 5.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                ],
+            )
+        }
+
+        #[test]
         fn box_fit_content_with_fill_parent_child() {
             test_converter(
                 128.0,
