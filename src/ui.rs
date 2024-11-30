@@ -455,7 +455,7 @@ impl UiNode {
         let computed_width = match modifiers.width {
             Extent::FillParent => boundary_size.x,
             Extent::FitContent => match self {
-                UiNode::Box(_) => {
+                UiNode::Box(_) | UiNode::Column(_) => {
                     let max_child_width = min_intrinsic_children_sizes
                         .iter()
                         .map(|cs| cs.margin_size.x)
@@ -464,11 +464,6 @@ impl UiNode {
                     children_boundary_size.x = max_child_width;
                     max_child_width + modifiers.padding.delta_size().x + modifiers.border_thickness.delta_size().x
                 }
-                UiNode::Column(_) => min_intrinsic_children_sizes
-                    .iter()
-                    .map(|cs| cs.margin_size.x)
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .unwrap_or(0.0),
             },
             Extent::Px(px) => px.round(),
         };
