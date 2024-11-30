@@ -1,4 +1,13 @@
+mod border_radius;
+mod border_thickness;
+mod margin;
+mod padding;
+
+use border_radius::BorderRadius;
+use border_thickness::BorderThickness;
 use glam::{Vec2, Vec4};
+use margin::Margin;
+use padding::Padding;
 
 use crate::{rectangle::Rectangle, vertex::Color};
 
@@ -72,160 +81,6 @@ impl Default for Extent {
         Self::FillParent
     }
 }
-
-#[derive(Debug, Clone, Copy)]
-pub struct BorderThickness {
-    pub left: f32,
-    pub bottom: f32,
-    pub right: f32,
-    pub top: f32,
-}
-
-impl BorderThickness {
-    fn new(left: f32, bottom: f32, right: f32, top: f32) -> Self {
-        Self {
-            left,
-            bottom,
-            right,
-            top,
-        }
-    }
-
-    fn all(x: f32) -> Self {
-        Self {
-            left: x,
-            bottom: x,
-            right: x,
-            top: x,
-        }
-    }
-
-    fn to_vec4(&self) -> Vec4 {
-        Vec4::new(
-            self.left.round(),
-            self.bottom.round(),
-            self.right.round(),
-            self.top.round(),
-        )
-    }
-
-    fn delta_size(&self) -> Vec2 {
-        Vec2::new(
-            self.left.round() + self.right.round(),
-            self.bottom.round() + self.top.round(),
-        )
-    }
-
-    fn delta_position(&self) -> Vec2 {
-        Vec2::new(self.left.round(), self.bottom.round()).round()
-    }
-}
-
-impl Default for BorderThickness {
-    fn default() -> Self {
-        Self {
-            bottom: 0.0,
-            right: 0.0,
-            top: 0.0,
-            left: 0.0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct BorderRadius {
-    pub bottom_left: f32,
-    pub bottom_right: f32,
-    pub top_right: f32,
-    pub top_left: f32,
-}
-
-impl BorderRadius {
-    fn new(bottom_left: f32, bottom_right: f32, top_right: f32, top_left: f32) -> Self {
-        Self {
-            bottom_left,
-            bottom_right,
-            top_right,
-            top_left,
-        }
-    }
-
-    fn all(x: f32) -> Self {
-        Self {
-            bottom_left: x,
-            bottom_right: x,
-            top_right: x,
-            top_left: x,
-        }
-    }
-
-    fn to_vec4(&self) -> Vec4 {
-        Vec4::new(self.bottom_left, self.bottom_right, self.top_right, self.top_left)
-    }
-}
-
-impl Default for BorderRadius {
-    fn default() -> Self {
-        Self {
-            bottom_left: 0.0,
-            bottom_right: 0.0,
-            top_right: 0.0,
-            top_left: 0.0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Padding {
-    pub bottom: f32,
-    pub right: f32,
-    pub top: f32,
-    pub left: f32,
-}
-
-impl Padding {
-    fn new(bottom: f32, right: f32, top: f32, left: f32) -> Self {
-        Self {
-            bottom,
-            right,
-            top,
-            left,
-        }
-    }
-
-    fn all(x: f32) -> Self {
-        Self {
-            bottom: x,
-            right: x,
-            top: x,
-            left: x,
-        }
-    }
-
-    fn delta_size(&self) -> Vec2 {
-        Vec2::new(
-            self.left.round() + self.right.round(),
-            self.bottom.round() + self.top.round(),
-        )
-    }
-
-    fn delta_position(&self) -> Vec2 {
-        Vec2::new(self.left.round(), self.bottom.round())
-    }
-}
-
-impl Default for Padding {
-    fn default() -> Self {
-        Self {
-            bottom: 0.0,
-            right: 0.0,
-            top: 0.0,
-            left: 0.0,
-        }
-    }
-}
-
-type Margin = Padding;
 
 #[derive(Debug, Clone)]
 pub struct BoxProps {
