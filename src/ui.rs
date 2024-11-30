@@ -446,11 +446,13 @@ impl UiNode {
                 Extent::Px(px) => px.round(),
             },
         );
-        let preliminar_children_boundary_size =
-            (preliminar_children_boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size())
-                .max(Vec2::ZERO);
+        let preliminar_children_boundary_size = (preliminar_children_boundary_size
+            - modifiers.border_thickness.delta_size()
+            - modifiers.padding.delta_size())
+        .max(Vec2::ZERO);
         // TODO: only compute when necessary
-        let min_intrinsic_children_sizes: Vec<Measurements> = Self::measure_children(preliminar_children_boundary_size, children);
+        let min_intrinsic_children_sizes: Vec<Measurements> =
+            Self::measure_children(preliminar_children_boundary_size, children);
 
         let mut children_boundary_size = preliminar_children_boundary_size;
         let computed_width = match modifiers.width {
