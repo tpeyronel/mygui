@@ -452,7 +452,16 @@ impl UiNode {
         let computed_width = match modifiers.width {
             Extent::FillParent => boundary_size.x,
             Extent::FitContent => match self {
-                UiNode::Box(_) | UiNode::Column(_) => min_intrinsic_children_sizes
+                UiNode::Box(_) => {
+                    let max_child_width = min_intrinsic_children_sizes
+                        .iter()
+                        .map(|cs| cs.margin_size.x)
+                        .max_by(|a, b| a.partial_cmp(b).unwrap())
+                        .unwrap_or(0.0);
+                    children_boundary_size.x = max_child_width;
+                    max_child_width
+                }
+                UiNode::Column(_) => min_intrinsic_children_sizes
                     .iter()
                     .map(|cs| cs.margin_size.x)
                     .max_by(|a, b| a.partial_cmp(b).unwrap())
@@ -464,11 +473,15 @@ impl UiNode {
         let computed_height = match modifiers.height {
             Extent::FillParent => boundary_size.y,
             Extent::FitContent => match self {
-                UiNode::Box(_) => min_intrinsic_children_sizes
-                    .iter()
-                    .map(|cs| cs.margin_size.y)
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .unwrap_or(0.0),
+                UiNode::Box(_) => {
+                    let max_child_height = min_intrinsic_children_sizes
+                        .iter()
+                        .map(|cs| cs.margin_size.y)
+                        .max_by(|a, b| a.partial_cmp(b).unwrap())
+                        .unwrap_or(0.0);
+                    children_boundary_size.y = max_child_height;
+                    max_child_height
+                }
                 UiNode::Column(_) => {
                     let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
                     children_boundary_size.y = min_intrinsic_height;
