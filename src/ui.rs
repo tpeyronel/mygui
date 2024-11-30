@@ -284,6 +284,9 @@ pub enum UiNode {
 
 impl UiNode {
     pub fn to_draw_data(self, boundary_pos: Vec2, boundary_size: Vec2, out: &mut Vec<Rectangle>) {
+        let boundary_pos = boundary_pos.round();
+        let boundary_size = boundary_size.round();
+
         let root_node = UiNode::Box(BoxProps {
             modifiers: Modifiers::new()
                 .width(Extent::Px(boundary_size.x))
