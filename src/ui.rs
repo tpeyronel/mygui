@@ -1231,7 +1231,7 @@ mod tests {
                         border_width: Vec4::splat(0.0),
                     },
                     Rectangle {
-                        position: Vec2::new(8.0, 128.0 - 64.0 - 8.0 - 8.0),
+                        position: Vec2::new(8.0, 8.0 + 64.0 - 8.0),
                         size: Vec2::new(96.0, 8.0),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
