@@ -82,6 +82,15 @@ pub struct BorderThickness {
 }
 
 impl BorderThickness {
+    fn new(bottom: f32, right: f32, top: f32, left: f32) -> Self {
+        Self {
+            bottom,
+            right,
+            top,
+            left,
+        }
+    }
+
     fn all(x: f32) -> Self {
         Self {
             bottom: x,
