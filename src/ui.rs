@@ -434,7 +434,7 @@ impl UiNode {
         // We subtract it here as the only special case is Extent::FillParent.
         let boundary_size = (boundary_size - modifiers.margin.delta_size()).max(Vec2::ZERO);
 
-        let mut children_boundary_size = Vec2::new(
+        let preliminar_children_boundary_size = Vec2::new(
             match modifiers.width {
                 Extent::FitContent => 0.0,
                 Extent::FillParent => boundary_size.x,
@@ -446,12 +446,13 @@ impl UiNode {
                 Extent::Px(px) => px.round(),
             },
         );
-        children_boundary_size =
-            (children_boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size())
+        let preliminar_children_boundary_size =
+            (preliminar_children_boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size())
                 .max(Vec2::ZERO);
         // TODO: only compute when necessary
-        let min_intrinsic_children_sizes: Vec<Measurements> = Self::measure_children(children_boundary_size, children);
+        let min_intrinsic_children_sizes: Vec<Measurements> = Self::measure_children(preliminar_children_boundary_size, children);
 
+        let mut children_boundary_size = preliminar_children_boundary_size;
         let computed_width = match modifiers.width {
             Extent::FillParent => boundary_size.x,
             Extent::FitContent => match self {
