@@ -1732,6 +1732,66 @@ mod tests {
         }
     }
 
+    mod rows {
+        use super::*;
+
+        #[test]
+        fn row_both_fit_content_with_fill_parent_child() {
+            test_converter(
+                256.0,
+                256.0,
+                UiNode::Row(RowProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::FitContent)
+                        .height(Extent::FitContent)
+                        .self_alignment(Alignment::BottomLeft),
+                    children: vec![
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::FillParent)
+                                .height(Extent::FillParent)
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::Px(64.0))
+                                .height(Extent::Px(32.0))
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0)),
+                            children: vec![],
+                        }),
+                    ],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(64.0 + 64.0, 32.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(64.0, 32.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(64.0, 0.0),
+                        size: Vec2::new(64.0, 32.0),
+                        fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                ],
+            );
+        }
+    }
+
     mod rounding {
         use super::*;
 
