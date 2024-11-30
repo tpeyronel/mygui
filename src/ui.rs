@@ -105,7 +105,7 @@ impl BorderThickness {
     }
 
     fn delta_size(&self) -> Vec2 {
-        Vec2::new(self.left + self.right, self.bottom + self.right).round()
+        Vec2::new(self.left + self.right, self.bottom + self.top).round()
     }
 
     fn delta_position(&self) -> Vec2 {
