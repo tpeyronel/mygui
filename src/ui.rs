@@ -707,6 +707,7 @@ pub fn example_ui() -> UiNode {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(256.0))
                         .height(Extent::FitContent)
+                        .padding(Padding::all(16.0))
                         .border_thickness(BorderThickness::all(4.0))
                         .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
                         .self_alignment(Alignment::Center),
