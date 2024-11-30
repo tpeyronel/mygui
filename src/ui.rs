@@ -112,6 +112,8 @@ impl Default for ColumnProps {
     }
 }
 
+pub type RowProps = ColumnProps;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Alignment {
     Center,
@@ -135,6 +137,7 @@ impl Default for Alignment {
 pub enum UiNode {
     Box(BoxProps),
     Column(ColumnProps),
+    Row(RowProps),
 }
 
 impl UiNode {
@@ -172,6 +175,7 @@ impl UiNode {
         let (modifiers, children) = match self {
             UiNode::Box(props) => (&props.modifiers, &props.children),
             UiNode::Column(props) => (&props.modifiers, &props.children),
+            UiNode::Row(props) => (&props.modifiers, &props.children),
         };
 
         let layout = &layout_node.layout;
@@ -216,6 +220,7 @@ impl UiNode {
                     let child_modifiers = match c {
                         UiNode::Box(props) => &props.modifiers,
                         UiNode::Column(props) => &props.modifiers,
+                        UiNode::Row(props) => &props.modifiers,
                     };
                     let child_margin_position = match child_modifiers.self_alignment {
                         Alignment::Center => (content_center - 0.5 * child_margin_size).round(),
@@ -278,6 +283,7 @@ impl UiNode {
                         let child_modifiers = match c {
                             UiNode::Box(props) => &props.modifiers,
                             UiNode::Column(props) => &props.modifiers,
+                            UiNode::Row(props) => &props.modifiers,
                         };
 
                         let child_margin_position = match child_modifiers.self_alignment {
@@ -310,6 +316,53 @@ impl UiNode {
                     })
                     .collect()
             }
+            UiNode::Row(props) => {
+                let mut horizontal_offset = 0.0;
+                props
+                    .children
+                    .iter()
+                    .map(|c| {
+                        let child_measurements = c.measure(layout.measurements.children_boundary_size);
+                        let child_margin_size = child_measurements.margin_size;
+
+                        let child_modifiers = match c {
+                            UiNode::Box(props) => &props.modifiers,
+                            UiNode::Column(props) => &props.modifiers,
+                            UiNode::Row(props) => &props.modifiers,
+                        };
+
+                        let child_margin_position = match child_modifiers.self_alignment {
+                            Alignment::BottomLeft | Alignment::Bottom | Alignment::BottomRight => {
+                                Vec2::new(content_position.x + horizontal_offset, content_position.y)
+                            }
+                            Alignment::Left | Alignment::Center | Alignment::Right => Vec2::new(
+                                content_position.x + horizontal_offset,
+                                content_center.y - 0.5 * child_margin_size.y,
+                            ),
+                            Alignment::TopLeft | Alignment::Top | Alignment::TopRight => Vec2::new(
+                                content_position.x + horizontal_offset,
+                                content_position.y + content_size.y - child_margin_size.y,
+                            ),
+                        };
+
+                        horizontal_offset += child_margin_size.x;
+
+                        let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
+                        let child_padding_position =
+                            child_border_position + child_modifiers.border_thickness.delta_position();
+                        let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
+
+                        let child_layout = Layout {
+                            measurements: child_measurements,
+                            margin_position: child_margin_position,
+                            border_position: child_border_position,
+                            content_position: child_content_position,
+                        };
+
+                        c.compute_layout_rec(child_layout)
+                    })
+                    .collect()
+            }
         }
     }
 
@@ -317,11 +370,13 @@ impl UiNode {
         let modifiers = match self {
             UiNode::Box(props) => &props.modifiers,
             UiNode::Column(props) => &props.modifiers,
+            UiNode::Row(props) => &props.modifiers,
         };
 
         let children = match self {
             UiNode::Box(props) => &props.children,
             UiNode::Column(props) => &props.children,
+            UiNode::Row(props) => &props.children,
         };
         // We subtract it here as the only special case is Extent::FillParent.
         let boundary_size = (boundary_size - modifiers.margin.delta_size()).max(Vec2::ZERO);
@@ -359,6 +414,14 @@ impl UiNode {
                     children_boundary_size.x = max_child_width;
                     max_child_width + modifiers.padding.delta_size().x + modifiers.border_thickness.delta_size().x
                 }
+                UiNode::Row(_) => {
+                    let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
+                    children_boundary_size.x = min_intrinsic_width;
+                    let children_sizes = Self::measure_children(children_boundary_size, children);
+                    children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>()
+                        + modifiers.padding.delta_size().x
+                        + modifiers.border_thickness.delta_size().x
+                }
             },
             Extent::Px(px) => px.round(),
         };
@@ -366,7 +429,7 @@ impl UiNode {
         let computed_height = match modifiers.height {
             Extent::FillParent => boundary_size.y,
             Extent::FitContent => match self {
-                UiNode::Box(_) => {
+                UiNode::Box(_) | UiNode::Row(_) => {
                     let max_child_height = min_intrinsic_children_sizes
                         .iter()
                         .map(|cs| cs.margin_size.y)
