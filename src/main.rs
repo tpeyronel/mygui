@@ -3,7 +3,7 @@ use std::{borrow::Cow, sync::Arc};
 use futures::executor;
 use glam::Vec2;
 use rectangle::Rectangle;
-use ui::{example_ui, UiNode};
+use ui::example_ui;
 use vertex::Vertex;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
