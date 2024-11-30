@@ -1484,6 +1484,43 @@ mod tests {
         }
 
         #[test]
+        fn column_fit_content_padding() {
+            test_converter(
+                256.0,
+                256.0,
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::FillParent)
+                        .height(Extent::FitContent)
+                        .padding(Padding::all(8.0))
+                        .self_alignment(Alignment::BottomLeft),
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new().height(Extent::Px(32.0)),
+                        children: vec![],
+                    })],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(256.0, 32.0 + 16.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(8.0, 8.0),
+                        size: Vec2::new(256.0 - 16.0, 32.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                ],
+            );
+        }
+
+        #[test]
         fn column_fit_content_single_child_fill_parent() {
             test_converter(
                 32.0,
