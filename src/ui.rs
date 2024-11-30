@@ -1092,6 +1092,81 @@ mod tests {
                 ],
             );
         }
+
+        #[test]
+        fn box_fit_content_with_fill_parent_child_all_children_with_borders() {
+            /* In this case, children having border should not affect in any way the parent size. */
+            test_converter(
+                128.0,
+                128.0,
+                UiNode::Box(BoxProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::FitContent)
+                        .height(Extent::FitContent)
+                        .self_alignment(Alignment::BottomLeft),
+                    children: vec![
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::FillParent)
+                                .height(Extent::FillParent)
+                                .border_thickness(BorderThickness::all(8.0))
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::Px(8.0))
+                                .height(Extent::Px(64.0))
+                                .border_thickness(BorderThickness::all(8.0))
+                                .self_alignment(Alignment::BottomLeft),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::Px(96.0))
+                                .height(Extent::Px(8.0))
+                                .border_thickness(BorderThickness::all(8.0))
+                                .self_alignment(Alignment::TopRight),
+                            children: vec![],
+                        }),
+                    ],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(96.0, 64.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(0.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(96.0, 64.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(8.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(8.0, 64.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(8.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 128.0 - 64.0 - 8.0),
+                        size: Vec2::new(96.0, 8.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::splat(0.0),
+                        border_width: Vec4::splat(8.0),
+                    },
+                ],
+            );
+        }
     }
 
     mod columns {
