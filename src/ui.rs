@@ -75,33 +75,33 @@ impl Default for Extent {
 
 #[derive(Debug, Clone, Copy)]
 pub struct BorderThickness {
+    pub left: f32,
     pub bottom: f32,
     pub right: f32,
     pub top: f32,
-    pub left: f32,
 }
 
 impl BorderThickness {
-    fn new(bottom: f32, right: f32, top: f32, left: f32) -> Self {
+    fn new(left: f32, bottom: f32, right: f32, top: f32) -> Self {
         Self {
+            left,
             bottom,
             right,
             top,
-            left,
         }
     }
 
     fn all(x: f32) -> Self {
         Self {
+            left: x,
             bottom: x,
             right: x,
             top: x,
-            left: x,
         }
     }
 
     fn to_vec4(&self) -> Vec4 {
-        Vec4::new(self.bottom, self.right, self.top, self.left)
+        Vec4::new(self.left, self.bottom, self.right, self.top)
     }
 
     fn delta_size(&self) -> Vec2 {
@@ -1123,8 +1123,8 @@ mod tests {
                         border_width: Vec4::new(1.0, 2.0, 4.0, 8.0),
                     },
                     Rectangle {
-                        position: Vec2::new(8.0, 1.0),
-                        size: Vec2::new(32.0 - 10.0, 32.0 - 5.0),
+                        position: Vec2::new(1.0, 2.0),
+                        size: Vec2::new(32.0 - 5.0, 32.0 - 10.0),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
