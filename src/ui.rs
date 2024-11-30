@@ -133,6 +133,15 @@ pub struct BorderRadius {
 }
 
 impl BorderRadius {
+    fn new(bottom_left: f32, bottom_right: f32, top_right: f32, top_left: f32) -> Self {
+        Self {
+            bottom_left,
+            bottom_right,
+            top_right,
+            top_left,
+        }
+    }
+
     fn all(x: f32) -> Self {
         Self {
             bottom_left: x,
