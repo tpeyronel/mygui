@@ -630,7 +630,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0)),
                     children: vec![],
                 }),
                 UiNode::Box(BoxProps {
@@ -640,8 +640,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::Top)
                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0)),
                     children: vec![],
                 }),
                 UiNode::Box(BoxProps {
