@@ -754,6 +754,7 @@ pub fn example_ui() -> UiNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[Rectangle]) {
         let mut draw_data = vec![];
