@@ -490,6 +490,7 @@ impl UiNode {
                     children_boundary_size.y = min_intrinsic_height;
                     let children_sizes = Self::measure_children(children_boundary_size, children);
                     children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
+                        + modifiers.padding.delta_size().y
                         + modifiers.border_thickness.delta_size().y
                 }
             },
