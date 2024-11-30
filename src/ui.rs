@@ -167,10 +167,6 @@ impl Padding {
         }
     }
 
-    fn to_vec4(&self) -> Vec4 {
-        Vec4::new(self.bottom, self.right, self.top, self.left)
-    }
-
     fn delta_size(&self) -> Vec2 {
         Vec2::new(self.left + self.right, self.bottom + self.right).round()
     }
