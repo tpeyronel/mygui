@@ -1912,5 +1912,31 @@ mod tests {
                 ],
             )
         }
+
+        #[test]
+        fn root_rounding() {
+            /* This test checks that the position and the size passed to ui.to_draw_data() get correctly rounded. */
+            let root_position = Vec2::splat(0.5); // Should be rounded to (1.0, 1.0)
+            let root_size = Vec2::splat(31.5); // Should be rounded to (32.0, 32.0)
+
+            let ui = UiNode::Box(BoxProps {
+                modifiers: Modifiers::new(),
+                children: vec![],
+            });
+
+            let mut draw_data = vec![];
+            ui.to_draw_data(root_position, root_size, &mut draw_data);
+
+            let expected = vec![Rectangle {
+                position: Vec2::new(1.0, 1.0),
+                size: Vec2::new(32.0, 32.0),
+                fill_color: Color::ZERO,
+                border_color: Color::ZERO,
+                border_radius: Vec4::ZERO,
+                border_width: Vec4::ZERO,
+            }];
+
+            pretty_assertions::assert_eq!(&expected, &draw_data);
+        }
     }
 }
