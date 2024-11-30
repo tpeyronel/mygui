@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4, Vec4Swizzles};
+use glam::{Vec2, Vec4};
 
 use crate::{rectangle::Rectangle, vertex::Color};
 
