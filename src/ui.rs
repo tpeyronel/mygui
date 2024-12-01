@@ -275,21 +275,58 @@ impl UiNode {
                 })
                 .collect(),
             UiNode::Column(props) => {
+                let total_children_weight: f32 = props
+                    .children
+                    .iter()
+                    .map(|c| match c {
+                        UiNode::Box(props) => props.modifiers.weight,
+                        UiNode::Column(props) => props.modifiers.weight,
+                        UiNode::Row(props) => props.modifiers.weight,
+                    })
+                    .sum();
+
+                let total_children_height: f32 = props
+                    .children
+                    .iter()
+                    .map(|c| c.measure(layout.measurements.children_boundary_size).margin_size.y)
+                    .sum();
+
+                let extra_column_height = (layout.measurements.content_size.y - total_children_height).max(0.0);
+
+                let mut remaining_column_height = extra_column_height;
+                let mut remaining_children_weight = total_children_weight;
+
                 let mut vertical_offset = 0.0;
                 let column_top = content_position.y + content_size.y;
                 props
                     .children
                     .iter()
                     .map(|c| {
-                        let child_measurements = c.measure(layout.measurements.children_boundary_size);
-                        let child_margin_size = child_measurements.margin_size;
-                        vertical_offset += child_margin_size.y;
-
                         let child_modifiers = match c {
                             UiNode::Box(props) => &props.modifiers,
                             UiNode::Column(props) => &props.modifiers,
                             UiNode::Row(props) => &props.modifiers,
                         };
+
+                        let mut child_measurements = c.measure(layout.measurements.children_boundary_size);
+
+                        if remaining_children_weight > 0.0 {
+                            let child_weight = child_modifiers.weight;
+                            let child_extra_height =
+                                remaining_column_height * (child_weight / remaining_children_weight);
+                            let child_extra_height = child_extra_height.ceil().min(remaining_column_height);
+                            remaining_column_height -= child_extra_height;
+                            remaining_children_weight -= child_weight;
+
+                            child_measurements.margin_size.y += child_extra_height;
+                            // TODO: below calculations are most probably wrong.
+                            // TODO: should extra height be used to compute child's children size?
+                            child_measurements.border_size.y += child_extra_height;
+                            child_measurements.content_size.y += child_extra_height;
+                        }
+
+                        let child_margin_size = child_measurements.margin_size;
+                        vertical_offset += child_margin_size.y;
 
                         let child_margin_position = match child_modifiers.self_alignment {
                             Alignment::TopLeft | Alignment::Left | Alignment::BottomLeft => {
