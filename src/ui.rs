@@ -22,6 +22,7 @@ pub struct Modifiers {
     border_thickness: BorderThickness,
     border_radius: BorderRadius,
     self_alignment: Alignment,
+    weight: f32,
 }
 
 impl Modifiers {
@@ -66,6 +67,10 @@ impl Modifiers {
 
     pub fn self_alignment(self, self_alignment: Alignment) -> Self {
         Self { self_alignment, ..self }
+    }
+
+    pub fn weight(self, weight: f32) -> Self {
+        Self { weight, ..self }
     }
 }
 
