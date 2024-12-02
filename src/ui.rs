@@ -800,6 +800,34 @@ pub fn example_ui() -> UiNode {
                         }),
                     ],
                 }),
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(256.0))
+                        .self_alignment(Alignment::Left),
+                    children: vec![
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .height(Extent::Px(0.0))
+                                .weight(1.0)
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.4)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .height(Extent::Px(0.0))
+                                .weight(2.0)
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.4)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .height(Extent::Px(0.0))
+                                .weight(1.0)
+                                .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
+                            children: vec![],
+                        }),
+                    ],
+                }),
             ],
         })],
         ..Default::default()
