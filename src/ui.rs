@@ -159,9 +159,10 @@ impl UiNode {
 
         let root_measurements = Measurements {
             margin_size: boundary_size,
-            border_size: boundary_size,
-            content_size: boundary_size,
             children_boundary_size: boundary_size,
+            margin: Margin::all(0.0),
+            border_thickness: BorderThickness::all(0.0),
+            padding: Padding::all(0.0),
         };
 
         let root_layout = Layout {
@@ -188,7 +189,7 @@ impl UiNode {
 
         Self::emit_rectangle(
             layout.border_position,
-            measurements.border_size,
+            measurements.border_size(),
             modifiers.fill_color,
             modifiers.border_color,
             modifiers.border_thickness,
@@ -211,7 +212,7 @@ impl UiNode {
     }
 
     fn compute_children_layouts(&self, layout: &Layout) -> Vec<UiNodeLayout> {
-        let content_size = layout.measurements.content_size;
+        let content_size = layout.measurements.content_size();
         let content_position = layout.content_position;
         let content_center = content_position + (content_size * 0.5);
 
@@ -291,7 +292,7 @@ impl UiNode {
                     .map(|c| c.measure(layout.measurements.children_boundary_size).margin_size.y)
                     .sum();
 
-                let extra_column_height = (layout.measurements.content_size.y - total_children_height).max(0.0);
+                let extra_column_height = (layout.measurements.content_size().y - total_children_height).max(0.0);
 
                 let mut remaining_column_height = extra_column_height;
                 let mut remaining_children_weight = total_children_weight;
@@ -319,10 +320,7 @@ impl UiNode {
                             remaining_children_weight -= child_weight;
 
                             child_measurements.margin_size.y += child_extra_height;
-                            // TODO: below calculations are most probably wrong.
-                            // TODO: should extra height be used to compute child's children size?
-                            child_measurements.border_size.y += child_extra_height;
-                            child_measurements.content_size.y += child_extra_height;
+                            child_measurements.children_boundary_size = child_measurements.content_size();
                         }
 
                         let child_margin_size = child_measurements.margin_size;
@@ -494,13 +492,12 @@ impl UiNode {
 
         let border_size = Vec2::new(computed_width, computed_height);
         let margin_size = border_size + modifiers.margin.delta_size();
-        let padding_size = (border_size - modifiers.border_thickness.delta_size()).max(Vec2::ZERO);
-        let content_size = (padding_size - modifiers.padding.delta_size()).max(Vec2::ZERO);
 
         Measurements {
             margin_size,
-            border_size,
-            content_size,
+            margin: modifiers.margin,
+            border_thickness: modifiers.border_thickness,
+            padding: modifiers.padding,
             children_boundary_size,
         }
     }
@@ -546,10 +543,25 @@ struct Layout {
 #[derive(Debug)]
 struct Measurements {
     margin_size: Vec2,
-    border_size: Vec2,
-    // padding_size: Vec2,
-    content_size: Vec2,
-    children_boundary_size: Vec2, // This is the size that was used to measure the children of the node.
+    margin: Margin,
+    border_thickness: BorderThickness,
+    padding: Padding,
+    children_boundary_size: Vec2,
+}
+
+impl Measurements {
+    fn border_size(&self) -> Vec2 {
+        (self.margin_size - self.margin.delta_size()).max(Vec2::ZERO)
+    }
+
+    fn padding_size(&self) -> Vec2 {
+        (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size()).max(Vec2::ZERO)
+    }
+
+    fn content_size(&self) -> Vec2 {
+        (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size() - self.padding.delta_size())
+            .max(Vec2::ZERO)
+    }
 }
 
 pub fn example_ui() -> UiNode {
@@ -2032,16 +2044,14 @@ mod tests {
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(8.0))
                         .self_alignment(Alignment::BottomLeft),
-                    children: vec![
-                        UiNode::Box(BoxProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
-                            children: vec![],
-                        }),
-                    ],
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new()
+                            .height(Extent::Px(0.0))
+                            .weight(1.0)
+                            .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        children: vec![],
+                    })],
                 }),
                 &[
                     Rectangle {
@@ -2074,24 +2084,20 @@ mod tests {
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(8.0))
                         .self_alignment(Alignment::BottomLeft),
-                    children: vec![
-                        UiNode::Box(BoxProps {
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new()
+                            .height(Extent::Px(0.0))
+                            .weight(1.0)
+                            .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        children: vec![UiNode::Box(BoxProps {
                             modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
-                            children: vec![
-                                UiNode::Box(BoxProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::FillParent)
-                                        .height(Extent::FillParent)
-                                        .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
-                                    children: vec![],
-                                }),
-                            ],
-                        }),
-                    ],
+                                .width(Extent::FillParent)
+                                .height(Extent::FillParent)
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                            children: vec![],
+                        })],
+                    })],
                 }),
                 &[
                     Rectangle {
