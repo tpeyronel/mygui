@@ -332,18 +332,49 @@ impl UiNode {
     }
 
     fn compute_row_children_layouts(RowProps { children, .. }: &RowProps, layout: &Layout) -> Vec<UiNodeLayout> {
+        let total_children_weight: f32 = children
+            .iter()
+            .map(|c| match c {
+                UiNode::Box(props) => props.modifiers.weight,
+                UiNode::Column(props) => props.modifiers.weight,
+                UiNode::Row(props) => props.modifiers.weight,
+            })
+            .sum();
+
+        let total_children_width: f32 = children
+            .iter()
+            .map(|c| c.measure(layout.children_boundary_size()).margin_size.x)
+            .sum();
+
+        let extra_column_width = (layout.content_size().x - total_children_width).max(0.0);
+
+        let mut remaining_column_width = extra_column_width;
+        let mut remaining_children_weight = total_children_weight;
+
         let mut horizontal_offset = 0.0;
         children
             .iter()
             .map(|c| {
-                let child_measurements = c.measure(layout.children_boundary_size());
-                let child_margin_size = child_measurements.margin_size;
-
                 let child_modifiers = match c {
                     UiNode::Box(props) => &props.modifiers,
                     UiNode::Column(props) => &props.modifiers,
                     UiNode::Row(props) => &props.modifiers,
                 };
+
+                let mut child_measurements = c.measure(layout.children_boundary_size());
+
+                if remaining_children_weight > 0.0 {
+                    let child_weight = child_modifiers.weight;
+                    let child_extra_width = remaining_column_width * (child_weight / remaining_children_weight);
+                    let child_extra_width = child_extra_width.ceil().min(remaining_column_width);
+                    remaining_column_width -= child_extra_width;
+                    remaining_children_weight -= child_weight;
+
+                    child_measurements.margin_size.x += child_extra_width;
+                    child_measurements.children_boundary_size = child_measurements.content_size();
+                }
+
+                let child_margin_size = child_measurements.margin_size;
 
                 let child_margin_position = match child_modifiers.self_alignment {
                     Alignment::BottomLeft | Alignment::Bottom | Alignment::BottomRight => Vec2::new(
