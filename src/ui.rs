@@ -212,198 +212,203 @@ impl UiNode {
     }
 
     fn compute_children_layouts(&self, layout: &Layout) -> Vec<UiNodeLayout> {
-        let content_size = layout.measurements.content_size();
-        let content_position = layout.content_position;
-        let content_center = content_position + (content_size * 0.5);
-
         match self {
-            UiNode::Box(props) => props
-                .children
-                .iter()
-                .map(|c| {
-                    let child_measurements = c.measure(layout.measurements.children_boundary_size);
-                    let child_margin_size = child_measurements.margin_size;
-                    let child_modifiers = match c {
-                        UiNode::Box(props) => &props.modifiers,
-                        UiNode::Column(props) => &props.modifiers,
-                        UiNode::Row(props) => &props.modifiers,
-                    };
-                    let child_margin_position = match child_modifiers.self_alignment {
-                        Alignment::Center => (content_center - 0.5 * child_margin_size).round(),
-                        Alignment::Right => Vec2::new(
-                            content_position.x + content_size.x - child_margin_size.x,
-                            content_center.y - 0.5 * child_margin_size.y,
-                        )
-                        .round(),
-                        Alignment::TopRight => (content_position + content_size - child_margin_size).round(),
-                        Alignment::Top => Vec2::new(
-                            content_center.x - 0.5 * child_margin_size.x,
-                            content_position.y + content_size.y - child_margin_size.y,
-                        )
-                        .round(),
-                        Alignment::TopLeft => Vec2::new(
-                            content_position.x,
-                            content_position.y + content_size.y - child_margin_size.y,
-                        )
-                        .round(),
-                        Alignment::Left => {
-                            Vec2::new(content_position.x, content_center.y - 0.5 * child_margin_size.y).round()
-                        }
-                        Alignment::BottomLeft => content_position.round(),
-                        Alignment::Bottom => {
-                            Vec2::new(content_center.x - 0.5 * child_margin_size.x, content_position.y).round()
-                        }
-                        Alignment::BottomRight => Vec2::new(
-                            content_position.x + content_size.x - child_margin_size.x,
-                            content_position.y,
-                        )
-                        .round(),
-                    };
-
-                    let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
-                    let child_padding_position =
-                        child_border_position + child_modifiers.border_thickness.delta_position();
-                    let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
-
-                    let child_layout = Layout {
-                        measurements: child_measurements,
-                        margin_position: child_margin_position,
-                        border_position: child_border_position,
-                        content_position: child_content_position,
-                    };
-
-                    c.compute_layout_rec(child_layout)
-                })
-                .collect(),
-            UiNode::Column(props) => {
-                let total_children_weight: f32 = props
-                    .children
-                    .iter()
-                    .map(|c| match c {
-                        UiNode::Box(props) => props.modifiers.weight,
-                        UiNode::Column(props) => props.modifiers.weight,
-                        UiNode::Row(props) => props.modifiers.weight,
-                    })
-                    .sum();
-
-                let total_children_height: f32 = props
-                    .children
-                    .iter()
-                    .map(|c| c.measure(layout.measurements.children_boundary_size).margin_size.y)
-                    .sum();
-
-                let extra_column_height = (layout.measurements.content_size().y - total_children_height).max(0.0);
-
-                let mut remaining_column_height = extra_column_height;
-                let mut remaining_children_weight = total_children_weight;
-
-                let mut vertical_offset = 0.0;
-                let column_top = content_position.y + content_size.y;
-                props
-                    .children
-                    .iter()
-                    .map(|c| {
-                        let child_modifiers = match c {
-                            UiNode::Box(props) => &props.modifiers,
-                            UiNode::Column(props) => &props.modifiers,
-                            UiNode::Row(props) => &props.modifiers,
-                        };
-
-                        let mut child_measurements = c.measure(layout.measurements.children_boundary_size);
-
-                        if remaining_children_weight > 0.0 {
-                            let child_weight = child_modifiers.weight;
-                            let child_extra_height =
-                                remaining_column_height * (child_weight / remaining_children_weight);
-                            let child_extra_height = child_extra_height.ceil().min(remaining_column_height);
-                            remaining_column_height -= child_extra_height;
-                            remaining_children_weight -= child_weight;
-
-                            child_measurements.margin_size.y += child_extra_height;
-                            child_measurements.children_boundary_size = child_measurements.content_size();
-                        }
-
-                        let child_margin_size = child_measurements.margin_size;
-                        vertical_offset += child_margin_size.y;
-
-                        let child_margin_position = match child_modifiers.self_alignment {
-                            Alignment::TopLeft | Alignment::Left | Alignment::BottomLeft => {
-                                Vec2::new(content_position.x, column_top - vertical_offset)
-                            }
-                            Alignment::Top | Alignment::Center | Alignment::Bottom => Vec2::new(
-                                content_center.x - 0.5 * child_margin_size.x,
-                                column_top - vertical_offset,
-                            ),
-                            Alignment::TopRight | Alignment::Right | Alignment::BottomRight => Vec2::new(
-                                content_position.x + content_size.x - child_margin_size.x,
-                                column_top - vertical_offset,
-                            ),
-                        };
-
-                        let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
-                        let child_padding_position =
-                            child_border_position + child_modifiers.border_thickness.delta_position();
-                        let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
-
-                        let child_layout = Layout {
-                            measurements: child_measurements,
-                            margin_position: child_margin_position,
-                            border_position: child_border_position,
-                            content_position: child_content_position,
-                        };
-
-                        c.compute_layout_rec(child_layout)
-                    })
-                    .collect()
-            }
-            UiNode::Row(props) => {
-                let mut horizontal_offset = 0.0;
-                props
-                    .children
-                    .iter()
-                    .map(|c| {
-                        let child_measurements = c.measure(layout.measurements.children_boundary_size);
-                        let child_margin_size = child_measurements.margin_size;
-
-                        let child_modifiers = match c {
-                            UiNode::Box(props) => &props.modifiers,
-                            UiNode::Column(props) => &props.modifiers,
-                            UiNode::Row(props) => &props.modifiers,
-                        };
-
-                        let child_margin_position = match child_modifiers.self_alignment {
-                            Alignment::BottomLeft | Alignment::Bottom | Alignment::BottomRight => {
-                                Vec2::new(content_position.x + horizontal_offset, content_position.y)
-                            }
-                            Alignment::Left | Alignment::Center | Alignment::Right => Vec2::new(
-                                content_position.x + horizontal_offset,
-                                content_center.y - 0.5 * child_margin_size.y,
-                            ),
-                            Alignment::TopLeft | Alignment::Top | Alignment::TopRight => Vec2::new(
-                                content_position.x + horizontal_offset,
-                                content_position.y + content_size.y - child_margin_size.y,
-                            ),
-                        };
-
-                        horizontal_offset += child_margin_size.x;
-
-                        let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
-                        let child_padding_position =
-                            child_border_position + child_modifiers.border_thickness.delta_position();
-                        let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
-
-                        let child_layout = Layout {
-                            measurements: child_measurements,
-                            margin_position: child_margin_position,
-                            border_position: child_border_position,
-                            content_position: child_content_position,
-                        };
-
-                        c.compute_layout_rec(child_layout)
-                    })
-                    .collect()
-            }
+            UiNode::Box(props) => Self::compute_box_children_layouts(props, layout),
+            UiNode::Column(props) => Self::compute_column_children_layouts(props, layout),
+            UiNode::Row(props) => Self::compute_row_children_layouts(props, layout),
         }
+    }
+
+    fn compute_box_children_layouts(BoxProps { children, .. }: &BoxProps, layout: &Layout) -> Vec<UiNodeLayout> {
+        children
+            .iter()
+            .map(|c| {
+                let child_measurements = c.measure(layout.measurements.children_boundary_size);
+                let child_margin_size = child_measurements.margin_size;
+                let child_modifiers = match c {
+                    UiNode::Box(props) => &props.modifiers,
+                    UiNode::Column(props) => &props.modifiers,
+                    UiNode::Row(props) => &props.modifiers,
+                };
+                let child_margin_position = match child_modifiers.self_alignment {
+                    Alignment::Center => (layout.content_center() - 0.5 * child_margin_size).round(),
+                    Alignment::Right => Vec2::new(
+                        layout.content_position().x + layout.content_size().x - child_margin_size.x,
+                        layout.content_center().y - 0.5 * child_margin_size.y,
+                    )
+                    .round(),
+                    Alignment::TopRight => {
+                        (layout.content_position() + layout.content_size() - child_margin_size).round()
+                    }
+                    Alignment::Top => Vec2::new(
+                        layout.content_center().x - 0.5 * child_margin_size.x,
+                        layout.content_position().y + layout.content_size().y - child_margin_size.y,
+                    )
+                    .round(),
+                    Alignment::TopLeft => Vec2::new(
+                        layout.content_position().x,
+                        layout.content_position().y + layout.content_size().y - child_margin_size.y,
+                    )
+                    .round(),
+                    Alignment::Left => Vec2::new(
+                        layout.content_position().x,
+                        layout.content_center().y - 0.5 * child_margin_size.y,
+                    )
+                    .round(),
+                    Alignment::BottomLeft => layout.content_position().round(),
+                    Alignment::Bottom => Vec2::new(
+                        layout.content_center().x - 0.5 * child_margin_size.x,
+                        layout.content_position().y,
+                    )
+                    .round(),
+                    Alignment::BottomRight => Vec2::new(
+                        layout.content_position().x + layout.content_size().x - child_margin_size.x,
+                        layout.content_position().y,
+                    )
+                    .round(),
+                };
+
+                let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
+                let child_padding_position = child_border_position + child_modifiers.border_thickness.delta_position();
+                let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
+
+                let child_layout = Layout {
+                    measurements: child_measurements,
+                    margin_position: child_margin_position,
+                    border_position: child_border_position,
+                    content_position: child_content_position,
+                };
+
+                c.compute_layout_rec(child_layout)
+            })
+            .collect()
+    }
+
+    fn compute_column_children_layouts(
+        ColumnProps { children, .. }: &ColumnProps,
+        layout: &Layout,
+    ) -> Vec<UiNodeLayout> {
+        let total_children_weight: f32 = children
+            .iter()
+            .map(|c| match c {
+                UiNode::Box(props) => props.modifiers.weight,
+                UiNode::Column(props) => props.modifiers.weight,
+                UiNode::Row(props) => props.modifiers.weight,
+            })
+            .sum();
+
+        let total_children_height: f32 = children
+            .iter()
+            .map(|c| c.measure(layout.measurements.children_boundary_size).margin_size.y)
+            .sum();
+
+        let extra_column_height = (layout.measurements.content_size().y - total_children_height).max(0.0);
+
+        let mut remaining_column_height = extra_column_height;
+        let mut remaining_children_weight = total_children_weight;
+
+        let mut vertical_offset = 0.0;
+        let column_top = layout.content_position().y + layout.content_size().y;
+        children
+            .iter()
+            .map(|c| {
+                let child_modifiers = match c {
+                    UiNode::Box(props) => &props.modifiers,
+                    UiNode::Column(props) => &props.modifiers,
+                    UiNode::Row(props) => &props.modifiers,
+                };
+
+                let mut child_measurements = c.measure(layout.measurements.children_boundary_size);
+
+                if remaining_children_weight > 0.0 {
+                    let child_weight = child_modifiers.weight;
+                    let child_extra_height = remaining_column_height * (child_weight / remaining_children_weight);
+                    let child_extra_height = child_extra_height.ceil().min(remaining_column_height);
+                    remaining_column_height -= child_extra_height;
+                    remaining_children_weight -= child_weight;
+
+                    child_measurements.margin_size.y += child_extra_height;
+                    child_measurements.children_boundary_size = child_measurements.content_size();
+                }
+
+                let child_margin_size = child_measurements.margin_size;
+                vertical_offset += child_margin_size.y;
+
+                let child_margin_position = match child_modifiers.self_alignment {
+                    Alignment::TopLeft | Alignment::Left | Alignment::BottomLeft => {
+                        Vec2::new(layout.content_position().x, column_top - vertical_offset)
+                    }
+                    Alignment::Top | Alignment::Center | Alignment::Bottom => Vec2::new(
+                        layout.content_center().x - 0.5 * child_margin_size.x,
+                        column_top - vertical_offset,
+                    ),
+                    Alignment::TopRight | Alignment::Right | Alignment::BottomRight => Vec2::new(
+                        layout.content_position().x + layout.content_size().x - child_margin_size.x,
+                        column_top - vertical_offset,
+                    ),
+                };
+
+                let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
+                let child_padding_position = child_border_position + child_modifiers.border_thickness.delta_position();
+                let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
+
+                let child_layout = Layout {
+                    measurements: child_measurements,
+                    margin_position: child_margin_position,
+                    border_position: child_border_position,
+                    content_position: child_content_position,
+                };
+
+                c.compute_layout_rec(child_layout)
+            })
+            .collect()
+    }
+
+    fn compute_row_children_layouts(RowProps { children, .. }: &RowProps, layout: &Layout) -> Vec<UiNodeLayout> {
+        let mut horizontal_offset = 0.0;
+        children
+            .iter()
+            .map(|c| {
+                let child_measurements = c.measure(layout.measurements.children_boundary_size);
+                let child_margin_size = child_measurements.margin_size;
+
+                let child_modifiers = match c {
+                    UiNode::Box(props) => &props.modifiers,
+                    UiNode::Column(props) => &props.modifiers,
+                    UiNode::Row(props) => &props.modifiers,
+                };
+
+                let child_margin_position = match child_modifiers.self_alignment {
+                    Alignment::BottomLeft | Alignment::Bottom | Alignment::BottomRight => Vec2::new(
+                        layout.content_position().x + horizontal_offset,
+                        layout.content_position().y,
+                    ),
+                    Alignment::Left | Alignment::Center | Alignment::Right => Vec2::new(
+                        layout.content_position().x + horizontal_offset,
+                        layout.content_center().y - 0.5 * child_margin_size.y,
+                    ),
+                    Alignment::TopLeft | Alignment::Top | Alignment::TopRight => Vec2::new(
+                        layout.content_position().x + horizontal_offset,
+                        layout.content_position().y + layout.content_size().y - child_margin_size.y,
+                    ),
+                };
+
+                horizontal_offset += child_margin_size.x;
+
+                let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
+                let child_padding_position = child_border_position + child_modifiers.border_thickness.delta_position();
+                let child_content_position = child_padding_position + child_modifiers.padding.delta_position(); // TODO: clamp
+
+                let child_layout = Layout {
+                    measurements: child_measurements,
+                    margin_position: child_margin_position,
+                    border_position: child_border_position,
+                    content_position: child_content_position,
+                };
+
+                c.compute_layout_rec(child_layout)
+            })
+            .collect()
     }
 
     fn measure(&self, boundary_size: Vec2) -> Measurements {
@@ -538,6 +543,20 @@ struct Layout {
     margin_position: Vec2,
     border_position: Vec2,
     content_position: Vec2,
+}
+
+impl Layout {
+    fn content_size(&self) -> Vec2 {
+        self.measurements.content_size()
+    }
+
+    fn content_position(&self) -> Vec2 {
+        self.content_position
+    }
+
+    fn content_center(&self) -> Vec2 {
+        self.content_position + (self.content_size() * 0.5)
+    }
 }
 
 #[derive(Debug)]
