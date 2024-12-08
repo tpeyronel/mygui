@@ -2389,5 +2389,44 @@ mod tests {
 
             pretty_assertions::assert_eq!(&expected, &draw_data);
         }
+
+        #[test]
+        fn column_horizontal_rounding() {
+            test_converter(
+                32.0,
+                32.0,
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(9.0))
+                        .height(Extent::Px(8.0))
+                        .self_alignment(Alignment::BottomLeft),
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new()
+                            .width(Extent::Px(8.0))
+                            .self_alignment(Alignment::Center)
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        children: vec![],
+                    })],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(9.0, 8.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    Rectangle {
+                        position: Vec2::new(1.0, 0.0),
+                        size: Vec2::new(8.0, 8.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                ],
+            )
+        }
     }
 }
