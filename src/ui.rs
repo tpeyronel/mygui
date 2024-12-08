@@ -315,15 +315,14 @@ impl UiNode {
                         Vec2::new(layout.content_position().x, column_top - vertical_offset)
                     }
                     Alignment::Top | Alignment::Center | Alignment::Bottom => Vec2::new(
-                        layout.content_center().x - 0.5 * child_margin_size.x,
+                        (layout.content_center().x - 0.5 * child_margin_size.x).round(),
                         column_top - vertical_offset,
                     ),
                     Alignment::TopRight | Alignment::Right | Alignment::BottomRight => Vec2::new(
                         layout.content_position().x + layout.content_size().x - child_margin_size.x,
                         column_top - vertical_offset,
                     ),
-                }
-                .round();
+                };
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
                 c.compute_layout_rec(child_layout)
