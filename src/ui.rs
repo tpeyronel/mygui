@@ -339,7 +339,7 @@ impl UiNode {
                         layout.content_position().x + layout.content_size().x - child_margin_size.x,
                         column_top - vertical_offset,
                     ),
-                };
+                }.round();
 
                 let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
                 let child_padding_position = child_border_position + child_modifiers.border_thickness.delta_position();
