@@ -383,7 +383,7 @@ impl UiNode {
                     ),
                     Alignment::Left | Alignment::Center | Alignment::Right => Vec2::new(
                         layout.content_position().x + horizontal_offset,
-                        layout.content_center().y - 0.5 * child_margin_size.y,
+                        (layout.content_center().y - 0.5 * child_margin_size.y).round(),
                     ),
                     Alignment::TopLeft | Alignment::Top | Alignment::TopRight => Vec2::new(
                         layout.content_position().x + horizontal_offset,
