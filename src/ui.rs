@@ -231,42 +231,35 @@ impl UiNode {
                     UiNode::Row(props) => &props.modifiers,
                 };
                 let child_margin_position = match child_modifiers.self_alignment {
-                    Alignment::Center => (layout.content_center() - 0.5 * child_margin_size).round(),
+                    Alignment::Center => layout.content_center() - 0.5 * child_margin_size,
                     Alignment::Right => Vec2::new(
                         layout.content_position().x + layout.content_size().x - child_margin_size.x,
                         layout.content_center().y - 0.5 * child_margin_size.y,
-                    )
-                    .round(),
-                    Alignment::TopRight => {
-                        (layout.content_position() + layout.content_size() - child_margin_size).round()
-                    }
+                    ),
+                    Alignment::TopRight => layout.content_position() + layout.content_size() - child_margin_size,
                     Alignment::Top => Vec2::new(
                         layout.content_center().x - 0.5 * child_margin_size.x,
                         layout.content_position().y + layout.content_size().y - child_margin_size.y,
-                    )
-                    .round(),
+                    ),
                     Alignment::TopLeft => Vec2::new(
                         layout.content_position().x,
                         layout.content_position().y + layout.content_size().y - child_margin_size.y,
-                    )
-                    .round(),
+                    ),
                     Alignment::Left => Vec2::new(
                         layout.content_position().x,
                         layout.content_center().y - 0.5 * child_margin_size.y,
-                    )
-                    .round(),
-                    Alignment::BottomLeft => layout.content_position().round(),
+                    ),
+                    Alignment::BottomLeft => layout.content_position(),
                     Alignment::Bottom => Vec2::new(
                         layout.content_center().x - 0.5 * child_margin_size.x,
                         layout.content_position().y,
-                    )
-                    .round(),
+                    ),
                     Alignment::BottomRight => Vec2::new(
                         layout.content_position().x + layout.content_size().x - child_margin_size.x,
                         layout.content_position().y,
-                    )
-                    .round(),
-                };
+                    ),
+                }
+                .round();
 
                 let child_border_position = child_margin_position + child_modifiers.margin.delta_position();
                 let child_padding_position = child_border_position + child_modifiers.border_thickness.delta_position();
