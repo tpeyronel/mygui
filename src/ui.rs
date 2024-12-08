@@ -1985,6 +1985,62 @@ mod tests {
         }
 
         #[test]
+        fn row_weight() {
+            test_converter(
+                256.0,
+                256.0,
+                UiNode::Row(RowProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(100.0))
+                        .height(Extent::Px(50.0))
+                        .self_alignment(Alignment::BottomLeft),
+                    children: vec![
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::Px(20.0))
+                                .weight(1.0)
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            children: vec![],
+                        }),
+                        UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::Px(40.0))
+                                .weight(1.0)
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                            children: vec![],
+                        }),
+                    ],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(100.0, 50.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(20.0 + 20.0, 50.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    Rectangle {
+                        position: Vec2::new(40.0, 0.0),
+                        size: Vec2::new(40.0 + 20.0, 50.0),
+                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                ],
+            )
+        }
+
+        #[test]
         fn column_weight_rounding() {
             test_converter(
                 256.0,
