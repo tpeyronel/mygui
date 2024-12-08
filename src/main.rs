@@ -120,7 +120,7 @@ impl ApplicationHandler for App {
         // Load the shaders from disk
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../assets/shaders/box_shader.wgsl"))),
         });
 
         let global_uniform = GlobalUniform {
