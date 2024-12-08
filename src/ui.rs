@@ -2075,6 +2075,60 @@ mod tests {
         }
 
         #[test]
+        fn column_weight_respects_border_thickness() {
+            test_converter(
+                256.0,
+                256.0,
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(50.0))
+                        .height(Extent::Px(8.0))
+                        .self_alignment(Alignment::BottomLeft),
+                    children: vec![UiNode::Box(BoxProps {
+                        modifiers: Modifiers::new()
+                            .height(Extent::Px(0.0))
+                            .weight(1.0)
+                            .border_thickness(BorderThickness::all(3.0)) // This border thickness should only allow for a height of the child of 2.0.
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        children: vec![UiNode::Box(BoxProps {
+                            modifiers: Modifiers::new()
+                                .width(Extent::FillParent)
+                                .height(Extent::FillParent)
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                            children: vec![],
+                        })],
+                    })],
+                }),
+                &[
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(50.0, 8.0),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    Rectangle {
+                        position: Vec2::new(0.0, 0.0),
+                        size: Vec2::new(50.0, 8.0),
+                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::splat(3.0),
+                    },
+                    Rectangle {
+                        position: Vec2::new(3.0, 3.0),
+                        size: Vec2::new(50.0 - 6.0, 2.0),
+                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                ],
+            )
+        }
+
+        #[test]
         fn column_weight_respects_padding() {
             test_converter(
                 256.0,
