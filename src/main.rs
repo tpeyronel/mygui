@@ -20,6 +20,7 @@ use winit::{
 mod rectangle;
 mod ui;
 mod vertex;
+mod is_integer;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]

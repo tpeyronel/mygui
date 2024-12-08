@@ -9,7 +9,7 @@ use glam::{Vec2, Vec4};
 use margin::Margin;
 use padding::Padding;
 
-use crate::{rectangle::Rectangle, vertex::Color};
+use crate::{is_integer::IsInteger, rectangle::Rectangle, vertex::Color};
 
 #[derive(Default, Debug, Clone)]
 pub struct Modifiers {
@@ -196,6 +196,11 @@ impl UiNode {
     }
 
     fn compute_layout_rec(&self, layout: Layout) -> UiNodeLayout {
+        assert!(layout.margin_position.x.is_integer());
+        assert!(layout.margin_position.y.is_integer());
+        assert!(layout.margin_size.x.is_integer());
+        assert!(layout.margin_size.y.is_integer());
+
         let children_layouts = Self::compute_children_layouts(&self, &layout);
 
         UiNodeLayout {
