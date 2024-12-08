@@ -254,15 +254,7 @@ impl UiNode {
                 }
                 .round();
 
-                let child_layout = Layout {
-                    margin_position: child_margin_position,
-                    margin_size: child_measurements.margin_size,
-                    children_boundary_size: child_measurements.children_boundary_size,
-                    margin: child_modifiers.margin,
-                    border_thickness: child_modifiers.border_thickness,
-                    padding: child_modifiers.padding,
-                };
-
+                let child_layout = child_measurements.to_layout(child_margin_position);
                 c.compute_layout_rec(child_layout)
             })
             .collect()
@@ -333,15 +325,7 @@ impl UiNode {
                 }
                 .round();
 
-                let child_layout = Layout {
-                    margin_position: child_margin_position,
-                    margin_size: child_measurements.margin_size,
-                    children_boundary_size: child_measurements.children_boundary_size,
-                    margin: child_modifiers.margin,
-                    border_thickness: child_modifiers.border_thickness,
-                    padding: child_modifiers.padding,
-                };
-
+                let child_layout = child_measurements.to_layout(child_margin_position);
                 c.compute_layout_rec(child_layout)
             })
             .collect()
@@ -378,15 +362,7 @@ impl UiNode {
 
                 horizontal_offset += child_margin_size.x;
 
-                let child_layout = Layout {
-                    margin_position: child_margin_position,
-                    margin_size: child_measurements.margin_size,
-                    children_boundary_size: child_measurements.children_boundary_size,
-                    margin: child_modifiers.margin,
-                    border_thickness: child_modifiers.border_thickness,
-                    padding: child_modifiers.padding,
-                };
-
+                let child_layout = child_measurements.to_layout(child_margin_position);
                 c.compute_layout_rec(child_layout)
             })
             .collect()
@@ -584,6 +560,17 @@ struct Measurements {
 }
 
 impl Measurements {
+    fn to_layout(&self, margin_position: Vec2) -> Layout {
+        Layout {
+            margin_position,
+            margin_size: self.margin_size,
+            children_boundary_size: self.children_boundary_size,
+            margin: self.margin,
+            border_thickness: self.border_thickness,
+            padding: self.padding,
+        }
+    }
+
     fn border_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size()).max(Vec2::ZERO)
     }
