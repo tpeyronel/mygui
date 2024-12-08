@@ -896,31 +896,64 @@ pub fn example_ui() -> UiNode {
                         }),
                     ],
                 }),
-                UiNode::Row(RowProps {
-                    modifiers: Modifiers::new()
-                        .height(Extent::Px(256.0))
-                        .self_alignment(Alignment::Top),
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new(),
                     children: vec![
-                        UiNode::Box(BoxProps {
+                        UiNode::Row(RowProps {
                             modifiers: Modifiers::new()
-                                .width(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.4)),
-                            children: vec![],
+                                .height(Extent::Px(128.0))
+                                .self_alignment(Alignment::Top),
+                            children: vec![
+                                UiNode::Box(BoxProps {
+                                    modifiers: Modifiers::new()
+                                        .width(Extent::Px(0.0))
+                                        .weight(1.0)
+                                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.4)),
+                                    children: vec![],
+                                }),
+                                UiNode::Box(BoxProps {
+                                    modifiers: Modifiers::new()
+                                        .width(Extent::Px(0.0))
+                                        .weight(2.0)
+                                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.4)),
+                                    children: vec![],
+                                }),
+                                UiNode::Box(BoxProps {
+                                    modifiers: Modifiers::new()
+                                        .width(Extent::Px(0.0))
+                                        .weight(1.0)
+                                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
+                                    children: vec![],
+                                }),
+                            ],
                         }),
-                        UiNode::Box(BoxProps {
+                        UiNode::Row(RowProps {
                             modifiers: Modifiers::new()
-                                .width(Extent::Px(0.0))
-                                .weight(2.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.4)),
-                            children: vec![],
-                        }),
-                        UiNode::Box(BoxProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
-                            children: vec![],
+                                .height(Extent::Px(128.0))
+                                .self_alignment(Alignment::Top),
+                            children: vec![
+                                UiNode::Box(BoxProps {
+                                    modifiers: Modifiers::new()
+                                        .width(Extent::Px(0.0))
+                                        .weight(2.0)
+                                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.4)),
+                                    children: vec![],
+                                }),
+                                UiNode::Box(BoxProps {
+                                    modifiers: Modifiers::new()
+                                        .width(Extent::Px(0.0))
+                                        .weight(1.0)
+                                        .fill_color(Color::new(0.0, 1.0, 1.0, 0.4)),
+                                    children: vec![],
+                                }),
+                                UiNode::Box(BoxProps {
+                                    modifiers: Modifiers::new()
+                                        .width(Extent::Px(0.0))
+                                        .weight(3.0)
+                                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
+                                    children: vec![],
+                                }),
+                            ],
                         }),
                     ],
                 }),
