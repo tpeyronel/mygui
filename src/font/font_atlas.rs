@@ -3,6 +3,8 @@ use std::{ffi::OsStr, u32};
 use freetype::Face;
 use glam::Vec2;
 
+use crate::vertex::Vertex;
+
 pub struct FontAtlas {
     face: Face,
     glyphs: Vec<AtlasGlyph>,
@@ -10,10 +12,15 @@ pub struct FontAtlas {
 }
 
 pub struct AtlasGlyph {
-    left: u32,   // Inclusive.
-    bottom: u32, // Inclusive.
-    top: u32,    // Exclusive.
-    right: u32,  // Exclusive.
+    left: u32,           // Atlas coordinates. Inclusive.
+    bottom: u32,         // Atlas coordinates. Inclusive.
+    right: u32,          // Atlas coordinates. Exclusive.
+    top: u32,            // Atlas coordinates. Exclusive.
+    bearing_left: i32,   // "glyph.bbox.left"
+    bearing_bottom: i32, // "glyph.bbox.bottom"
+    bearing_right: i32,  // "glyph.bbox.right"
+    bearing_top: i32,    // "glyph.bbox.top"
+    advance: i32,
 }
 
 impl FontAtlas {
@@ -34,14 +41,14 @@ impl FontAtlas {
                 data: glyph.bitmap().buffer().to_owned(),
                 width: glyph.bitmap().width() as u32,
                 height: glyph.bitmap().rows() as u32,
-                pitch: glyph.bitmap().pitch() as u32,
+                pitch: glyph.bitmap().pitch() as u32, // TODO: handle negative
             };
 
             let glyph = Glyph {
                 image: glyph_image,
-                bearing_left: glyph.bitmap_left() as u32,
-                bearing_top: glyph.bitmap_top() as u32,
-                advance: glyph.advance().x as u32,
+                bearing_left: glyph.bitmap_left(),
+                bearing_top: glyph.bitmap_top(),
+                advance: glyph.advance().x,
             };
 
             glyphs.push(glyph);
@@ -73,6 +80,11 @@ impl FontAtlas {
                 bottom: cursor_y,
                 right: cursor_x + glyph.image.width,
                 top: cursor_y + glyph.image.height,
+                bearing_left: glyph.bearing_left,
+                bearing_bottom: glyph.bearing_top - glyph.image.height as i32,
+                bearing_right: glyph.bearing_left + glyph.image.width as i32,
+                bearing_top: glyph.bearing_top,
+                advance: glyph.advance,
             });
 
             cursor_x += glyph.image.width;
@@ -104,6 +116,43 @@ impl FontAtlas {
             ),
         ));
     }
+
+    fn get_uv_for_glyph(&self, glyph: &AtlasGlyph) -> (Vec2, Vec2) {
+        return (
+            Vec2::new(
+                glyph.left as f32 / self.image.width as f32,
+                glyph.bottom as f32 / self.image.height as f32,
+            ),
+            Vec2::new(
+                glyph.right as f32 / self.image.width as f32,
+                glyph.top as f32 / self.image.height as f32,
+            ),
+        );
+    }
+
+    pub fn get_vertices_for_char_at(&self, c: char, origin: Vec2) -> Option<Vec<Vertex>> {
+        let g = self.face.get_char_index(c as usize)?;
+        let glyph = &self.glyphs[g as usize];
+        let (uv_bl, uv_tr) = self.get_uv_for_glyph(glyph);
+
+        let bl = origin + Vec2::new(glyph.bearing_left as f32, glyph.bearing_bottom as f32);
+        let br = origin + Vec2::new(glyph.bearing_right as f32, glyph.bearing_bottom as f32);
+        let tr = origin + Vec2::new(glyph.bearing_right as f32, glyph.bearing_top as f32);
+        let tl = origin + Vec2::new(glyph.bearing_left as f32, glyph.bearing_top as f32);
+
+        return Some(vec![
+            Vertex { pos: bl, uv: uv_bl },
+            Vertex {
+                pos: br,
+                uv: Vec2::new(uv_tr.x, uv_bl.y),
+            },
+            Vertex { pos: tr, uv: uv_tr },
+            Vertex {
+                pos: tl,
+                uv: Vec2::new(uv_bl.x, uv_tr.y),
+            },
+        ]);
+    }
 }
 
 fn copy_to_atlas(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32, dst_bottom: u32) {
@@ -118,9 +167,9 @@ fn copy_to_atlas(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32, ds
 
 struct Glyph {
     image: Image,
-    bearing_left: u32,
-    bearing_top: u32,
-    advance: u32,
+    bearing_left: i32,
+    bearing_top: i32,
+    advance: i32,
 }
 
 pub struct Image {
