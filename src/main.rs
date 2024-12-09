@@ -17,10 +17,11 @@ use winit::{
     window::{Window, WindowId},
 };
 
+mod font;
+mod is_integer;
 mod rectangle;
 mod ui;
 mod vertex;
-mod is_integer;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
