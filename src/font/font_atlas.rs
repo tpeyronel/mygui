@@ -27,8 +27,9 @@ impl FontAtlas {
     pub fn new(font_path: impl AsRef<OsStr>, font_size: u32, ft_lib: &freetype::Library) -> Self {
         let face = ft_lib.new_face(font_path, 0).unwrap();
 
-        let width = 8192;
-        let height = 8192;
+        // TODO: choose dimensions
+        let width = 4096;
+        let height = 4096;
 
         face.set_pixel_sizes(0, font_size).expect("TODO");
 
