@@ -1,12 +1,15 @@
 use std::{ffi::OsStr, u32};
 
+use freetype::Face;
+use glam::Vec2;
+
 pub struct FontAtlas {
+    face: Face,
     glyphs: Vec<AtlasGlyph>,
     image: Image,
 }
 
 pub struct AtlasGlyph {
-    index: u32,
     left: u32,   // Inclusive.
     bottom: u32, // Inclusive.
     top: u32,    // Exclusive.
@@ -44,8 +47,9 @@ impl FontAtlas {
             glyphs.push(glyph);
         }
 
-        glyphs.sort_by_key(|g| -(g.image.width as i32));
-        glyphs.sort_by_key(|g| -(g.image.height as i32));
+        let mut glyph_indices = (0..glyphs.len() as u32).collect::<Vec<u32>>();
+        glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.width as i32));
+        glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.height as i32));
 
         let mut atlas_glyphs = vec![];
         let mut atlas_image = Image::new_empty(width, height);
@@ -53,7 +57,9 @@ impl FontAtlas {
         let mut cursor_y: u32 = u32::MAX;
         let mut next_cursor_y = 0;
 
-        for (glyph_index, glyph) in glyphs.iter().enumerate() {
+        for glyph_index in glyph_indices {
+            let glyph = &glyphs[glyph_index as usize];
+
             if cursor_x + glyph.image.width > width {
                 cursor_x = 0;
                 cursor_y = next_cursor_y;
@@ -63,7 +69,6 @@ impl FontAtlas {
             copy_to_atlas(&glyph.image, &mut atlas_image, cursor_x, cursor_y);
 
             atlas_glyphs.push(AtlasGlyph {
-                index: glyph_index as u32,
                 left: cursor_x,
                 bottom: cursor_y,
                 right: cursor_x + glyph.image.width,
@@ -74,6 +79,7 @@ impl FontAtlas {
         }
 
         Self {
+            face,
             glyphs: atlas_glyphs,
             image: atlas_image,
         }
@@ -81,6 +87,22 @@ impl FontAtlas {
 
     pub fn image(&self) -> &Image {
         &self.image
+    }
+
+    pub fn get_uv_for_char(&self, c: char) -> Option<(Vec2, Vec2)> {
+        let g = self.face.get_char_index(c as usize)?;
+        let glyph = &self.glyphs[g as usize];
+
+        return Some((
+            Vec2::new(
+                glyph.left as f32 / self.image.width as f32,
+                glyph.bottom as f32 / self.image.height as f32,
+            ),
+            Vec2::new(
+                glyph.right as f32 / self.image.width as f32,
+                glyph.top as f32 / self.image.height as f32,
+            ),
+        ));
     }
 }
 
