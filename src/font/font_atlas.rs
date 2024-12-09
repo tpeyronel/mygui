@@ -204,6 +204,22 @@ impl Image {
         let index = self.coords_to_index(x, y);
         self.data[index] = value;
     }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn pitch(&self) -> u32 {
+        self.pitch
+    }
 }
 
 impl ToString for Image {
