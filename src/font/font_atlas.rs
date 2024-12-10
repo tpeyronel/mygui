@@ -49,7 +49,7 @@ impl FontAtlas {
                 image: glyph_image,
                 bearing_left: glyph.bitmap_left(),
                 bearing_top: glyph.bitmap_top(),
-                advance: glyph.advance().x,
+                advance: glyph.advance().x / 64,
             };
 
             glyphs.push(glyph);
