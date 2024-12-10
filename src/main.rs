@@ -1,5 +1,6 @@
 use std::{borrow::Cow, sync::Arc};
 
+use font::font_engine::FontEngine;
 use futures::executor;
 use glam::Vec2;
 use rectangle::Rectangle;
@@ -7,7 +8,7 @@ use ui::example_ui;
 use vertex::Vertex;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    Device, Queue, RenderPipeline, Surface,
+    Device, Extent3d, Queue, RenderPipeline, Surface, TextureUsages,
 };
 use winit::{
     application::ApplicationHandler,
@@ -52,7 +53,7 @@ struct AppState {
     surface: Surface<'static>,
     device: Device,
     queue: Queue,
-    render_pipeline: RenderPipeline,
+    box_pipeline: RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     global_uniform: GlobalUniform,
@@ -61,7 +62,10 @@ struct AppState {
     rectangles: Vec<Rectangle>,
     rectangle_data_uniform_buffer: wgpu::Buffer,
     rectangle_data_uniform_bind_group: wgpu::BindGroup,
+    texture: wgpu::Texture,
+    texture_uniform_bind_group: wgpu::BindGroup,
     config: wgpu::SurfaceConfiguration,
+    font_engine: FontEngine,
 }
 
 impl App {
@@ -118,9 +122,8 @@ impl ApplicationHandler for App {
         ))
         .expect("Failed to create device");
 
-        // Load the shaders from disk
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: None,
+        let box_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("box shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../assets/shaders/box_shader.wgsl"))),
         });
 
@@ -160,10 +163,14 @@ impl ApplicationHandler for App {
 
         let ui = example_ui();
 
+        // let font_engine = FontEngine::new("./assets/fonts/times.ttf");
+        let font_engine = FontEngine::new("./assets/fonts/jetbrainsmono-regular.ttf");
+
         let mut rectangles = vec![];
         ui.to_draw_data(
             Vec2::ZERO,
             Vec2::new(size.width as f32, size.height as f32),
+            &font_engine,
             &mut rectangles,
         );
 
@@ -232,11 +239,97 @@ impl ApplicationHandler for App {
             }],
         });
 
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let texture_uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("texture uniform group layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                    count: None,
+                },
+            ],
+        });
+
+        let font_atlas_image = font_engine.atlas.image();
+
+        let texture_size = Extent3d {
+            width: font_atlas_image.width(),
+            height: font_atlas_image.height(),
+            depth_or_array_layers: 1,
+        };
+
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("glyphs array"),
+            size: texture_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Unorm,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            font_atlas_image.data(),
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(font_atlas_image.pitch() as u32),
+                rows_per_image: Some(font_atlas_image.height() as u32),
+            },
+            texture_size,
+        );
+
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("glyph sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        let texture_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("texture uniform group"),
+            layout: &texture_uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&texture_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+            ],
+        });
+
+        let box_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[
                 &global_uniform_bind_group_layout,
                 &rectangle_data_uniform_bind_group_layout,
+                &texture_uniform_bind_group_layout,
             ],
             push_constant_ranges: &[],
         });
@@ -263,17 +356,17 @@ impl ApplicationHandler for App {
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
         });
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let box_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
-            layout: Some(&pipeline_layout),
+            layout: Some(&box_pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &shader,
+                module: &box_shader,
                 entry_point: Some("vs_main"),
                 buffers: &[Vertex::vertex_buffer_layout()],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
-                module: &shader,
+                module: &box_shader,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
@@ -313,7 +406,7 @@ impl ApplicationHandler for App {
             surface,
             device,
             queue,
-            render_pipeline,
+            box_pipeline,
             vertex_buffer,
             index_buffer,
             global_uniform,
@@ -322,6 +415,9 @@ impl ApplicationHandler for App {
             rectangles,
             rectangle_data_uniform_bind_group,
             rectangle_data_uniform_buffer,
+            texture,
+            texture_uniform_bind_group,
+            font_engine,
             config,
         })
     }
@@ -343,6 +439,7 @@ impl ApplicationHandler for App {
                         state.global_uniform.viewport_width,
                         state.global_uniform.viewport_height,
                     ),
+                    &state.font_engine,
                     &mut state.rectangles,
                 );
 
@@ -418,9 +515,10 @@ impl ApplicationHandler for App {
                         timestamp_writes: None,
                         occlusion_query_set: None,
                     });
-                    rpass.set_pipeline(&state.render_pipeline);
+                    rpass.set_pipeline(&state.box_pipeline);
                     rpass.set_bind_group(0, &state.global_uniform_bind_group, &[]);
                     rpass.set_bind_group(1, &state.rectangle_data_uniform_bind_group, &[]);
+                    rpass.set_bind_group(2, &state.texture_uniform_bind_group, &[]);
                     rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
                     rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                     rpass.draw_indexed(0..(state.rectangles.len() * 6) as u32, 0, 0..1);
