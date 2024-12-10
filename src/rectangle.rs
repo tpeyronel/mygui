@@ -11,6 +11,8 @@ pub struct Rectangle {
     pub border_color: Color,
     pub border_radius: Vec4,
     pub border_width: Vec4,
+    pub uv_bl: Vec2,
+    pub uv_tr: Vec2,
 }
 
 impl Rectangle {
@@ -21,10 +23,22 @@ impl Rectangle {
         let tl = Vec2::new(self.position.x, self.position.y + self.size.y);
 
         return vec![
-            Vertex { pos: bl },
-            Vertex { pos: br },
-            Vertex { pos: tr },
-            Vertex { pos: tl },
+            Vertex {
+                pos: bl,
+                uv: self.uv_bl,
+            },
+            Vertex {
+                pos: br,
+                uv: Vec2::new(self.uv_tr.x, self.uv_bl.y),
+            },
+            Vertex {
+                pos: tr,
+                uv: self.uv_tr,
+            },
+            Vertex {
+                pos: tl,
+                uv: Vec2::new(self.uv_bl.x, self.uv_tr.y),
+            },
         ];
     }
 }
