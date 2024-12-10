@@ -11,16 +11,18 @@ pub struct FontAtlas {
     image: Image,
 }
 
+#[derive(Debug)]
 pub struct AtlasGlyph {
-    left: u32,           // Atlas coordinates. Inclusive.
-    bottom: u32,         // Atlas coordinates. Inclusive.
-    right: u32,          // Atlas coordinates. Exclusive.
-    top: u32,            // Atlas coordinates. Exclusive.
-    bearing_left: i32,   // "glyph.bbox.left"
-    bearing_bottom: i32, // "glyph.bbox.bottom"
-    bearing_right: i32,  // "glyph.bbox.right"
-    bearing_top: i32,    // "glyph.bbox.top"
-    advance: i32,
+    pub glyph_index: u32,
+    pub left: u32,           // Atlas coordinates. Inclusive.
+    pub bottom: u32,         // Atlas coordinates. Inclusive.
+    pub right: u32,          // Atlas coordinates. Exclusive.
+    pub top: u32,            // Atlas coordinates. Exclusive.
+    pub bearing_left: i32,   // "glyph.bbox.left"
+    pub bearing_bottom: i32, // "glyph.bbox.bottom"
+    pub bearing_right: i32,  // "glyph.bbox.right"
+    pub bearing_top: i32,    // "glyph.bbox.top"
+    pub advance: i32,
 }
 
 impl FontAtlas {
@@ -106,57 +108,10 @@ impl FontAtlas {
         &self.image
     }
 
-    pub fn get_uv_for_char(&self, c: char) -> Option<(Vec2, Vec2)> {
+    pub fn get_glyph(&self, c: char) -> Option<&AtlasGlyph> {
         let g = self.face.get_char_index(c as usize)?;
         let glyph = &self.glyphs[g as usize];
-
-        return Some((
-            Vec2::new(
-                glyph.left as f32 / self.image.width as f32,
-                glyph.bottom as f32 / self.image.height as f32,
-            ),
-            Vec2::new(
-                glyph.right as f32 / self.image.width as f32,
-                glyph.top as f32 / self.image.height as f32,
-            ),
-        ));
-    }
-
-    fn get_uv_for_glyph(&self, glyph: &AtlasGlyph) -> (Vec2, Vec2) {
-        return (
-            Vec2::new(
-                glyph.left as f32 / self.image.width as f32,
-                glyph.bottom as f32 / self.image.height as f32,
-            ),
-            Vec2::new(
-                glyph.right as f32 / self.image.width as f32,
-                glyph.top as f32 / self.image.height as f32,
-            ),
-        );
-    }
-
-    pub fn get_vertices_for_char_at(&self, c: char, origin: Vec2) -> Option<Vec<Vertex>> {
-        let g = self.face.get_char_index(c as usize)?;
-        let glyph = &self.glyphs[g as usize];
-        let (uv_bl, uv_tr) = self.get_uv_for_glyph(glyph);
-
-        let bl = origin + Vec2::new(glyph.bearing_left as f32, glyph.bearing_bottom as f32);
-        let br = origin + Vec2::new(glyph.bearing_right as f32, glyph.bearing_bottom as f32);
-        let tr = origin + Vec2::new(glyph.bearing_right as f32, glyph.bearing_top as f32);
-        let tl = origin + Vec2::new(glyph.bearing_left as f32, glyph.bearing_top as f32);
-
-        return Some(vec![
-            Vertex { pos: bl, uv: uv_bl },
-            Vertex {
-                pos: br,
-                uv: Vec2::new(uv_tr.x, uv_bl.y),
-            },
-            Vertex { pos: tr, uv: uv_tr },
-            Vertex {
-                pos: tl,
-                uv: Vec2::new(uv_bl.x, uv_tr.y),
-            },
-        ]);
+        Some(glyph)
     }
 }
 
