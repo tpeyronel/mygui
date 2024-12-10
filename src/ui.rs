@@ -2,7 +2,6 @@ mod border_radius;
 mod border_thickness;
 mod margin;
 mod padding;
-mod text;
 
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
