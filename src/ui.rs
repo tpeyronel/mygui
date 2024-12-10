@@ -1043,7 +1043,11 @@ pub fn example_ui() -> UiNode {
                                         .width(Extent::Px(0.0))
                                         .weight(1.0)
                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
-                                    children: vec![],
+                                    children: vec![UiNode::Text(TextProps {
+                                        content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
+                                        font_size: 24.0,
+                                        modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
+                                    })],
                                 }),
                             ],
                         }),
@@ -1072,7 +1076,7 @@ pub fn example_ui() -> UiNode {
                                         .weight(3.0)
                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
-                                        content: "Helloowjdoqi129312893u!\nYegh".to_string(),
+                                        content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
                                         font_size: 24.0,
                                         modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
                                     })],
