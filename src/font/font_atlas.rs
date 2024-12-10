@@ -1,12 +1,9 @@
 use std::{ffi::OsStr, u32};
 
 use freetype::Face;
-use glam::Vec2;
-
-use crate::vertex::Vertex;
 
 pub struct FontAtlas {
-    face: Face,
+    pub face: Face,
     glyphs: Vec<AtlasGlyph>,
     image: Image,
 }
