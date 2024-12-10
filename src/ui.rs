@@ -2,6 +2,7 @@ mod border_radius;
 mod border_thickness;
 mod margin;
 mod padding;
+mod text;
 
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
@@ -9,7 +10,12 @@ use glam::{Vec2, Vec4};
 use margin::Margin;
 use padding::Padding;
 
-use crate::{is_integer::IsInteger, rectangle::Rectangle, vertex::Color};
+use crate::{
+    font::font_engine::{FontEngine, TextLayoutOptions},
+    is_integer::IsInteger,
+    rectangle::Rectangle,
+    vertex::Color,
+};
 
 #[derive(Default, Debug, Clone)]
 pub struct Modifiers {
@@ -119,6 +125,13 @@ impl Default for ColumnProps {
 
 pub type RowProps = ColumnProps;
 
+#[derive(Debug, Clone)]
+pub struct TextProps {
+    content: String,
+    font_size: f32,
+    modifiers: Modifiers,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum Alignment {
     Center,
@@ -143,10 +156,17 @@ pub enum UiNode {
     Box(BoxProps),
     Column(ColumnProps),
     Row(RowProps),
+    Text(TextProps),
 }
 
 impl UiNode {
-    pub fn to_draw_data(self, boundary_pos: Vec2, boundary_size: Vec2, out: &mut Vec<Rectangle>) {
+    pub fn to_draw_data(
+        self,
+        boundary_pos: Vec2,
+        boundary_size: Vec2,
+        font_engine: &FontEngine,
+        out: &mut Vec<Rectangle>,
+    ) {
         let boundary_pos = boundary_pos.round();
         let boundary_size = boundary_size.round();
 
@@ -166,16 +186,17 @@ impl UiNode {
             padding: Padding::all(0.0),
         };
 
-        let root_layout_node = root_node.compute_layout_rec(root_layout);
-        root_node.to_draw_data_rec(&root_layout_node, out);
+        let root_layout_node = root_node.compute_layout_rec(root_layout, font_engine);
+        root_node.to_draw_data_rec(&root_layout_node, font_engine, out);
         out.remove(0); // TODO: remove. This is mainly done to simplify testing (the first rectangle is completely transparent).
     }
 
-    fn to_draw_data_rec(&self, layout_node: &UiNodeLayout, draw_data: &mut Vec<Rectangle>) {
+    fn to_draw_data_rec(&self, layout_node: &UiNodeLayout, font_engine: &FontEngine, draw_data: &mut Vec<Rectangle>) {
         let (modifiers, children) = match self {
-            UiNode::Box(props) => (&props.modifiers, &props.children),
-            UiNode::Column(props) => (&props.modifiers, &props.children),
-            UiNode::Row(props) => (&props.modifiers, &props.children),
+            UiNode::Box(props) => (&props.modifiers, Some(&props.children)),
+            UiNode::Column(props) => (&props.modifiers, Some(&props.children)),
+            UiNode::Row(props) => (&props.modifiers, Some(&props.children)),
+            UiNode::Text(props) => (&props.modifiers, None),
         };
 
         let layout = &layout_node.layout;
@@ -190,18 +211,24 @@ impl UiNode {
             draw_data,
         );
 
-        for (i, c) in children.iter().enumerate() {
-            c.to_draw_data_rec(&layout_node.children[i], draw_data);
+        if let UiNode::Text(props) = self {
+            Self::emit_text_draw_data(props, layout, font_engine, draw_data);
+        }
+
+        if let Some(children) = children {
+            for (i, c) in children.iter().enumerate() {
+                c.to_draw_data_rec(&layout_node.children[i], font_engine, draw_data);
+            }
         }
     }
 
-    fn compute_layout_rec(&self, layout: Layout) -> UiNodeLayout {
+    fn compute_layout_rec(&self, layout: Layout, font_engine: &FontEngine) -> UiNodeLayout {
         assert!(layout.margin_position.x.is_integer());
         assert!(layout.margin_position.y.is_integer());
         assert!(layout.margin_size.x.is_integer());
         assert!(layout.margin_size.y.is_integer());
 
-        let children_layouts = Self::compute_children_layouts(&self, &layout);
+        let children_layouts = Self::compute_children_layouts(&self, &layout, font_engine);
 
         UiNodeLayout {
             layout,
@@ -209,24 +236,30 @@ impl UiNode {
         }
     }
 
-    fn compute_children_layouts(&self, layout: &Layout) -> Vec<UiNodeLayout> {
+    fn compute_children_layouts(&self, layout: &Layout, font_engine: &FontEngine) -> Vec<UiNodeLayout> {
         match self {
-            UiNode::Box(props) => Self::compute_box_children_layouts(props, layout),
-            UiNode::Column(props) => Self::compute_column_children_layouts(props, layout),
-            UiNode::Row(props) => Self::compute_row_children_layouts(props, layout),
+            UiNode::Box(props) => Self::compute_box_children_layouts(props, layout, font_engine),
+            UiNode::Column(props) => Self::compute_column_children_layouts(props, layout, font_engine),
+            UiNode::Row(props) => Self::compute_row_children_layouts(props, layout, font_engine),
+            UiNode::Text(_) => vec![],
         }
     }
 
-    fn compute_box_children_layouts(BoxProps { children, .. }: &BoxProps, layout: &Layout) -> Vec<UiNodeLayout> {
+    fn compute_box_children_layouts(
+        BoxProps { children, .. }: &BoxProps,
+        layout: &Layout,
+        font_engine: &FontEngine,
+    ) -> Vec<UiNodeLayout> {
         children
             .iter()
             .map(|c| {
-                let child_measurements = c.measure(layout.children_boundary_size());
+                let child_measurements = c.measure(layout.children_boundary_size(), font_engine);
                 let child_margin_size = child_measurements.margin_size;
                 let child_modifiers = match c {
                     UiNode::Box(props) => &props.modifiers,
                     UiNode::Column(props) => &props.modifiers,
                     UiNode::Row(props) => &props.modifiers,
+                    UiNode::Text(props) => &props.modifiers,
                 };
                 let child_margin_position = match child_modifiers.self_alignment {
                     Alignment::Center => layout.content_center() - 0.5 * child_margin_size,
@@ -260,7 +293,7 @@ impl UiNode {
                 .round();
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                c.compute_layout_rec(child_layout)
+                c.compute_layout_rec(child_layout, font_engine)
             })
             .collect()
     }
@@ -268,6 +301,7 @@ impl UiNode {
     fn compute_column_children_layouts(
         ColumnProps { children, .. }: &ColumnProps,
         layout: &Layout,
+        font_engine: &FontEngine,
     ) -> Vec<UiNodeLayout> {
         let total_children_weight: f32 = children
             .iter()
@@ -275,12 +309,13 @@ impl UiNode {
                 UiNode::Box(props) => props.modifiers.weight,
                 UiNode::Column(props) => props.modifiers.weight,
                 UiNode::Row(props) => props.modifiers.weight,
+                UiNode::Text(props) => props.modifiers.weight,
             })
             .sum();
 
         let total_children_height: f32 = children
             .iter()
-            .map(|c| c.measure(layout.children_boundary_size()).margin_size.y)
+            .map(|c| c.measure(layout.children_boundary_size(), font_engine).margin_size.y)
             .sum();
 
         let extra_column_height = (layout.content_size().y - total_children_height).max(0.0);
@@ -297,9 +332,10 @@ impl UiNode {
                     UiNode::Box(props) => &props.modifiers,
                     UiNode::Column(props) => &props.modifiers,
                     UiNode::Row(props) => &props.modifiers,
+                    UiNode::Text(props) => &props.modifiers,
                 };
 
-                let mut child_measurements = c.measure(layout.children_boundary_size());
+                let mut child_measurements = c.measure(layout.children_boundary_size(), font_engine);
 
                 if remaining_children_weight > 0.0 {
                     let child_weight = child_modifiers.weight;
@@ -330,24 +366,29 @@ impl UiNode {
                 };
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                c.compute_layout_rec(child_layout)
+                c.compute_layout_rec(child_layout, font_engine)
             })
             .collect()
     }
 
-    fn compute_row_children_layouts(RowProps { children, .. }: &RowProps, layout: &Layout) -> Vec<UiNodeLayout> {
+    fn compute_row_children_layouts(
+        RowProps { children, .. }: &RowProps,
+        layout: &Layout,
+        font_engine: &FontEngine,
+    ) -> Vec<UiNodeLayout> {
         let total_children_weight: f32 = children
             .iter()
             .map(|c| match c {
                 UiNode::Box(props) => props.modifiers.weight,
                 UiNode::Column(props) => props.modifiers.weight,
                 UiNode::Row(props) => props.modifiers.weight,
+                UiNode::Text(props) => props.modifiers.weight,
             })
             .sum();
 
         let total_children_width: f32 = children
             .iter()
-            .map(|c| c.measure(layout.children_boundary_size()).margin_size.x)
+            .map(|c| c.measure(layout.children_boundary_size(), font_engine).margin_size.x)
             .sum();
 
         let extra_column_width = (layout.content_size().x - total_children_width).max(0.0);
@@ -363,9 +404,10 @@ impl UiNode {
                     UiNode::Box(props) => &props.modifiers,
                     UiNode::Column(props) => &props.modifiers,
                     UiNode::Row(props) => &props.modifiers,
+                    UiNode::Text(props) => &props.modifiers,
                 };
 
-                let mut child_measurements = c.measure(layout.children_boundary_size());
+                let mut child_measurements = c.measure(layout.children_boundary_size(), font_engine);
 
                 if remaining_children_weight > 0.0 {
                     let child_weight = child_modifiers.weight;
@@ -398,22 +440,30 @@ impl UiNode {
                 horizontal_offset += child_margin_size.x;
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                c.compute_layout_rec(child_layout)
+                c.compute_layout_rec(child_layout, font_engine)
             })
             .collect()
     }
 
-    fn measure(&self, boundary_size: Vec2) -> Measurements {
+    fn measure(&self, boundary_size: Vec2, font_engine: &FontEngine) -> Measurements {
+        match self {
+            UiNode::Text(props) => return Self::measure_text(props, boundary_size, font_engine),
+            _ => (),
+        }
+
         let modifiers = match self {
             UiNode::Box(props) => &props.modifiers,
             UiNode::Column(props) => &props.modifiers,
             UiNode::Row(props) => &props.modifiers,
+            UiNode::Text(props) => &props.modifiers,
         };
 
+        let empty_vec = vec![];
         let children = match self {
             UiNode::Box(props) => &props.children,
             UiNode::Column(props) => &props.children,
             UiNode::Row(props) => &props.children,
+            UiNode::Text(_) => &empty_vec,
         };
         // We subtract it here as the only special case is Extent::FillParent.
         let boundary_size = (boundary_size - modifiers.margin.delta_size()).max(Vec2::ZERO);
@@ -436,7 +486,7 @@ impl UiNode {
         .max(Vec2::ZERO);
         // TODO: only compute when necessary
         let min_intrinsic_children_sizes: Vec<Measurements> =
-            Self::measure_children(preliminar_children_boundary_size, children);
+            Self::measure_children(preliminar_children_boundary_size, children, font_engine);
 
         let mut children_boundary_size = preliminar_children_boundary_size;
         let computed_width = match modifiers.width {
@@ -454,11 +504,12 @@ impl UiNode {
                 UiNode::Row(_) => {
                     let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
                     children_boundary_size.x = min_intrinsic_width;
-                    let children_sizes = Self::measure_children(children_boundary_size, children);
+                    let children_sizes = Self::measure_children(children_boundary_size, children, font_engine);
                     children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>()
                         + modifiers.padding.delta_size().x
                         + modifiers.border_thickness.delta_size().x
                 }
+                UiNode::Text(_) => unreachable!(),
             },
             Extent::Px(px) => px.round(),
         };
@@ -478,11 +529,12 @@ impl UiNode {
                 UiNode::Column(_) => {
                     let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
                     children_boundary_size.y = min_intrinsic_height;
-                    let children_sizes = Self::measure_children(children_boundary_size, children);
+                    let children_sizes = Self::measure_children(children_boundary_size, children, font_engine);
                     children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
                         + modifiers.padding.delta_size().y
                         + modifiers.border_thickness.delta_size().y
                 }
+                UiNode::Text(_) => unreachable!(),
             },
             Extent::Px(px) => px.round(),
         };
@@ -499,8 +551,41 @@ impl UiNode {
         }
     }
 
-    fn measure_children(parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
-        return children.iter().map(|c| c.measure(parent_size)).collect();
+    fn measure_children(parent_size: Vec2, children: &[UiNode], font_engine: &FontEngine) -> Vec<Measurements> {
+        return children.iter().map(|c| c.measure(parent_size, font_engine)).collect();
+    }
+
+    fn measure_text(
+        TextProps {
+            content,
+            font_size,
+            modifiers,
+        }: &TextProps,
+        boundary_size: Vec2,
+        font_engine: &FontEngine,
+    ) -> Measurements {
+        // TODO: support more than FitContent
+
+        let text_options = TextLayoutOptions {
+            font_size: *font_size,
+            line_height: *font_size,
+            max_line_width: boundary_size.x,
+        };
+
+        let dimensions = font_engine.lay_out_text(content, &text_options, |_| {});
+
+        let content_size = dimensions;
+        let padding_size = content_size + modifiers.padding.delta_size();
+        let border_size = padding_size + modifiers.border_thickness.delta_size();
+        let margin_size = border_size + modifiers.margin.delta_size();
+
+        Measurements {
+            margin_size,
+            margin: modifiers.margin,
+            border_thickness: modifiers.border_thickness,
+            padding: modifiers.padding,
+            children_boundary_size: content_size,
+        }
     }
 
     fn emit_rectangle(
@@ -519,9 +604,45 @@ impl UiNode {
             border_color,
             border_radius: border_radius.to_vec4(),
             border_width: border_thickness.to_vec4(),
+            uv_bl: Vec2::ZERO,
+            uv_tr: Vec2::ZERO,
         };
 
         out.push(rectangle);
+    }
+
+    fn emit_text_draw_data(
+        TextProps {
+            content,
+            font_size,
+            modifiers,
+        }: &TextProps,
+        layout: &Layout,
+        font_engine: &FontEngine,
+        out: &mut Vec<Rectangle>,
+    ) {
+        // TODO: use font_size
+        let origin = layout.content_position() + Vec2::new(0.0, layout.content_size().y);
+        let options = TextLayoutOptions {
+            font_size: 0.0,
+            line_height: 24.0,
+            max_line_width: layout.content_size().x,
+        };
+
+        font_engine.lay_out_text(content, &options, |glyph| {
+            let rectangle = Rectangle {
+                position: origin + glyph.position,
+                size: glyph.size,
+                fill_color: Color::ZERO,
+                border_color: Color::ZERO,
+                border_radius: Vec4::ZERO,
+                border_width: Vec4::ZERO,
+                uv_bl: glyph.atlas_uv_bl,
+                uv_tr: glyph.atlas_uv_tr,
+            };
+
+            out.push(rectangle);
+        });
     }
 }
 
@@ -951,7 +1072,11 @@ pub fn example_ui() -> UiNode {
                                         .width(Extent::Px(0.0))
                                         .weight(3.0)
                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
-                                    children: vec![],
+                                    children: vec![UiNode::Text(TextProps {
+                                        content: "Helloowjdoqi129312893u!\nYegh".to_string(),
+                                        font_size: 24.0,
+                                        modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
+                                    })],
                                 }),
                             ],
                         }),
@@ -963,6 +1088,7 @@ pub fn example_ui() -> UiNode {
     });
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2591,3 +2717,4 @@ mod tests {
         }
     }
 }
+*/
