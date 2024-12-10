@@ -76,7 +76,8 @@ impl FontAtlas {
 
             copy_to_atlas(&glyph.image, &mut atlas_image, cursor_x, cursor_y);
 
-            atlas_glyphs.push(AtlasGlyph {
+            let atlas_glyph = AtlasGlyph {
+                glyph_index,
                 left: cursor_x,
                 bottom: cursor_y,
                 right: cursor_x + glyph.image.width,
@@ -86,10 +87,13 @@ impl FontAtlas {
                 bearing_right: glyph.bearing_left + glyph.image.width as i32,
                 bearing_top: glyph.bearing_top,
                 advance: glyph.advance,
-            });
+            };
+            atlas_glyphs.push(atlas_glyph);
 
             cursor_x += glyph.image.width;
         }
+
+        atlas_glyphs.sort_by_key(|g| g.glyph_index);
 
         Self {
             face,
