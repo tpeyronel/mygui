@@ -1,9 +1,6 @@
-use std::{ffi::OsStr, u32};
-
-use freetype::Face;
+use std::u32;
 
 pub struct FontAtlas {
-    pub face: Face,
     glyphs: Vec<AtlasGlyph>,
     image: Image,
 }
@@ -23,14 +20,10 @@ pub struct AtlasGlyph {
 }
 
 impl FontAtlas {
-    pub fn new(font_path: impl AsRef<OsStr>, font_size: u32, ft_lib: &freetype::Library) -> Self {
-        let face = ft_lib.new_face(font_path, 0).unwrap();
-
+    pub fn new(face: &freetype::Face) -> Self {
         // TODO: choose dimensions
         let width = 4096;
         let height = 4096;
-
-        face.set_pixel_sizes(0, font_size).expect("TODO");
 
         let mut glyphs = vec![];
         for g in 0..face.num_glyphs() as u32 {
@@ -95,7 +88,6 @@ impl FontAtlas {
         atlas_glyphs.sort_by_key(|g| g.glyph_index);
 
         Self {
-            face,
             glyphs: atlas_glyphs,
             image: atlas_image,
         }
@@ -105,10 +97,8 @@ impl FontAtlas {
         &self.image
     }
 
-    pub fn get_glyph(&self, c: char) -> Option<&AtlasGlyph> {
-        let g = self.face.get_char_index(c as usize)?;
-        let glyph = &self.glyphs[g as usize];
-        Some(glyph)
+    pub fn get_glyph(&self, glyph_index: u32) -> &AtlasGlyph {
+        &self.glyphs[glyph_index as usize]
     }
 }
 

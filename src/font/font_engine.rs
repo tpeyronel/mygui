@@ -5,6 +5,7 @@ use glam::Vec2;
 use super::font_atlas::{AtlasGlyph, FontAtlas};
 
 pub struct FontEngine {
+    face: freetype::Face,
     pub atlas: FontAtlas,
 }
 
@@ -13,10 +14,13 @@ impl FontEngine {
         // TODO: ft lib as parameter?
         let ft_lib = freetype::Library::init().unwrap();
 
-        Self {
-            // TODO: choose font size
-            atlas: FontAtlas::new(font_path, 24, &ft_lib),
-        }
+        let face = ft_lib.new_face(font_path, 0).unwrap();
+        // TODO: choose font size
+        face.set_pixel_sizes(0, 24).expect("TODO");
+
+        let atlas = FontAtlas::new(&face);
+
+        Self { face, atlas }
     }
 
     pub fn lay_out_text(&self, text: &str, options: &TextLayoutOptions, mut f: impl FnMut(&LaidOutGlyph)) -> Vec2 {
@@ -31,7 +35,8 @@ impl FontEngine {
                 continue;
             }
 
-            let glyph: &AtlasGlyph = self.atlas.get_glyph(c).expect("TODO");
+            let glyph_index = self.face.get_char_index(c as usize).expect("TODO");
+            let glyph: &AtlasGlyph = self.atlas.get_glyph(glyph_index);
 
             if pen.x + glyph.advance as f32 > options.max_line_width {
                 max_computed_line_width = max_computed_line_width.max(pen.x);
@@ -73,7 +78,7 @@ impl FontEngine {
 
         let dimensions = Vec2::new(
             max_computed_line_width,
-            pen.y.abs() + options.line_height - (self.atlas.face.descender() / 64) as f32,
+            pen.y.abs() + options.line_height - (self.face.descender() / 64) as f32,
         );
 
         dimensions
