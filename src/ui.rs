@@ -11,6 +11,7 @@ use padding::Padding;
 
 use crate::{
     font::font_engine::{FontEngine, TextLayoutOptions},
+    image::image_manager::ImageManager,
     is_integer::IsInteger,
     rectangle::Rectangle,
     vertex::Color,
@@ -163,7 +164,8 @@ impl UiNode {
         self,
         boundary_pos: Vec2,
         boundary_size: Vec2,
-        font_engine: &FontEngine,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
         out: &mut Vec<Rectangle>,
     ) {
         let boundary_pos = boundary_pos.round();
@@ -185,12 +187,18 @@ impl UiNode {
             padding: Padding::all(0.0),
         };
 
-        let root_layout_node = root_node.compute_layout_rec(root_layout, font_engine);
-        root_node.to_draw_data_rec(&root_layout_node, font_engine, out);
+        let root_layout_node = root_node.compute_layout_rec(root_layout, image_manager, font_engine);
+        root_node.to_draw_data_rec(&root_layout_node, image_manager, font_engine, out);
         out.remove(0); // TODO: remove. This is mainly done to simplify testing (the first rectangle is completely transparent).
     }
 
-    fn to_draw_data_rec(&self, layout_node: &UiNodeLayout, font_engine: &FontEngine, draw_data: &mut Vec<Rectangle>) {
+    fn to_draw_data_rec(
+        &self,
+        layout_node: &UiNodeLayout,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
+        draw_data: &mut Vec<Rectangle>,
+    ) {
         let (modifiers, children) = match self {
             UiNode::Box(props) => (&props.modifiers, Some(&props.children)),
             UiNode::Column(props) => (&props.modifiers, Some(&props.children)),
@@ -211,23 +219,28 @@ impl UiNode {
         );
 
         if let UiNode::Text(props) = self {
-            Self::emit_text_draw_data(props, layout, font_engine, draw_data);
+            Self::emit_text_draw_data(props, layout, image_manager, font_engine, draw_data);
         }
 
         if let Some(children) = children {
             for (i, c) in children.iter().enumerate() {
-                c.to_draw_data_rec(&layout_node.children[i], font_engine, draw_data);
+                c.to_draw_data_rec(&layout_node.children[i], image_manager, font_engine, draw_data);
             }
         }
     }
 
-    fn compute_layout_rec(&self, layout: Layout, font_engine: &FontEngine) -> UiNodeLayout {
+    fn compute_layout_rec(
+        &self,
+        layout: Layout,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
+    ) -> UiNodeLayout {
         assert!(layout.margin_position.x.is_integer());
         assert!(layout.margin_position.y.is_integer());
         assert!(layout.margin_size.x.is_integer());
         assert!(layout.margin_size.y.is_integer());
 
-        let children_layouts = Self::compute_children_layouts(&self, &layout, font_engine);
+        let children_layouts = Self::compute_children_layouts(&self, &layout, image_manager, font_engine);
 
         UiNodeLayout {
             layout,
@@ -235,11 +248,16 @@ impl UiNode {
         }
     }
 
-    fn compute_children_layouts(&self, layout: &Layout, font_engine: &FontEngine) -> Vec<UiNodeLayout> {
+    fn compute_children_layouts(
+        &self,
+        layout: &Layout,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
+    ) -> Vec<UiNodeLayout> {
         match self {
-            UiNode::Box(props) => Self::compute_box_children_layouts(props, layout, font_engine),
-            UiNode::Column(props) => Self::compute_column_children_layouts(props, layout, font_engine),
-            UiNode::Row(props) => Self::compute_row_children_layouts(props, layout, font_engine),
+            UiNode::Box(props) => Self::compute_box_children_layouts(props, layout, image_manager, font_engine),
+            UiNode::Column(props) => Self::compute_column_children_layouts(props, layout, image_manager, font_engine),
+            UiNode::Row(props) => Self::compute_row_children_layouts(props, layout, image_manager, font_engine),
             UiNode::Text(_) => vec![],
         }
     }
@@ -247,12 +265,13 @@ impl UiNode {
     fn compute_box_children_layouts(
         BoxProps { children, .. }: &BoxProps,
         layout: &Layout,
-        font_engine: &FontEngine,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
     ) -> Vec<UiNodeLayout> {
         children
             .iter()
             .map(|c| {
-                let child_measurements = c.measure(layout.children_boundary_size(), font_engine);
+                let child_measurements = c.measure(layout.children_boundary_size(), image_manager, font_engine);
                 let child_margin_size = child_measurements.margin_size;
                 let child_modifiers = match c {
                     UiNode::Box(props) => &props.modifiers,
@@ -292,7 +311,7 @@ impl UiNode {
                 .round();
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                c.compute_layout_rec(child_layout, font_engine)
+                c.compute_layout_rec(child_layout, image_manager, font_engine)
             })
             .collect()
     }
@@ -300,7 +319,8 @@ impl UiNode {
     fn compute_column_children_layouts(
         ColumnProps { children, .. }: &ColumnProps,
         layout: &Layout,
-        font_engine: &FontEngine,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
     ) -> Vec<UiNodeLayout> {
         let total_children_weight: f32 = children
             .iter()
@@ -314,7 +334,11 @@ impl UiNode {
 
         let total_children_height: f32 = children
             .iter()
-            .map(|c| c.measure(layout.children_boundary_size(), font_engine).margin_size.y)
+            .map(|c| {
+                c.measure(layout.children_boundary_size(), image_manager, font_engine)
+                    .margin_size
+                    .y
+            })
             .sum();
 
         let extra_column_height = (layout.content_size().y - total_children_height).max(0.0);
@@ -334,7 +358,7 @@ impl UiNode {
                     UiNode::Text(props) => &props.modifiers,
                 };
 
-                let mut child_measurements = c.measure(layout.children_boundary_size(), font_engine);
+                let mut child_measurements = c.measure(layout.children_boundary_size(), image_manager, font_engine);
 
                 if remaining_children_weight > 0.0 {
                     let child_weight = child_modifiers.weight;
@@ -365,7 +389,7 @@ impl UiNode {
                 };
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                c.compute_layout_rec(child_layout, font_engine)
+                c.compute_layout_rec(child_layout, image_manager, font_engine)
             })
             .collect()
     }
@@ -373,7 +397,8 @@ impl UiNode {
     fn compute_row_children_layouts(
         RowProps { children, .. }: &RowProps,
         layout: &Layout,
-        font_engine: &FontEngine,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
     ) -> Vec<UiNodeLayout> {
         let total_children_weight: f32 = children
             .iter()
@@ -387,7 +412,11 @@ impl UiNode {
 
         let total_children_width: f32 = children
             .iter()
-            .map(|c| c.measure(layout.children_boundary_size(), font_engine).margin_size.x)
+            .map(|c| {
+                c.measure(layout.children_boundary_size(), image_manager, font_engine)
+                    .margin_size
+                    .x
+            })
             .sum();
 
         let extra_column_width = (layout.content_size().x - total_children_width).max(0.0);
@@ -406,7 +435,7 @@ impl UiNode {
                     UiNode::Text(props) => &props.modifiers,
                 };
 
-                let mut child_measurements = c.measure(layout.children_boundary_size(), font_engine);
+                let mut child_measurements = c.measure(layout.children_boundary_size(), image_manager, font_engine);
 
                 if remaining_children_weight > 0.0 {
                     let child_weight = child_modifiers.weight;
@@ -439,14 +468,19 @@ impl UiNode {
                 horizontal_offset += child_margin_size.x;
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                c.compute_layout_rec(child_layout, font_engine)
+                c.compute_layout_rec(child_layout, image_manager, font_engine)
             })
             .collect()
     }
 
-    fn measure(&self, boundary_size: Vec2, font_engine: &FontEngine) -> Measurements {
+    fn measure(
+        &self,
+        boundary_size: Vec2,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
+    ) -> Measurements {
         match self {
-            UiNode::Text(props) => return Self::measure_text(props, boundary_size, font_engine),
+            UiNode::Text(props) => return Self::measure_text(props, boundary_size, image_manager, font_engine),
             _ => (),
         }
 
@@ -485,7 +519,7 @@ impl UiNode {
         .max(Vec2::ZERO);
         // TODO: only compute when necessary
         let min_intrinsic_children_sizes: Vec<Measurements> =
-            Self::measure_children(preliminar_children_boundary_size, children, font_engine);
+            Self::measure_children(preliminar_children_boundary_size, children, image_manager, font_engine);
 
         let mut children_boundary_size = preliminar_children_boundary_size;
         let computed_width = match modifiers.width {
@@ -503,7 +537,8 @@ impl UiNode {
                 UiNode::Row(_) => {
                     let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
                     children_boundary_size.x = min_intrinsic_width;
-                    let children_sizes = Self::measure_children(children_boundary_size, children, font_engine);
+                    let children_sizes =
+                        Self::measure_children(children_boundary_size, children, image_manager, font_engine);
                     children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>()
                         + modifiers.padding.delta_size().x
                         + modifiers.border_thickness.delta_size().x
@@ -528,7 +563,8 @@ impl UiNode {
                 UiNode::Column(_) => {
                     let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
                     children_boundary_size.y = min_intrinsic_height;
-                    let children_sizes = Self::measure_children(children_boundary_size, children, font_engine);
+                    let children_sizes =
+                        Self::measure_children(children_boundary_size, children, image_manager, font_engine);
                     children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
                         + modifiers.padding.delta_size().y
                         + modifiers.border_thickness.delta_size().y
@@ -550,8 +586,16 @@ impl UiNode {
         }
     }
 
-    fn measure_children(parent_size: Vec2, children: &[UiNode], font_engine: &FontEngine) -> Vec<Measurements> {
-        return children.iter().map(|c| c.measure(parent_size, font_engine)).collect();
+    fn measure_children(
+        parent_size: Vec2,
+        children: &[UiNode],
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
+    ) -> Vec<Measurements> {
+        return children
+            .iter()
+            .map(|c| c.measure(parent_size, image_manager, font_engine))
+            .collect();
     }
 
     fn measure_text(
@@ -561,17 +605,19 @@ impl UiNode {
             modifiers,
         }: &TextProps,
         boundary_size: Vec2,
-        font_engine: &FontEngine,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
     ) -> Measurements {
         // TODO: support more than FitContent
 
         let text_options = TextLayoutOptions {
+            font: "times.ttf",
             font_size: *font_size,
             line_height: *font_size,
             max_line_width: boundary_size.x,
         };
 
-        let dimensions = font_engine.lay_out_text(content, &text_options, |_| {});
+        let dimensions = font_engine.lay_out_text(image_manager, content, &text_options, |_| {});
 
         let content_size = dimensions;
         let padding_size = content_size + modifiers.padding.delta_size();
@@ -617,18 +663,19 @@ impl UiNode {
             modifiers,
         }: &TextProps,
         layout: &Layout,
-        font_engine: &FontEngine,
+        image_manager: &mut ImageManager,
+        font_engine: &mut FontEngine,
         out: &mut Vec<Rectangle>,
     ) {
-        // TODO: use font_size
         let origin = layout.content_position() + Vec2::new(0.0, layout.content_size().y);
         let options = TextLayoutOptions {
-            font_size: 0.0,
+            font: "times.ttf",
+            font_size: *font_size,
             line_height: 24.0,
             max_line_width: layout.content_size().x,
         };
 
-        font_engine.lay_out_text(content, &options, |glyph| {
+        font_engine.lay_out_text(image_manager, content, &options, |glyph| {
             let rectangle = Rectangle {
                 position: origin + glyph.position,
                 size: glyph.size,
