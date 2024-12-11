@@ -1,8 +1,14 @@
 use std::u32;
 
+use crate::image::{
+    image::Image,
+    image_manager::{ImageId, ImageManager},
+};
+
+#[derive(Debug)]
 pub struct FontAtlas {
     glyphs: Vec<AtlasGlyph>,
-    image: Image,
+    image_id: ImageId,
 }
 
 #[derive(Debug)]
@@ -20,7 +26,7 @@ pub struct AtlasGlyph {
 }
 
 impl FontAtlas {
-    pub fn new(face: &freetype::Face) -> Self {
+    pub fn new(face: &freetype::Face, image_manager: &mut ImageManager) -> Self {
         // TODO: choose dimensions
         let width = 4096;
         let height = 4096;
@@ -30,12 +36,12 @@ impl FontAtlas {
             face.load_glyph(g, freetype::face::LoadFlag::RENDER).expect("TODO");
             let glyph = face.glyph();
 
-            let glyph_image = Image {
-                data: glyph.bitmap().buffer().to_owned(),
-                width: glyph.bitmap().width() as u32,
-                height: glyph.bitmap().rows() as u32,
-                pitch: glyph.bitmap().pitch() as u32, // TODO: handle negative
-            };
+            let glyph_image = Image::from_data(
+                glyph.bitmap().buffer().to_owned(),
+                glyph.bitmap().width() as u32,
+                glyph.bitmap().rows() as u32,
+                glyph.bitmap().pitch() as u32, // TODO: handle negative
+            );
 
             let glyph = Glyph {
                 image: glyph_image,
@@ -48,8 +54,8 @@ impl FontAtlas {
         }
 
         let mut glyph_indices = (0..glyphs.len() as u32).collect::<Vec<u32>>();
-        glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.width as i32));
-        glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.height as i32));
+        glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.width() as i32));
+        glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.height() as i32));
 
         let mut atlas_glyphs = vec![];
         let mut atlas_image = Image::new_empty(width, height);
@@ -60,10 +66,10 @@ impl FontAtlas {
         for glyph_index in glyph_indices {
             let glyph = &glyphs[glyph_index as usize];
 
-            if cursor_x + glyph.image.width > width {
+            if cursor_x + glyph.image.width() > width {
                 cursor_x = 0;
                 cursor_y = next_cursor_y;
-                next_cursor_y += glyph.image.height;
+                next_cursor_y += glyph.image.height();
             }
 
             copy_to_atlas(&glyph.image, &mut atlas_image, cursor_x, cursor_y);
@@ -72,29 +78,30 @@ impl FontAtlas {
                 glyph_index,
                 left: cursor_x,
                 bottom: cursor_y,
-                right: cursor_x + glyph.image.width,
-                top: cursor_y + glyph.image.height,
+                right: cursor_x + glyph.image.width(),
+                top: cursor_y + glyph.image.height(),
                 bearing_left: glyph.bearing_left,
-                bearing_bottom: glyph.bearing_top - glyph.image.height as i32,
-                bearing_right: glyph.bearing_left + glyph.image.width as i32,
+                bearing_bottom: glyph.bearing_top - glyph.image.height() as i32,
+                bearing_right: glyph.bearing_left + glyph.image.width() as i32,
                 bearing_top: glyph.bearing_top,
                 advance: glyph.advance,
             };
             atlas_glyphs.push(atlas_glyph);
 
-            cursor_x += glyph.image.width;
+            cursor_x += glyph.image.width();
         }
 
         atlas_glyphs.sort_by_key(|g| g.glyph_index);
+        let atlas_image_id = image_manager.add_image(atlas_image);
 
         Self {
             glyphs: atlas_glyphs,
-            image: atlas_image,
+            image_id: atlas_image_id,
         }
     }
 
-    pub fn image(&self) -> &Image {
-        &self.image
+    pub fn image_id(&self) -> ImageId {
+        self.image_id
     }
 
     pub fn get_glyph(&self, glyph_index: u32) -> &AtlasGlyph {
@@ -103,10 +110,10 @@ impl FontAtlas {
 }
 
 fn copy_to_atlas(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32, dst_bottom: u32) {
-    for y in 0..glyph_image.height {
-        for x in 0..glyph_image.width {
+    for y in 0..glyph_image.height() {
+        for x in 0..glyph_image.width() {
             let p = glyph_image.get(x, y);
-            let flipped_y = glyph_image.height - 1 - y; // TODO: handle negative pitch.
+            let flipped_y = glyph_image.height() - 1 - y; // TODO: handle negative pitch.
             atlas_image.set(dst_left + x, dst_bottom + flipped_y, p);
         }
     }
