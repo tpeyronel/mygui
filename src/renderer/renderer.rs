@@ -6,8 +6,11 @@ use wgpu::util::DeviceExt;
 use crate::{
     image::image_manager::{ImageId, ImageManager},
     rectangle::Rectangle,
+    ui::draw_element::DrawElement,
     vertex::Vertex,
 };
+
+use super::mesh::Mesh;
 
 const MAX_RECTANGLES: u64 = 2048;
 const MAX_VERTICES: u64 = 4 * MAX_RECTANGLES;
@@ -18,17 +21,18 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     box_pipeline: wgpu::RenderPipeline,
+    texture_pipeline: wgpu::RenderPipeline,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     textures: HashMap<ImageId, Texture>,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    index_count: u32,
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
     rectangle_data_uniform_buffer: wgpu::Buffer,
     rectangle_data_uniform_bind_group: wgpu::BindGroup,
     config: wgpu::SurfaceConfiguration,
+    processed_meshes: Vec<ProcessedMesh>,
 }
 
 impl Renderer {
@@ -56,13 +60,15 @@ impl Renderer {
         required_limits.max_storage_buffers_per_shader_stage =
             wgpu::Limits::default().max_storage_buffers_per_shader_stage;
         required_limits.max_storage_buffer_binding_size = wgpu::Limits::default().max_storage_buffer_binding_size;
+        required_limits.max_push_constant_size = 128;
 
         // Create the logical device and command queue
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
                 required_features: wgpu::Features::BUFFER_BINDING_ARRAY
-                    | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY, // TODO: apparently not needed?
+                    | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY // TODO: apparently not needed?
+                    | wgpu::Features::PUSH_CONSTANTS,
                 required_limits,
                 memory_hints: wgpu::MemoryHints::MemoryUsage,
             },
@@ -73,6 +79,11 @@ impl Renderer {
         let box_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("box shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/box_shader.wgsl"))),
+        });
+
+        let texture_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("texture shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/texture_shader.wgsl"))),
         });
 
         let global_uniform = GlobalUniform {
@@ -167,8 +178,16 @@ impl Renderer {
             bind_group_layouts: &[
                 &global_uniform_bind_group_layout,
                 &rectangle_data_uniform_bind_group_layout,
-                &texture_bind_group_layout,
             ],
+            push_constant_ranges: &[wgpu::PushConstantRange {
+                stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                range: 0..4,
+            }],
+        });
+
+        let texture_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("texture pipeline layout"),
+            bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -195,7 +214,7 @@ impl Renderer {
         });
 
         let box_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: None,
+            label: Some("box pipeline"),
             layout: Some(&box_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &box_shader,
@@ -205,6 +224,39 @@ impl Renderer {
             },
             fragment: Some(wgpu::FragmentState {
                 module: &box_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: swapchain_format,
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::SrcAlpha,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                            operation: wgpu::BlendOperation::Add,
+                        },
+                        alpha: wgpu::BlendComponent::OVER,
+                    }),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        let texture_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("texture pipeline"),
+            layout: Some(&texture_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &texture_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[Vertex::vertex_buffer_layout()],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &texture_shader,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
@@ -245,17 +297,18 @@ impl Renderer {
             device,
             queue,
             box_pipeline,
+            texture_pipeline,
             texture_bind_group_layout,
             textures: HashMap::new(),
             vertex_buffer,
             index_buffer,
-            index_count: 0,
             global_uniform,
             global_uniform_buffer,
             global_uniform_bind_group,
             rectangle_data_uniform_buffer,
             rectangle_data_uniform_bind_group,
             config,
+            processed_meshes: Vec::new(),
         }
     }
 
@@ -343,12 +396,64 @@ impl Renderer {
         self.textures.insert(image_id, texture);
     }
 
-    pub fn update_rectangles(&mut self, rectangles: &[Rectangle]) {
-        let (vertices, indices) = rectangles_to_vertices_and_indices(rectangles);
-        self.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
-        self.queue.write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
-        self.index_count = indices.len() as u32;
-        self.queue.write_buffer(&self.rectangle_data_uniform_buffer, 0, bytemuck::cast_slice(rectangles));
+    pub fn update_draw_data(&mut self, rectangles: &[DrawElement]) {
+        let meshes: Vec<Mesh> = rectangles.iter().map(|e| Mesh::from_draw_element(e)).collect();
+
+        let mut all_vertices: Vec<Vertex> = vec![];
+        let mut all_indices: Vec<u32> = vec![];
+        let mut all_rectangle_data = vec![];
+
+        let processed_meshes = meshes
+            .into_iter()
+            .map(|m| {
+                let base_vertex = all_vertices.len() as i32;
+                let first_index = all_indices.len() as u32;
+                match m {
+                    Mesh::Rectangle {
+                        vertices,
+                        indices,
+                        rectangle_data,
+                    } => {
+                        all_vertices.extend(vertices);
+                        all_indices.extend(indices);
+
+                        let rectangle_data_index = all_rectangle_data.len() as u32;
+                        all_rectangle_data.push(rectangle_data);
+
+                        ProcessedMesh::Rectangle {
+                            base_vertex,
+                            first_index,
+                            rectangle_data_index,
+                        }
+                    }
+                    Mesh::Texture {
+                        vertices,
+                        indices,
+                        image_id,
+                    } => {
+                        all_vertices.extend(vertices);
+                        all_indices.extend(indices);
+
+                        ProcessedMesh::Texture {
+                            base_vertex,
+                            first_index,
+                            image_id,
+                        }
+                    }
+                }
+            })
+            .collect();
+
+        self.queue
+            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&all_vertices));
+        self.queue
+            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&all_indices));
+        self.queue.write_buffer(
+            &self.rectangle_data_uniform_buffer,
+            0,
+            bytemuck::cast_slice(&all_rectangle_data),
+        );
+        self.processed_meshes = processed_meshes;
     }
 
     pub fn render(&mut self) {
@@ -389,14 +494,40 @@ impl Renderer {
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
-            rpass.set_pipeline(&self.box_pipeline);
-            rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
-            rpass.set_bind_group(1, &self.rectangle_data_uniform_bind_group, &[]);
-            let first_texture = self.textures.iter().next().unwrap();
-            rpass.set_bind_group(2, &first_texture.1.bind_group, &[]);
+
             rpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             rpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-            rpass.draw_indexed(0..self.index_count, 0, 0..1);
+
+            for mesh in &self.processed_meshes {
+                match mesh {
+                    ProcessedMesh::Rectangle {
+                        base_vertex,
+                        first_index,
+                        rectangle_data_index,
+                    } => {
+                        rpass.set_pipeline(&self.box_pipeline);
+                        rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
+                        rpass.set_bind_group(1, &self.rectangle_data_uniform_bind_group, &[]);
+                        rpass.set_push_constants(
+                            wgpu::ShaderStages::VERTEX_FRAGMENT,
+                            0,
+                            bytemuck::cast_slice(&[*rectangle_data_index]),
+                        );
+                        rpass.draw_indexed(*first_index..*first_index + 6, *base_vertex, 0..1);
+                    }
+                    ProcessedMesh::Texture {
+                        base_vertex,
+                        first_index,
+                        image_id,
+                    } => {
+                        rpass.set_pipeline(&self.texture_pipeline);
+                        rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
+                        let texture = self.textures.get(&image_id).expect("TODO");
+                        rpass.set_bind_group(1, &texture.bind_group, &[]);
+                        rpass.draw_indexed(*first_index..*first_index + 6, *base_vertex, 0..1);
+                    }
+                }
+            }
         }
 
         self.queue.submit(Some(encoder.finish()));
@@ -418,15 +549,15 @@ struct GlobalUniform {
     viewport_height: f32,
 }
 
-fn rectangles_to_vertices_and_indices(rectangles: &[Rectangle]) -> (Vec<Vertex>, Vec<u32>) {
-    let mut vertices = vec![];
-    let mut indices = vec![];
-
-    for r in rectangles {
-        let i = vertices.len() as u32;
-        indices.extend([i, i + 1, i + 2, i, i + 2, i + 3]);
-        vertices.extend(r.to_vertices());
-    }
-
-    (vertices, indices)
+enum ProcessedMesh {
+    Rectangle {
+        base_vertex: i32,
+        first_index: u32,
+        rectangle_data_index: u32,
+    },
+    Texture {
+        base_vertex: i32,
+        first_index: u32,
+        image_id: ImageId,
+    },
 }
