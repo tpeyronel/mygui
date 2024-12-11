@@ -1032,7 +1032,14 @@ pub fn example_ui() -> UiNode {
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
                                 .fill_color(Color::new(0.25, 1.0, 0.25, 0.5)),
-                            children: vec![],
+                            children: vec![UiNode::Text(TextProps {
+                                content: "ÓThis is a text!\nÓWith three lines\nÓThis is the last lineeeeeeeeee."
+                                    .to_string(),
+                                font: "jetbrainsmono-regular.ttf".to_string(),
+                                font_size: 24.0,
+                                line_height: 24.0 * 1.5,
+                                modifiers: Modifiers::new().self_alignment(Alignment::TopLeft),
+                            })],
                         }),
                     ],
                 }),
