@@ -4,20 +4,19 @@ struct GlobalUniform {
 }
 
 struct RectangleData {
-    pos: vec2<f32>,
-    size: vec2<f32>,
+    left: f32,
+    bottom: f32,
+    right: f32,
+    top: f32,
     fill_color: vec4<f32>,
     border_color: vec4<f32>,
     border_radius: vec4<f32>,
     border_width: vec4<f32>, // left, bottom, right, top
-    uv_bl: vec2<f32>,
-    uv_tr: vec2<f32>,
 }
 
 @group(0) @binding(0) var<uniform> global_uniform: GlobalUniform;
 @group(1) @binding(0) var<storage, read> rectangle_data: array<RectangleData>;
-@group(2) @binding(0) var u_texture: texture_2d<f32>;
-@group(2) @binding(1) var u_sampler: sampler;
+var<push_constant> rectangle_idx: u32;
 
 struct VertexIn {
     @location(0) pos: vec2<f32>,
@@ -27,8 +26,6 @@ struct VertexIn {
 struct VertexOut {
     @builtin(position) _position: vec4<f32>,
     @location(0) pos: vec2<f32>,
-    @location(1) rectangle_idx: u32,
-    @location(2) uv: vec2<f32>,
 };
 
 @vertex
@@ -41,8 +38,6 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, in: VertexIn) -> VertexOut {
         1.0,
     );
     out.pos = in.pos;
-    out.rectangle_idx = vertex_idx / 4;
-    out.uv = in.uv;
     return out;
 }
 
@@ -80,13 +75,14 @@ fn smooth_corner(
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    let data = rectangle_data[in.rectangle_idx];
+    let data = rectangle_data[rectangle_idx];
 
     let fill_color = data.fill_color;
     let border_color = data.border_color;
-    let bbox = vec4(data.pos, data.pos + data.size);
+    let bbox = vec4(data.left, data.bottom, data.right, data.top);
 
     var color: vec4<f32> = vec4(0.0);
+
     if (in.pos.x < bbox.x + data.border_radius.x && in.pos.y < bbox.y + data.border_radius.x) { // bottom-left corner
         color += smooth_corner(in.pos, bbox.xy + data.border_radius.x, data.border_radius.x, data.border_width.xy, fill_color, border_color);
     } else if (in.pos.x > bbox.z - data.border_radius.y && in.pos.y < bbox.y + data.border_radius.y) { // bottom-right corner
@@ -101,9 +97,5 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         color += fill_color;
     }
 
-    let alpha = textureSample(u_texture, u_sampler, in.uv).r;
-    if (alpha != 0.0) {
-        color = vec4(vec3(1.0) * textureSample(u_texture, u_sampler, in.uv).r, 1.0);
-    }
     return color;
 }
