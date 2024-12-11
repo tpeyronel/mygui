@@ -484,7 +484,6 @@ impl UiNode {
         font_engine: &mut FontEngine,
     ) -> Measurements {
         match self {
-            // TODO: padding not being correctly handled
             UiNode::Text(props) => return Self::measure_text(props, boundary_size, image_manager, font_engine),
             _ => (),
         }
@@ -616,6 +615,7 @@ impl UiNode {
         font_engine: &mut FontEngine,
     ) -> Measurements {
         // TODO: support more than FitContent
+        let boundary_size = boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size();
 
         let text_options = TextLayoutOptions {
             font,
