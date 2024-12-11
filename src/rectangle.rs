@@ -1,44 +1,40 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 
-use crate::vertex::{Color, Vertex};
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Clone, Copy)]
 pub struct Rectangle {
-    pub position: Vec2,
-    pub size: Vec2,
-    pub fill_color: Color,
-    pub border_color: Color,
-    pub border_radius: Vec4,
-    pub border_width: Vec4,
-    pub uv_bl: Vec2,
-    pub uv_tr: Vec2,
+    pub left: f32,
+    pub bottom: f32,
+    pub right: f32,
+    pub top: f32,
 }
 
 impl Rectangle {
-    pub fn to_vertices(self) -> Vec<Vertex> {
-        let bl = self.position;
-        let br = Vec2::new(self.position.x + self.size.x, self.position.y);
-        let tr = self.position + self.size;
-        let tl = Vec2::new(self.position.x, self.position.y + self.size.y);
+    pub fn from_position_size(position: Vec2, size: Vec2) -> Self {
+        Self {
+            left: position.x,
+            bottom: position.y,
+            right: position.x + size.x,
+            top: position.y + size.y,
+        }
+    }
 
-        return vec![
-            Vertex {
-                pos: bl,
-                uv: self.uv_bl,
-            },
-            Vertex {
-                pos: br,
-                uv: Vec2::new(self.uv_tr.x, self.uv_bl.y),
-            },
-            Vertex {
-                pos: tr,
-                uv: self.uv_tr,
-            },
-            Vertex {
-                pos: tl,
-                uv: Vec2::new(self.uv_bl.x, self.uv_tr.y),
-            },
-        ];
+    pub fn bottom_left(&self) -> Vec2 {
+        Vec2::new(self.left, self.bottom)
+    }
+
+    pub fn top_right(&self) -> Vec2 {
+        Vec2::new(self.right, self.top)
+    }
+
+    pub fn width(&self) -> f32 {
+        self.right - self.left
+    }
+
+    pub fn height(&self) -> f32 {
+        self.top - self.bottom
+    }
+
+    pub fn size(&self) -> Vec2 {
+        Vec2::new(self.width(), self.height())
     }
 }
