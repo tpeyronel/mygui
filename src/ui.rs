@@ -130,7 +130,9 @@ pub type RowProps = ColumnProps;
 #[derive(Debug, Clone)]
 pub struct TextProps {
     content: String,
+    font: String,
     font_size: f32,
+    line_height: f32,
     modifiers: Modifiers,
 }
 
@@ -482,6 +484,7 @@ impl UiNode {
         font_engine: &mut FontEngine,
     ) -> Measurements {
         match self {
+            // TODO: padding not being correctly handled
             UiNode::Text(props) => return Self::measure_text(props, boundary_size, image_manager, font_engine),
             _ => (),
         }
@@ -603,7 +606,9 @@ impl UiNode {
     fn measure_text(
         TextProps {
             content,
+            font,
             font_size,
+            line_height,
             modifiers,
         }: &TextProps,
         boundary_size: Vec2,
@@ -613,9 +618,9 @@ impl UiNode {
         // TODO: support more than FitContent
 
         let text_options = TextLayoutOptions {
-            font: "times.ttf",
+            font,
             font_size: *font_size,
-            line_height: *font_size,
+            line_height: *line_height,
             max_line_width: boundary_size.x,
         };
 
@@ -658,7 +663,9 @@ impl UiNode {
     fn emit_text_draw_data(
         TextProps {
             content,
+            font,
             font_size,
+            line_height,
             modifiers,
         }: &TextProps,
         layout: &Layout,
@@ -668,9 +675,9 @@ impl UiNode {
     ) {
         let origin = layout.content_position() + Vec2::new(0.0, layout.content_size().y);
         let options = TextLayoutOptions {
-            font: "times.ttf",
+            font,
             font_size: *font_size,
-            line_height: 24.0,
+            line_height: *line_height,
             max_line_width: layout.content_size().x,
         };
 
@@ -1086,7 +1093,9 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
                                         content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
-                                        font_size: 24.0,
+                                        font: "jetbrainsmono-regular.ttf".to_string(),
+                                        font_size: 48.0,
+                                        line_height: 48.0,
                                         modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
                                     })],
                                 }),
@@ -1118,8 +1127,13 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
                                         content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
-                                        font_size: 24.0,
-                                        modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
+                                        font: "times.ttf".to_string(),
+                                        font_size: 17.0,
+                                        line_height: 17.0,
+                                        modifiers: Modifiers::new()
+                                            .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
+                                            .border_radius(BorderRadius::all(8.0))
+                                            .padding(Padding::all(8.0)),
                                     })],
                                 }),
                             ],
