@@ -3,9 +3,8 @@ use std::sync::Arc;
 use font::font_engine::FontEngine;
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
-use rectangle::Rectangle;
 use renderer::renderer::Renderer;
-use ui::example_ui;
+use ui::{draw_element::DrawElement, example_ui};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -28,7 +27,7 @@ struct App {
 
 struct AppState {
     window: Arc<Window>,
-    rectangles: Vec<Rectangle>,
+    draw_data: Vec<DrawElement>,
     image_manager: ImageManager,
     font_engine: FontEngine,
     renderer: Renderer,
@@ -73,18 +72,18 @@ impl ApplicationHandler for App {
         // let font_engine = FontEngine::new("./assets/fonts/times.ttf");
         let mut font_engine = FontEngine::new("./assets/fonts/");
 
-        let mut rectangles = vec![];
+        let mut draw_data = vec![];
         ui.to_draw_data(
             Vec2::ZERO,
             Vec2::new(window.inner_size().width as f32, window.inner_size().height as f32),
             &mut image_manager,
             &mut font_engine,
-            &mut rectangles,
+            &mut draw_data,
         );
 
         self.state = Some(AppState {
             window,
-            rectangles,
+            draw_data,
             image_manager,
             font_engine,
             renderer,
@@ -97,16 +96,16 @@ impl ApplicationHandler for App {
                 let state = self.state.as_mut().unwrap();
                 state.renderer.on_resize(new_size.width, new_size.height);
 
-                state.rectangles.clear();
+                state.draw_data.clear();
                 example_ui().to_draw_data(
                     Vec2::ZERO,
                     Vec2::new(new_size.width as f32, new_size.height as f32),
                     &mut state.image_manager,
                     &mut state.font_engine,
-                    &mut state.rectangles,
+                    &mut state.draw_data,
                 );
 
-                state.renderer.update_rectangles(&state.rectangles);
+                state.renderer.update_draw_data(&state.draw_data);
             }
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
