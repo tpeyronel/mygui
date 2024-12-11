@@ -1,11 +1,13 @@
 mod border_radius;
 mod border_thickness;
+pub mod draw_element;
 mod margin;
 mod padding;
 
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
-use glam::{Vec2, Vec4};
+use draw_element::DrawElement;
+use glam::Vec2;
 use margin::Margin;
 use padding::Padding;
 
@@ -166,7 +168,7 @@ impl UiNode {
         boundary_size: Vec2,
         image_manager: &mut ImageManager,
         font_engine: &mut FontEngine,
-        out: &mut Vec<Rectangle>,
+        out: &mut Vec<DrawElement>,
     ) {
         let boundary_pos = boundary_pos.round();
         let boundary_size = boundary_size.round();
@@ -197,7 +199,7 @@ impl UiNode {
         layout_node: &UiNodeLayout,
         image_manager: &mut ImageManager,
         font_engine: &mut FontEngine,
-        draw_data: &mut Vec<Rectangle>,
+        draw_data: &mut Vec<DrawElement>,
     ) {
         let (modifiers, children) = match self {
             UiNode::Box(props) => (&props.modifiers, Some(&props.children)),
@@ -640,17 +642,14 @@ impl UiNode {
         border_color: Color,
         border_thickness: BorderThickness,
         border_radius: BorderRadius,
-        out: &mut Vec<Rectangle>,
+        out: &mut Vec<DrawElement>,
     ) {
-        let rectangle = Rectangle {
-            position,
-            size,
+        let rectangle = DrawElement::Rectangle {
+            bounds: Rectangle::from_position_size(position, size),
             fill_color,
             border_color,
             border_radius: border_radius.to_vec4(),
             border_width: border_thickness.to_vec4(),
-            uv_bl: Vec2::ZERO,
-            uv_tr: Vec2::ZERO,
         };
 
         out.push(rectangle);
@@ -665,7 +664,7 @@ impl UiNode {
         layout: &Layout,
         image_manager: &mut ImageManager,
         font_engine: &mut FontEngine,
-        out: &mut Vec<Rectangle>,
+        out: &mut Vec<DrawElement>,
     ) {
         let origin = layout.content_position() + Vec2::new(0.0, layout.content_size().y);
         let options = TextLayoutOptions {
@@ -676,18 +675,13 @@ impl UiNode {
         };
 
         font_engine.lay_out_text(image_manager, content, &options, |glyph| {
-            let rectangle = Rectangle {
-                position: origin + glyph.position,
-                size: glyph.size,
-                fill_color: Color::ZERO,
-                border_color: Color::ZERO,
-                border_radius: Vec4::ZERO,
-                border_width: Vec4::ZERO,
-                uv_bl: glyph.atlas_uv_bl,
-                uv_tr: glyph.atlas_uv_tr,
+            let texture = DrawElement::Texture {
+                bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
+                uv_rectangle: glyph.atlas_uv_rectangle,
+                image_id: glyph.image_id,
             };
 
-            out.push(rectangle);
+            out.push(texture);
         });
     }
 }
