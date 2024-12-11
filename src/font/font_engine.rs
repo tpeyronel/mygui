@@ -2,7 +2,10 @@ use std::{collections::HashMap, ffi::OsStr};
 
 use glam::Vec2;
 
-use crate::image::image_manager::ImageManager;
+use crate::{
+    image::image_manager::{ImageId, ImageManager},
+    rectangle::Rectangle,
+};
 
 use super::font_atlas::{AtlasGlyph, FontAtlas};
 
@@ -68,15 +71,18 @@ impl FontEngine {
                 (glyph.bearing_top - glyph.bearing_bottom) as f32,
             );
 
-            let atlas_uv_bl = Vec2::new(glyph.left as f32 / atlas_width, glyph.bottom as f32 / atlas_height);
-
-            let atlas_uv_tr = Vec2::new(glyph.right as f32 / atlas_width, glyph.top as f32 / atlas_height);
+            let atlas_uv_rectangle = Rectangle {
+                left: glyph.left as f32 / atlas_width,
+                bottom: glyph.bottom as f32 / atlas_height,
+                right: glyph.right as f32 / atlas_width,
+                top: glyph.top as f32 / atlas_height,
+            };
 
             let laid_out_glyph = LaidOutGlyph {
                 position,
                 size,
-                atlas_uv_bl,
-                atlas_uv_tr,
+                atlas_uv_rectangle,
+                image_id: atlas.image_id(),
             };
 
             f(&laid_out_glyph);
@@ -118,8 +124,8 @@ pub struct TextLayoutOptions<'a> {
 pub struct LaidOutGlyph {
     pub position: Vec2, // Bottom left of the glyph's bounding box
     pub size: Vec2,     // Size of the glyph's bounding box
-    pub atlas_uv_bl: Vec2,
-    pub atlas_uv_tr: Vec2,
+    pub atlas_uv_rectangle: Rectangle,
+    pub image_id: ImageId,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
