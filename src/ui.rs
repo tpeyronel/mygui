@@ -1135,15 +1135,22 @@ pub fn example_ui() -> UiNode {
     });
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
+    use glam::Vec4;
     use pretty_assertions::assert_eq;
 
-    fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[Rectangle]) {
+    fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
+        let mut image_manager = ImageManager::new();
+        let mut font_engine = FontEngine::new("");
         let mut draw_data = vec![];
-        ui.to_draw_data(Vec2::ZERO, Vec2::new(width, height), &mut draw_data);
+        ui.to_draw_data(position, size, &mut image_manager, &mut font_engine, &mut draw_data);
+        draw_data
+    }
+
+    fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[DrawElement]) {
+        let draw_data = convert_to_draw_data(Vec2::ZERO, Vec2::new(width, height), ui);
         assert_eq!(expected, &draw_data);
     }
 
@@ -1156,9 +1163,8 @@ mod tests {
                 modifiers: Modifiers::new(),
                 children: vec![],
             }),
-            &[Rectangle {
-                position: Vec2::new(0.0, 0.0),
-                size: Vec2::new(32.0, 32.0),
+            &[DrawElement::Rectangle {
+                bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                 fill_color: Color::ZERO,
                 border_color: Color::ZERO,
                 border_radius: Vec4::ZERO,
@@ -1180,17 +1186,15 @@ mod tests {
                 })],
             }),
             &[
-                Rectangle {
-                    position: Vec2::new(0.0, 0.0),
-                    size: Vec2::new(32.0, 32.0),
+                DrawElement::Rectangle {
+                    bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                     fill_color: Color::ZERO,
                     border_color: Color::ZERO,
                     border_radius: Vec4::ZERO,
                     border_width: Vec4::ZERO,
                 },
-                Rectangle {
-                    position: Vec2::new(8.0, 8.0),
-                    size: Vec2::new(16.0, 16.0),
+                DrawElement::Rectangle {
+                    bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(16.0, 16.0)),
                     fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                     border_color: Color::ZERO,
                     border_radius: Vec4::ZERO,
@@ -1209,9 +1213,8 @@ mod tests {
                 modifiers: Modifiers::new().margin(Margin::all(8.0)),
                 children: vec![],
             }),
-            &[Rectangle {
-                position: Vec2::new(8.0, 8.0),
-                size: Vec2::new(16.0, 16.0),
+            &[DrawElement::Rectangle {
+                bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(16.0, 16.0)),
                 fill_color: Color::ZERO,
                 border_color: Color::ZERO,
                 border_radius: Vec4::ZERO,
@@ -1233,17 +1236,15 @@ mod tests {
                 })],
             }),
             &[
-                Rectangle {
-                    position: Vec2::new(0.0, 0.0),
-                    size: Vec2::new(32.0, 32.0),
+                DrawElement::Rectangle {
+                    bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                     fill_color: Color::ZERO,
                     border_color: Color::ZERO,
                     border_radius: Vec4::ZERO,
                     border_width: Vec4::ZERO,
                 },
-                Rectangle {
-                    position: Vec2::new(16.0, 16.0),
-                    size: Vec2::new(0.0, 0.0),
+                DrawElement::Rectangle {
+                    bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
                     fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                     border_color: Color::ZERO,
                     border_radius: Vec4::ZERO,
@@ -1267,17 +1268,15 @@ mod tests {
         //         })],
         //     }),
         //     &[
-        //         Rectangle {
-        //             position: Vec2::new(0.0, 0.0),
-        //             size: Vec2::new(32.0, 32.0),
+        //         DrawElement::Rectangle {
+        //             bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
         //             fill_color: Color::ZERO,
         //             border_color: Color::ZERO,
         //             border_radius: Vec4::ZERO,
         //             border_width: Vec4::ZERO,
         //         },
-        //         Rectangle {
-        //             position: Vec2::new(16.0, 16.0),
-        //             size: Vec2::new(0.0, 0.0),
+        //         DrawElement::Rectangle {
+        //             bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
         //             fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
         //             border_color: Color::ZERO,
         //             border_radius: Vec4::ZERO,
@@ -1300,9 +1299,8 @@ mod tests {
                         .self_alignment(alignment),
                     children: vec![],
                 }),
-                &[Rectangle {
-                    position: expected_position,
-                    size: Vec2::new(8.0, 8.0),
+                &[DrawElement::Rectangle {
+                    bounds: Rectangle::from_position_size(expected_position, Vec2::new(8.0, 8.0)),
                     fill_color: Color::ZERO,
                     border_color: Color::ZERO,
                     border_radius: Vec4::ZERO,
@@ -1333,9 +1331,8 @@ mod tests {
             15.0,
             15.0,
             ui.clone(),
-            &[Rectangle {
-                position: Vec2::new(4.0, 4.0),
-                size: Vec2::new(8.0, 8.0),
+            &[DrawElement::Rectangle {
+                bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(8.0, 8.0)),
                 fill_color: Color::ZERO,
                 border_color: Color::ZERO,
                 border_radius: Vec4::splat(0.0),
@@ -1347,9 +1344,8 @@ mod tests {
             17.0,
             17.0,
             ui,
-            &[Rectangle {
-                position: Vec2::new(5.0, 5.0),
-                size: Vec2::new(8.0, 8.0),
+            &[DrawElement::Rectangle {
+                bounds: Rectangle::from_position_size(Vec2::new(5.0, 5.0), Vec2::new(8.0, 8.0)),
                 fill_color: Color::ZERO,
                 border_color: Color::ZERO,
                 border_radius: Vec4::splat(0.0),
@@ -1376,17 +1372,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::ZERO,
-                        size: Vec2::new(32.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::ZERO, Vec2::new(32.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::splat(4.0),
                     },
-                    Rectangle {
-                        position: expected_position,
-                        size: Vec2::new(8.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(expected_position, Vec2::new(8.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -1423,17 +1417,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 1.0),
-                        size: Vec2::new(32.0 - 10.0, 32.0 - 5.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 1.0), Vec2::new(32.0 - 10.0, 32.0 - 5.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -1456,17 +1448,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::new(1.0, 2.0, 4.0, 8.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(1.0, 2.0),
-                        size: Vec2::new(32.0 - 5.0, 32.0 - 10.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(1.0, 2.0), Vec2::new(32.0 - 5.0, 32.0 - 10.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -1511,33 +1501,29 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(96.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(96.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(8.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 64.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 128.0 - 64.0 - 8.0),
-                        size: Vec2::new(96.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 64.0 - 8.0), Vec2::new(96.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1586,33 +1572,29 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(96.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(96.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(8.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(8.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 64.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(8.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 128.0 - 64.0 - 8.0),
-                        size: Vec2::new(96.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 64.0 - 8.0), Vec2::new(96.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1658,33 +1640,29 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(96.0 + 16.0, 64.0 + 16.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0 + 16.0, 64.0 + 16.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(8.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0),
-                        size: Vec2::new(96.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(96.0, 64.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0),
-                        size: Vec2::new(8.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(8.0, 64.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0 + 64.0 - 8.0),
-                        size: Vec2::new(96.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0 + 64.0 - 8.0), Vec2::new(96.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1731,33 +1709,29 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(96.0 + 16.0, 64.0 + 16.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0 + 16.0, 64.0 + 16.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0),
-                        size: Vec2::new(96.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(96.0, 64.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0),
-                        size: Vec2::new(8.0, 64.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(8.0, 64.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0 + 64.0 - 8.0),
-                        size: Vec2::new(96.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0 + 64.0 - 8.0), Vec2::new(96.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1790,25 +1764,25 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 128.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 128.0 - 24.0),
-                        size: Vec2::new(32.0, 24.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 24.0), Vec2::new(32.0, 24.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 128.0 - 24.0 - 48.0),
-                        size: Vec2::new(32.0, 48.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(
+                            Vec2::new(0.0, 128.0 - 24.0 - 48.0),
+                            Vec2::new(32.0, 48.0),
+                        ),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1840,33 +1814,35 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 128.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 128.0 - 24.0),
-                        size: Vec2::new(32.0, 24.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 24.0), Vec2::new(32.0, 24.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0 + 2.0, 128.0 - 24.0 + 2.0),
-                        size: Vec2::new(32.0 - 4.0, 24.0 - 4.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(
+                            Vec2::new(0.0 + 2.0, 128.0 - 24.0 + 2.0),
+                            Vec2::new(32.0 - 4.0, 24.0 - 4.0),
+                        ),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 128.0 - 24.0 - 48.0),
-                        size: Vec2::new(32.0, 48.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(
+                            Vec2::new(0.0, 128.0 - 24.0 - 48.0),
+                            Vec2::new(32.0, 48.0),
+                        ),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1889,17 +1865,18 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 128.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0 + 2.0, 128.0 - 16.0 - 2.0),
-                        size: Vec2::new(32.0 - 4.0, 16.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(
+                            Vec2::new(0.0 + 2.0, 128.0 - 16.0 - 2.0),
+                            Vec2::new(32.0 - 4.0, 16.0),
+                        ),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1937,25 +1914,22 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(64.0, 32.0 + 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0 + 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 32.0),
-                        size: Vec2::new(64.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 32.0), Vec2::new(64.0, 32.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(64.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -1982,17 +1956,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(256.0, 32.0 + 16.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(256.0, 32.0 + 16.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(8.0, 8.0),
-                        size: Vec2::new(256.0 - 16.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(256.0 - 16.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -2018,17 +1990,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(0.0, 0.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(0.0, 0.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -2057,17 +2027,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(8.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(4.0, 4.0),
-                        size: Vec2::new(0.0, 0.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(0.0, 0.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -2105,25 +2073,22 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(64.0, 48.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 48.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(64.0, 48.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 48.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, -48.0),
-                        size: Vec2::new(64.0, 48.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, -48.0), Vec2::new(64.0, 48.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -2165,25 +2130,22 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(64.0 + 64.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0 + 64.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(64.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
                         border_width: Vec4::splat(0.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(64.0, 0.0),
-                        size: Vec2::new(64.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(64.0, 0.0), Vec2::new(64.0, 32.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
@@ -2225,25 +2187,25 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 100.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 100.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 100.0 - 40.0),
-                        size: Vec2::new(50.0, 20.0 + 20.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(
+                            Vec2::new(0.0, 100.0 - 40.0),
+                            Vec2::new(50.0, 20.0 + 20.0),
+                        ),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 40.0 + 20.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 40.0 + 20.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2281,25 +2243,22 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(100.0, 50.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(100.0, 50.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(20.0 + 20.0, 50.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(20.0 + 20.0, 50.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(40.0, 0.0),
-                        size: Vec2::new(40.0 + 20.0, 50.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(40.0, 0.0), Vec2::new(40.0 + 20.0, 50.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2344,33 +2303,32 @@ mod tests {
                     ],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 100.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 100.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 100.0 - 34.0),
-                        size: Vec2::new(50.0, 34.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 100.0 - 34.0), Vec2::new(50.0, 34.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 100.0 - 34.0 - 33.0),
-                        size: Vec2::new(50.0, 33.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(
+                            Vec2::new(0.0, 100.0 - 34.0 - 33.0),
+                            Vec2::new(50.0, 33.0),
+                        ),
                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 33.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 33.0)),
                         fill_color: Color::new(0.0, 0.0, 1.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2400,17 +2358,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(4.0, 4.0),
-                        size: Vec2::new(50.0 - 8.0, 0.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(50.0 - 8.0, 0.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2446,25 +2402,22 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::splat(3.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(3.0, 3.0),
-                        size: Vec2::new(50.0 - 6.0, 2.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(3.0, 3.0), Vec2::new(50.0 - 6.0, 2.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2500,25 +2453,22 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(3.0, 3.0),
-                        size: Vec2::new(50.0 - 6.0, 2.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(3.0, 3.0), Vec2::new(50.0 - 6.0, 2.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2559,33 +2509,29 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(50.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
                         fill_color: Color::new(0.0, 0.0, 1.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2612,17 +2558,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::splat(4.0),
                     },
-                    Rectangle {
-                        position: Vec2::new(4.0, 4.0),
-                        size: Vec2::new(32.0 - 8.0, 32.0 - 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2645,17 +2589,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(32.0, 32.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(4.0, 4.0),
-                        size: Vec2::new(32.0 - 8.0, 32.0 - 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2678,17 +2620,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(4.0, 4.0),
-                        size: Vec2::new(32.0 - 8.0, 32.0 - 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(4.0, 4.0),
-                        size: Vec2::new(32.0 - 8.0, 32.0 - 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2709,12 +2649,10 @@ mod tests {
                 children: vec![],
             });
 
-            let mut draw_data = vec![];
-            ui.to_draw_data(root_position, root_size, &mut draw_data);
+            let draw_data = convert_to_draw_data(root_position, root_size, ui);
 
-            let expected = vec![Rectangle {
-                position: Vec2::new(1.0, 1.0),
-                size: Vec2::new(32.0, 32.0),
+            let expected = vec![DrawElement::Rectangle {
+                bounds: Rectangle::from_position_size(Vec2::new(1.0, 1.0), Vec2::new(32.0, 32.0)),
                 fill_color: Color::ZERO,
                 border_color: Color::ZERO,
                 border_radius: Vec4::ZERO,
@@ -2743,17 +2681,15 @@ mod tests {
                     })],
                 }),
                 &[
-                    Rectangle {
-                        position: Vec2::new(0.0, 0.0),
-                        size: Vec2::new(9.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(9.0, 8.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
                         border_width: Vec4::ZERO,
                     },
-                    Rectangle {
-                        position: Vec2::new(1.0, 0.0),
-                        size: Vec2::new(8.0, 8.0),
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(1.0, 0.0), Vec2::new(8.0, 8.0)),
                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
                         border_color: Color::ZERO,
                         border_radius: Vec4::ZERO,
@@ -2764,4 +2700,3 @@ mod tests {
         }
     }
 }
-*/

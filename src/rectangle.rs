@@ -1,6 +1,6 @@
 use glam::Vec2;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rectangle {
     pub left: f32,
     pub bottom: f32,

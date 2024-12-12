@@ -2,6 +2,7 @@ use glam::Vec4;
 
 use crate::{image::image_manager::ImageId, rectangle::Rectangle, vertex::Color};
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum DrawElement {
     Rectangle {
         bounds: Rectangle,
