@@ -1129,6 +1129,29 @@ pub fn example_ui() -> UiNode {
                         }),
                     ],
                 }),
+                UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new()
+                        .width(Extent::Px(512.0))
+                        .height(Extent::FitContent)
+                        .self_alignment(Alignment::BottomRight),
+                    children: (5..48)
+                        .map(|i| {
+                            UiNode::Text(TextProps {
+                                content: "aAbBcCdDoOÓgfjpq".to_string(),
+                                font: "tangerine-regular.ttf".to_string(),
+                                font_size: i as f32,
+                                line_height: i as f32,
+                                modifiers: Modifiers::new()
+                                    .self_alignment(Alignment::Left)
+                                    .fill_color(if i % 2 == 0 {
+                                        Color::new(1.0, 0.0, 0.0, 0.5)
+                                    } else {
+                                        Color::new(0.0, 1.0, 0.0, 0.5)
+                                    }),
+                            })
+                        })
+                        .collect(),
+                }),
             ],
         })],
         ..Default::default()
