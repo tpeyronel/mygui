@@ -94,10 +94,20 @@ impl FontEngine {
 
         let dimensions = Vec2::new(
             max_computed_line_width,
-            pen.y.abs() + options.line_height - (face.descender() / 64) as f32,
+            pen.y.abs() + options.line_height - Self::estimate_descender(face, options.font_size),
         );
 
         dimensions
+    }
+
+    // Not quite perfect (the round() doesn't always work), but good enough.
+    fn estimate_descender(face: &freetype::Face, font_size: f32) -> f32 {
+        let unscaled_descender = face.descender() as f32 / 64.0;
+        let unscaled_height = (face.ascender() - face.descender()) as f32 / 64.0;
+        let height_quotient = font_size / unscaled_height;
+        let scaled_descender = (height_quotient * unscaled_descender).round();
+
+        scaled_descender
     }
 
     fn get_or_create_font_data(&mut self, image_manager: &mut ImageManager, font: &str, font_size: u32) -> &FontData {
