@@ -1139,7 +1139,7 @@ pub fn example_ui() -> UiNode {
                 }),
                 UiNode::Column(ColumnProps {
                     modifiers: Modifiers::new()
-                        .width(Extent::Px(512.0))
+                        .width(Extent::FitContent)
                         .height(Extent::FitContent)
                         .self_alignment(Alignment::BottomRight),
                     children: (5..48)
