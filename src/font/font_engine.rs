@@ -90,6 +90,8 @@ impl FontEngine {
             pen.x += glyph.advance as f32;
         }
 
+        max_computed_line_width = max_computed_line_width.max(pen.x);
+
         let dimensions = Vec2::new(
             max_computed_line_width,
             pen.y.abs() + options.line_height - (face.descender() / 64) as f32,
