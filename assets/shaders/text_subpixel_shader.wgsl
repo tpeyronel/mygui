@@ -41,7 +41,4 @@ fn fs_main(in: VertexOut) -> FragmentOut {
     out.color = vec4(1.0, 1.0, 1.0, 1.0);
     out.mask = vec4(textureSample(u_texture, u_sampler, in.uv).rgb, 1.0);
     return out;
-
-    // return vec4(vec3(1.0), textureSample(u_texture, u_sampler, in.uv).r);
-    // return select(vec4(0.0), vec4(0.0, 0.0, 1.0, 1.0), textureSample(u_texture, u_sampler, in.uv).r != 0);
 }

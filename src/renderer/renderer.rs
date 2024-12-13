@@ -21,7 +21,7 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     box_pipeline: wgpu::RenderPipeline,
-    texture_pipeline: wgpu::RenderPipeline,
+    text_subpixel_pipeline: wgpu::RenderPipeline,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     textures: HashMap<ImageId, Texture>,
     vertex_buffer: wgpu::Buffer,
@@ -82,9 +82,11 @@ impl Renderer {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/box_shader.wgsl"))),
         });
 
-        let texture_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        let text_subpixel_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("texture shader"),
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/texture_shader.wgsl"))),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!(
+                "../../assets/shaders/text_subpixel_shader.wgsl"
+            ))),
         });
 
         let global_uniform = GlobalUniform {
@@ -247,17 +249,17 @@ impl Renderer {
             cache: None,
         });
 
-        let texture_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let text_subpixel_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("texture pipeline"),
             layout: Some(&texture_pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &texture_shader,
+                module: &text_subpixel_shader,
                 entry_point: Some("vs_main"),
                 buffers: &[Vertex::vertex_buffer_layout()],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
-                module: &texture_shader,
+                module: &text_subpixel_shader,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
@@ -298,7 +300,7 @@ impl Renderer {
             device,
             queue,
             box_pipeline,
-            texture_pipeline,
+            text_subpixel_pipeline,
             texture_bind_group_layout,
             textures: HashMap::new(),
             vertex_buffer,
@@ -521,7 +523,7 @@ impl Renderer {
                         first_index,
                         image_id,
                     } => {
-                        rpass.set_pipeline(&self.texture_pipeline);
+                        rpass.set_pipeline(&self.text_subpixel_pipeline);
                         rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
                         let texture = self.textures.get(&image_id).expect("TODO");
                         rpass.set_bind_group(1, &texture.bind_group, &[]);
