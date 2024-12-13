@@ -675,7 +675,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         self.font_engine
             .lay_out_text(self.image_manager, content, &options, |glyph| {
-                let texture = DrawElement::Texture {
+                let texture = DrawElement::TextGlyph {
                     bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
                     uv_rectangle: glyph.atlas_uv_rectangle,
                     text_color: *text_color,

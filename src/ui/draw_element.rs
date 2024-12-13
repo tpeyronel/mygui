@@ -11,7 +11,7 @@ pub enum DrawElement {
         border_radius: Vec4,
         border_width: Vec4,
     },
-    Texture {
+    TextGlyph {
         bounds: Rectangle,
         uv_rectangle: Rectangle,
         text_color: Color,

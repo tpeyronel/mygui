@@ -381,7 +381,7 @@ impl Renderer {
         };
 
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("glyphs array"),
+            label: Some(&format!("{:?} texture", image_id)),
             size: texture_size,
             mip_level_count: 1,
             sample_count: 1,
@@ -407,10 +407,13 @@ impl Renderer {
             texture_size,
         );
 
-        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some(&format!("{:?} texture view", image_id)),
+            ..Default::default()
+        });
 
         let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("glyph sampler"),
+            label: Some(&format!("{:?} sampler", image_id)),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
@@ -420,9 +423,8 @@ impl Renderer {
             ..Default::default()
         });
 
-        let label = format!("texture {:?} uniform group", image_id);
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(&label),
+            label: Some(&format!("{:?} bind group", image_id)),
             layout: &self.text_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -476,7 +478,7 @@ impl Renderer {
                             rectangle_data_index,
                         }
                     }
-                    Mesh::Texture {
+                    Mesh::TextGlyph {
                         vertices,
                         indices,
                         text_color,
@@ -485,7 +487,7 @@ impl Renderer {
                         all_vertices.extend(vertices);
                         all_indices.extend(indices);
 
-                        ProcessedMesh::Texture {
+                        ProcessedMesh::TextGlyph {
                             base_vertex,
                             first_index,
                             text_color,
@@ -567,7 +569,7 @@ impl Renderer {
                         );
                         rpass.draw_indexed(*first_index..*first_index + 6, *base_vertex, 0..1);
                     }
-                    ProcessedMesh::Texture {
+                    ProcessedMesh::TextGlyph {
                         base_vertex,
                         first_index,
                         text_color,
@@ -617,7 +619,7 @@ enum ProcessedMesh {
         first_index: u32,
         rectangle_data_index: u32,
     },
-    Texture {
+    TextGlyph {
         base_vertex: i32,
         first_index: u32,
         text_color: Color,

@@ -13,7 +13,7 @@ pub enum Mesh {
         indices: Vec<u32>,
         rectangle_data: RectangleData,
     },
-    Texture {
+    TextGlyph {
         vertices: Vec<Vertex>,
         indices: Vec<u32>,
         text_color: Color,
@@ -72,7 +72,7 @@ impl Mesh {
                     rectangle_data,
                 }
             }
-            DrawElement::Texture {
+            DrawElement::TextGlyph {
                 bounds,
                 uv_rectangle,
                 text_color,
@@ -81,7 +81,7 @@ impl Mesh {
                 let vertices = rectangle_to_vertices(bounds, uv_rectangle);
                 let indices = vec![0, 1, 2, 0, 2, 3];
 
-                Self::Texture {
+                Self::TextGlyph {
                     vertices,
                     indices,
                     text_color: *text_color,
