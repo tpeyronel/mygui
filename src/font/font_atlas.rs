@@ -1,7 +1,8 @@
-use std::u32;
+use std::{u32, u8};
 
 use crate::image::{
     image::Image,
+    image_format::ImageFormat,
     image_manager::{ImageId, ImageManager},
 };
 
@@ -31,16 +32,20 @@ impl FontAtlas {
         let width = 4096;
         let height = 4096;
 
+        let mut load_flags = freetype::face::LoadFlag::RENDER;
+        load_flags |= freetype::face::LoadFlag::TARGET_LCD;
+
         let mut glyphs = vec![];
         for g in 0..face.num_glyphs() as u32 {
-            face.load_glyph(g, freetype::face::LoadFlag::RENDER).expect("TODO");
+            face.load_glyph(g, load_flags).expect("TODO");
             let glyph = face.glyph();
 
             let glyph_image = Image::from_data(
                 glyph.bitmap().buffer().to_owned(),
-                glyph.bitmap().width() as u32,
+                (glyph.bitmap().width() / 3) as u32,
                 glyph.bitmap().rows() as u32,
                 glyph.bitmap().pitch() as u32, // TODO: handle negative
+                ImageFormat::Rgb8Unorm,
             );
 
             let glyph = Glyph {
@@ -58,7 +63,7 @@ impl FontAtlas {
         glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.height() as i32));
 
         let mut atlas_glyphs = vec![];
-        let mut atlas_image = Image::new_empty(width, height);
+        let mut atlas_image = Image::new_empty(width, height, ImageFormat::Rgba8Unorm);
         let mut cursor_x: u32 = width;
         let mut cursor_y: u32 = u32::MAX;
         let mut next_cursor_y = 0;
@@ -110,11 +115,15 @@ impl FontAtlas {
 }
 
 fn copy_to_atlas(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32, dst_bottom: u32) {
+    assert_eq!(glyph_image.format(), ImageFormat::Rgb8Unorm);
+    assert_eq!(atlas_image.format(), ImageFormat::Rgba8Unorm);
+
     for y in 0..glyph_image.height() {
         for x in 0..glyph_image.width() {
-            let p = glyph_image.get(x, y);
+            let rgb = glyph_image.get_rgb(x, y);
             let flipped_y = glyph_image.height() - 1 - y; // TODO: handle negative pitch.
-            atlas_image.set(dst_left + x, dst_bottom + flipped_y, p);
+
+            atlas_image.set_rgba(dst_left + x, dst_bottom + flipped_y, [rgb[0], rgb[1], rgb[2], u8::MAX]);
         }
     }
 }
