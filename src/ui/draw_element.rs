@@ -14,6 +14,7 @@ pub enum DrawElement {
     Texture {
         bounds: Rectangle,
         uv_rectangle: Rectangle,
+        text_color: Color,
         image_id: ImageId,
     },
 }

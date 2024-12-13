@@ -16,6 +16,7 @@ pub enum Mesh {
     Texture {
         vertices: Vec<Vertex>,
         indices: Vec<u32>,
+        text_color: Color,
         image_id: ImageId,
     },
 }
@@ -74,6 +75,7 @@ impl Mesh {
             DrawElement::Texture {
                 bounds,
                 uv_rectangle,
+                text_color,
                 image_id,
             } => {
                 let vertices = rectangle_to_vertices(bounds, uv_rectangle);
@@ -82,6 +84,7 @@ impl Mesh {
                 Self::Texture {
                     vertices,
                     indices,
+                    text_color: *text_color,
                     image_id: *image_id,
                 }
             }

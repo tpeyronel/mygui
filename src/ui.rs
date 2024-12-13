@@ -130,6 +130,7 @@ pub type RowProps = ColumnProps;
 #[derive(Debug, Clone)]
 pub struct TextProps {
     content: String,
+    text_color: Color,
     font: String,
     font_size: f32,
     line_height: f32,
@@ -592,6 +593,7 @@ impl<'a> UiNodeProcessor<'a> {
             font_size,
             line_height,
             modifiers,
+            ..
         }: &TextProps,
         boundary_size: Vec2,
     ) -> Measurements {
@@ -651,6 +653,7 @@ impl<'a> UiNodeProcessor<'a> {
         &mut self,
         TextProps {
             content,
+            text_color,
             font,
             font_size,
             line_height,
@@ -675,6 +678,7 @@ impl<'a> UiNodeProcessor<'a> {
                 let texture = DrawElement::Texture {
                     bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
                     uv_rectangle: glyph.atlas_uv_rectangle,
+                    text_color: *text_color,
                     image_id: glyph.image_id,
                 };
 
@@ -1025,6 +1029,7 @@ pub fn example_ui() -> UiNode {
                             children: vec![UiNode::Text(TextProps {
                                 content: "ÓThis is a text!\nÓWith three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
+                                text_color: Color::ONE,
                                 font: "jetbrainsmono.ttf".to_string(),
                                 font_size: 24.0,
                                 line_height: 24.0 * 1.5,
@@ -1090,6 +1095,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
                                         content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
+                                        text_color: Color::ONE,
                                         font: "jetbrainsmono.ttf".to_string(),
                                         font_size: 48.0,
                                         line_height: 48.0,
@@ -1124,6 +1130,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
                                         content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
+                                        text_color: Color::ONE,
                                         font: "times.ttf".to_string(),
                                         font_size: 17.0,
                                         line_height: 17.0,
@@ -1142,10 +1149,11 @@ pub fn example_ui() -> UiNode {
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
                         .self_alignment(Alignment::BottomRight),
-                    children: (5..48)
+                    children: (5..32)
                         .map(|i| {
                             UiNode::Text(TextProps {
                                 content: "aAbBcCdDoOÓgfjpq".to_string(),
+                                text_color: Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0),
                                 font: "tangerine.ttf".to_string(),
                                 font_size: i as f32,
                                 line_height: i as f32,

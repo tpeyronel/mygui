@@ -8,7 +8,7 @@ use crate::{
     image::image_manager::{ImageId, ImageManager},
     rectangle::Rectangle,
     ui::draw_element::DrawElement,
-    vertex::Vertex,
+    vertex::{Color, Vertex},
 };
 
 use super::mesh::Mesh;
@@ -24,7 +24,7 @@ pub struct Renderer {
     box_pipeline: wgpu::RenderPipeline,
     text_grayscale_pipeline: wgpu::RenderPipeline,
     text_subpixel_pipeline: wgpu::RenderPipeline,
-    texture_bind_group_layout: wgpu::BindGroupLayout,
+    text_bind_group_layout: wgpu::BindGroupLayout,
     textures: HashMap<ImageId, Texture>,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -163,7 +163,7 @@ impl Renderer {
             }],
         });
 
-        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        let text_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("texture bind group layout"),
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -197,10 +197,13 @@ impl Renderer {
             }],
         });
 
-        let texture_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("texture pipeline layout"),
-            bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
-            push_constant_ranges: &[],
+        let text_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("text pipeline layout"),
+            bind_group_layouts: &[&global_uniform_bind_group_layout, &text_bind_group_layout],
+            push_constant_ranges: &[wgpu::PushConstantRange {
+                stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                range: 0..16,
+            }],
         });
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
@@ -260,7 +263,7 @@ impl Renderer {
 
         let text_grayscale_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("text grayscale pipeline"),
-            layout: Some(&texture_pipeline_layout),
+            layout: Some(&text_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &text_grayscale_shader,
                 entry_point: Some("vs_main"),
@@ -293,7 +296,7 @@ impl Renderer {
 
         let text_subpixel_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("text subpixel pipeline"),
-            layout: Some(&texture_pipeline_layout),
+            layout: Some(&text_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &text_subpixel_shader,
                 entry_point: Some("vs_main"),
@@ -344,7 +347,7 @@ impl Renderer {
             box_pipeline,
             text_grayscale_pipeline,
             text_subpixel_pipeline,
-            texture_bind_group_layout,
+            text_bind_group_layout,
             textures: HashMap::new(),
             vertex_buffer,
             index_buffer,
@@ -417,9 +420,10 @@ impl Renderer {
             ..Default::default()
         });
 
+        let label = format!("texture {:?} uniform group", image_id);
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("texture uniform group"),
-            layout: &self.texture_bind_group_layout,
+            label: Some(&label),
+            layout: &self.text_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -475,6 +479,7 @@ impl Renderer {
                     Mesh::Texture {
                         vertices,
                         indices,
+                        text_color,
                         image_id,
                     } => {
                         all_vertices.extend(vertices);
@@ -483,6 +488,7 @@ impl Renderer {
                         ProcessedMesh::Texture {
                             base_vertex,
                             first_index,
+                            text_color,
                             image_id,
                         }
                     }
@@ -564,6 +570,7 @@ impl Renderer {
                     ProcessedMesh::Texture {
                         base_vertex,
                         first_index,
+                        text_color,
                         image_id,
                     } => {
                         if ENABLE_SUBPIXEL_RENDERING {
@@ -571,6 +578,11 @@ impl Renderer {
                         } else {
                             rpass.set_pipeline(&self.text_grayscale_pipeline);
                         }
+                        rpass.set_push_constants(
+                            wgpu::ShaderStages::VERTEX_FRAGMENT,
+                            0,
+                            bytemuck::cast_slice(std::slice::from_ref(text_color)),
+                        );
                         rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
                         let texture = self.textures.get(&image_id).expect("TODO");
                         rpass.set_bind_group(1, &texture.bind_group, &[]);
@@ -608,6 +620,7 @@ enum ProcessedMesh {
     Texture {
         base_vertex: i32,
         first_index: u32,
+        text_color: Color,
         image_id: ImageId,
     },
 }

@@ -6,6 +6,7 @@ struct GlobalUniform {
 @group(0) @binding(0) var<uniform> global_uniform: GlobalUniform;
 @group(1) @binding(0) var u_texture: texture_2d<f32>;
 @group(1) @binding(1) var u_sampler: sampler;
+var<push_constant> u_text_color: vec4<f32>;
 
 struct VertexIn {
     @location(0) pos: vec2<f32>,
@@ -37,6 +38,6 @@ struct FragmentOut {
 @fragment
 fn fs_main(in: VertexOut) -> FragmentOut {
     var out: FragmentOut;
-    out.color = vec4(1.0, 1.0, 1.0, textureSample(u_texture, u_sampler, in.uv).r);
+    out.color = vec4(u_text_color.rgb, u_text_color.a * textureSample(u_texture, u_sampler, in.uv).r);
     return out;
 }
