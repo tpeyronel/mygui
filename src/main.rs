@@ -20,6 +20,7 @@ mod rectangle;
 mod renderer;
 mod ui;
 mod vertex;
+mod config;
 
 struct App {
     state: Option<AppState>,

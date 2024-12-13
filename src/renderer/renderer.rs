@@ -4,6 +4,7 @@ use futures::executor;
 use wgpu::util::DeviceExt;
 
 use crate::{
+    config::ENABLE_SUBPIXEL_RENDERING,
     image::image_manager::{ImageId, ImageManager},
     rectangle::Rectangle,
     ui::draw_element::DrawElement,
@@ -565,7 +566,11 @@ impl Renderer {
                         first_index,
                         image_id,
                     } => {
-                        rpass.set_pipeline(&self.text_subpixel_pipeline);
+                        if ENABLE_SUBPIXEL_RENDERING {
+                            rpass.set_pipeline(&self.text_subpixel_pipeline);
+                        } else {
+                            rpass.set_pipeline(&self.text_grayscale_pipeline);
+                        }
                         rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
                         let texture = self.textures.get(&image_id).expect("TODO");
                         rpass.set_bind_group(1, &texture.bind_group, &[]);

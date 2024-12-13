@@ -1,9 +1,12 @@
 use std::{u32, u8};
 
-use crate::image::{
-    image::Image,
-    image_format::ImageFormat,
-    image_manager::{ImageId, ImageManager},
+use crate::{
+    config::ENABLE_SUBPIXEL_RENDERING,
+    image::{
+        image::Image,
+        image_format::ImageFormat,
+        image_manager::{ImageId, ImageManager},
+    },
 };
 
 #[derive(Debug)]
@@ -33,19 +36,29 @@ impl FontAtlas {
         let height = 4096;
 
         let mut load_flags = freetype::face::LoadFlag::RENDER;
-        load_flags |= freetype::face::LoadFlag::TARGET_LCD;
+        if ENABLE_SUBPIXEL_RENDERING {
+            load_flags |= freetype::face::LoadFlag::TARGET_LCD;
+        }
 
         let mut glyphs = vec![];
         for g in 0..face.num_glyphs() as u32 {
             face.load_glyph(g, load_flags).expect("TODO");
             let glyph = face.glyph();
 
+            let pixel_mode = glyph.bitmap().pixel_mode().expect("TODO");
+
+            let (glyph_image_format, glyph_width) = match pixel_mode {
+                freetype::bitmap::PixelMode::Gray => (ImageFormat::R8Unorm, glyph.bitmap().width()),
+                freetype::bitmap::PixelMode::Lcd => (ImageFormat::Rgb8Unorm, glyph.bitmap().width() / 3),
+                _ => todo!(),
+            };
+
             let glyph_image = Image::from_data(
                 glyph.bitmap().buffer().to_owned(),
-                (glyph.bitmap().width() / 3) as u32,
+                glyph_width as u32,
                 glyph.bitmap().rows() as u32,
                 glyph.bitmap().pitch() as u32, // TODO: handle negative
-                ImageFormat::Rgb8Unorm,
+                glyph_image_format,
             );
 
             let glyph = Glyph {
@@ -63,7 +76,12 @@ impl FontAtlas {
         glyph_indices.sort_by_key(|&i| -(glyphs[i as usize].image.height() as i32));
 
         let mut atlas_glyphs = vec![];
-        let mut atlas_image = Image::new_empty(width, height, ImageFormat::Rgba8Unorm);
+        let atlas_image_format = if ENABLE_SUBPIXEL_RENDERING {
+            ImageFormat::Rgba8Unorm
+        } else {
+            ImageFormat::R8Unorm
+        };
+        let mut atlas_image = Image::new_empty(width, height, atlas_image_format);
         let mut cursor_x: u32 = width;
         let mut cursor_y: u32 = u32::MAX;
         let mut next_cursor_y = 0;
@@ -115,16 +133,33 @@ impl FontAtlas {
 }
 
 fn copy_to_atlas(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32, dst_bottom: u32) {
-    assert_eq!(glyph_image.format(), ImageFormat::Rgb8Unorm);
-    assert_eq!(atlas_image.format(), ImageFormat::Rgba8Unorm);
+    assert!(
+        (glyph_image.format() == ImageFormat::R8Unorm && atlas_image.format() == ImageFormat::R8Unorm)
+            || (glyph_image.format() == ImageFormat::Rgb8Unorm && atlas_image.format() == ImageFormat::Rgba8Unorm)
+    );
 
-    for y in 0..glyph_image.height() {
-        for x in 0..glyph_image.width() {
-            let rgb = glyph_image.get_rgb(x, y);
-            let flipped_y = glyph_image.height() - 1 - y; // TODO: handle negative pitch.
+    match glyph_image.format() {
+        ImageFormat::R8Unorm => {
+            for y in 0..glyph_image.height() {
+                for x in 0..glyph_image.width() {
+                    let r = glyph_image.get_r(x, y);
+                    let flipped_y = glyph_image.height() - 1 - y; // TODO: handle negative pitch.
 
-            atlas_image.set_rgba(dst_left + x, dst_bottom + flipped_y, [rgb[0], rgb[1], rgb[2], u8::MAX]);
+                    atlas_image.set_r(dst_left + x, dst_bottom + flipped_y, r);
+                }
+            }
         }
+        ImageFormat::Rgb8Unorm => {
+            for y in 0..glyph_image.height() {
+                for x in 0..glyph_image.width() {
+                    let rgb = glyph_image.get_rgb(x, y);
+                    let flipped_y = glyph_image.height() - 1 - y; // TODO: handle negative pitch.
+
+                    atlas_image.set_rgba(dst_left + x, dst_bottom + flipped_y, [rgb[0], rgb[1], rgb[2], u8::MAX]);
+                }
+            }
+        }
+        ImageFormat::Rgba8Unorm => unreachable!(),
     }
 }
 
