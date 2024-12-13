@@ -1025,7 +1025,7 @@ pub fn example_ui() -> UiNode {
                             children: vec![UiNode::Text(TextProps {
                                 content: "ÓThis is a text!\nÓWith three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
-                                font: "jetbrainsmono-regular.ttf".to_string(),
+                                font: "jetbrainsmono.ttf".to_string(),
                                 font_size: 24.0,
                                 line_height: 24.0 * 1.5,
                                 modifiers: Modifiers::new().self_alignment(Alignment::TopLeft),
@@ -1090,7 +1090,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
                                         content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
-                                        font: "jetbrainsmono-regular.ttf".to_string(),
+                                        font: "jetbrainsmono.ttf".to_string(),
                                         font_size: 48.0,
                                         line_height: 48.0,
                                         modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
@@ -1146,7 +1146,7 @@ pub fn example_ui() -> UiNode {
                         .map(|i| {
                             UiNode::Text(TextProps {
                                 content: "aAbBcCdDoOÓgfjpq".to_string(),
-                                font: "tangerine-regular.ttf".to_string(),
+                                font: "tangerine.ttf".to_string(),
                                 font_size: i as f32,
                                 line_height: i as f32,
                                 modifiers: Modifiers::new()
