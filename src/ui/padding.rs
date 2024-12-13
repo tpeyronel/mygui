@@ -9,6 +9,7 @@ pub struct Padding {
 }
 
 impl Padding {
+    #[allow(unused)]
     pub fn new(bottom: f32, right: f32, top: f32, left: f32) -> Self {
         Self {
             bottom,

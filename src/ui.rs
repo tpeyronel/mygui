@@ -657,7 +657,7 @@ impl<'a> UiNodeProcessor<'a> {
             font,
             font_size,
             line_height,
-            modifiers,
+            ..
         }: &TextProps,
         layout: &Layout,
     ) {
@@ -702,18 +702,22 @@ struct Layout {
 }
 
 impl Layout {
+    #[allow(unused)]
     fn margin_position(&self) -> Vec2 {
         self.margin_position
     }
 
+    #[allow(unused)]
     fn border_position(&self) -> Vec2 {
         self.margin_position + self.margin.delta_position()
     }
 
+    #[allow(unused)]
     fn padding_position(&self) -> Vec2 {
         self.margin_position + self.margin.delta_position() + self.border_thickness.delta_position()
     }
 
+    #[allow(unused)]
     fn content_position(&self) -> Vec2 {
         self.margin_position
             + self.margin.delta_position()
@@ -721,27 +725,33 @@ impl Layout {
             + self.padding.delta_position() // TODO: clamp
     }
 
+    #[allow(unused)]
     fn margin_size(&self) -> Vec2 {
         self.margin_size
     }
 
+    #[allow(unused)]
     fn border_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size()).max(Vec2::ZERO)
     }
 
+    #[allow(unused)]
     fn padding_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size()).max(Vec2::ZERO)
     }
 
+    #[allow(unused)]
     fn content_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size() - self.padding.delta_size())
             .max(Vec2::ZERO)
     }
 
+    #[allow(unused)]
     fn children_boundary_size(&self) -> Vec2 {
         self.children_boundary_size
     }
 
+    #[allow(unused)]
     fn content_center(&self) -> Vec2 {
         self.content_position() + (self.content_size() * 0.5)
     }
@@ -768,14 +778,17 @@ impl Measurements {
         }
     }
 
+    #[allow(unused)]
     fn border_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size()).max(Vec2::ZERO)
     }
 
+    #[allow(unused)]
     fn padding_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size()).max(Vec2::ZERO)
     }
 
+    #[allow(unused)]
     fn content_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size() - self.padding.delta_size())
             .max(Vec2::ZERO)

@@ -22,6 +22,14 @@ impl Rectangle {
         Vec2::new(self.left, self.bottom)
     }
 
+    pub fn bottom_right(&self) -> Vec2 {
+        Vec2::new(self.right, self.bottom)
+    }
+
+    pub fn top_left(&self) -> Vec2 {
+        Vec2::new(self.left, self.top)
+    }
+
     pub fn top_right(&self) -> Vec2 {
         Vec2::new(self.right, self.top)
     }
@@ -34,6 +42,7 @@ impl Rectangle {
         self.top - self.bottom
     }
 
+    #[allow(unused)]
     pub fn size(&self) -> Vec2 {
         Vec2::new(self.width(), self.height())
     }

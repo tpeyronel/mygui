@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4};
+use glam::Vec4;
 
 use crate::{
     image::image_manager::ImageId,
@@ -93,20 +93,22 @@ impl Mesh {
 }
 
 fn rectangle_to_vertices(rectangle: &Rectangle, uv_rectangle: &Rectangle) -> Vec<Vertex> {
-    let bl = Vec2::new(rectangle.left, rectangle.bottom);
-    let br = Vec2::new(rectangle.right, rectangle.bottom);
-    let tr = Vec2::new(rectangle.right, rectangle.top);
-    let tl = Vec2::new(rectangle.left, rectangle.top);
-
-    let uv_bl = Vec2::new(uv_rectangle.left, uv_rectangle.bottom);
-    let uv_br = Vec2::new(uv_rectangle.right, uv_rectangle.bottom);
-    let uv_tr = Vec2::new(uv_rectangle.right, uv_rectangle.top);
-    let uv_tl = Vec2::new(uv_rectangle.left, uv_rectangle.top);
-
     return vec![
-        Vertex { pos: bl, uv: uv_bl },
-        Vertex { pos: br, uv: uv_br },
-        Vertex { pos: tr, uv: uv_tr },
-        Vertex { pos: tl, uv: uv_tl },
+        Vertex {
+            pos: rectangle.bottom_left(),
+            uv: uv_rectangle.bottom_left(),
+        },
+        Vertex {
+            pos: rectangle.bottom_right(),
+            uv: uv_rectangle.bottom_right(),
+        },
+        Vertex {
+            pos: rectangle.top_right(),
+            uv: uv_rectangle.top_right(),
+        },
+        Vertex {
+            pos: rectangle.top_left(),
+            uv: uv_rectangle.top_left(),
+        },
     ];
 }

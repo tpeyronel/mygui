@@ -600,8 +600,11 @@ impl Renderer {
 }
 
 struct Texture {
+    #[allow(unused)]
     texture: wgpu::Texture,
+    #[allow(unused)]
     texture_view: wgpu::TextureView,
+    #[allow(unused)]
     sampler: wgpu::Sampler,
     bind_group: wgpu::BindGroup,
 }

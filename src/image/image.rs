@@ -40,12 +40,14 @@ impl Image {
         (y * self.pitch + x * self.format.bytes_per_pixel()) as usize
     }
 
+    #[allow(unused)]
     pub fn get_r(&self, x: u32, y: u32) -> u8 {
         assert_eq!(self.format, ImageFormat::R8Unorm);
 
         self.data[self.coords_to_index(x, y)]
     }
 
+    #[allow(unused)]
     pub fn set_r(&mut self, x: u32, y: u32, value: u8) {
         assert_eq!(self.format, ImageFormat::R8Unorm);
 
@@ -53,6 +55,7 @@ impl Image {
         self.data[index] = value;
     }
 
+    #[allow(unused)]
     pub fn get_rgb(&self, x: u32, y: u32) -> [u8; 3] {
         assert_eq!(self.format, ImageFormat::Rgb8Unorm);
 
@@ -60,6 +63,7 @@ impl Image {
         [self.data[r_index], self.data[r_index + 1], self.data[r_index + 2]]
     }
 
+    #[allow(unused)]
     pub fn set_rgb(&mut self, x: u32, y: u32, value: [u8; 3]) {
         assert_eq!(self.format, ImageFormat::Rgb8Unorm);
 
@@ -69,6 +73,7 @@ impl Image {
         self.data[r_index + 2] = value[2];
     }
 
+    #[allow(unused)]
     pub fn get_rgba(&self, x: u32, y: u32) -> [u8; 4] {
         assert_eq!(self.format, ImageFormat::Rgba8Unorm);
 
@@ -81,6 +86,7 @@ impl Image {
         ]
     }
 
+    #[allow(unused)]
     pub fn set_rgba(&mut self, x: u32, y: u32, value: [u8; 4]) {
         assert_eq!(self.format, ImageFormat::Rgba8Unorm);
 

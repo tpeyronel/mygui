@@ -13,6 +13,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
+mod config;
 mod font;
 mod image;
 mod is_integer;
@@ -20,13 +21,13 @@ mod rectangle;
 mod renderer;
 mod ui;
 mod vertex;
-mod config;
 
 struct App {
     state: Option<AppState>,
 }
 
 struct AppState {
+    #[allow(dead_code)]
     window: Arc<Window>,
     draw_data: Vec<DrawElement>,
     image_manager: ImageManager,
@@ -91,7 +92,7 @@ impl ApplicationHandler for App {
         })
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _window_id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::Resized(new_size) => {
                 let state = self.state.as_mut().unwrap();
@@ -135,9 +136,9 @@ impl ApplicationHandler for App {
                 state.renderer.render();
             }
             WindowEvent::KeyboardInput {
-                device_id,
+                device_id: _device_id,
                 event,
-                is_synthetic,
+                is_synthetic: _is_synthetic,
             } => match event.physical_key {
                 PhysicalKey::Code(winit::keyboard::KeyCode::Escape) if event.state == ElementState::Released => {
                     event_loop.exit()
