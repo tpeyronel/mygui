@@ -1,5 +1,3 @@
-// enable dual_source_blending;
-
 struct GlobalUniform {
     viewport_width: f32,
     viewport_height: f32,
