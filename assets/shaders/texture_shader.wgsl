@@ -1,3 +1,5 @@
+// enable dual_source_blending;
+
 struct GlobalUniform {
     viewport_width: f32,
     viewport_height: f32,
@@ -30,7 +32,18 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, in: VertexIn) -> VertexOut {
     return out;
 }
 
+struct FragmentOut {
+    @location(0) color: vec4<f32>,
+    @location(0) @second_blend_source mask: vec4<f32>,
+}
+
 @fragment
-fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    return vec4(vec3(1.0), textureSample(u_texture, u_sampler, in.uv).r);
+fn fs_main(in: VertexOut) -> FragmentOut {
+    var out: FragmentOut;
+    out.color = vec4(1.0, 1.0, 1.0, 1.0);
+    out.mask = vec4(textureSample(u_texture, u_sampler, in.uv).rgb, 1.0);
+    return out;
+
+    // return vec4(vec3(1.0), textureSample(u_texture, u_sampler, in.uv).r);
+    // return select(vec4(0.0), vec4(0.0, 0.0, 1.0, 1.0), textureSample(u_texture, u_sampler, in.uv).r != 0);
 }

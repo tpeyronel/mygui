@@ -68,7 +68,8 @@ impl Renderer {
                 label: None,
                 required_features: wgpu::Features::BUFFER_BINDING_ARRAY
                     | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY // TODO: apparently not needed?
-                    | wgpu::Features::PUSH_CONSTANTS,
+                    | wgpu::Features::PUSH_CONSTANTS
+                    | wgpu::Features::DUAL_SOURCE_BLENDING,
                 required_limits,
                 memory_hints: wgpu::MemoryHints::MemoryUsage,
             },
@@ -263,8 +264,8 @@ impl Renderer {
                     format: swapchain_format,
                     blend: Some(wgpu::BlendState {
                         color: wgpu::BlendComponent {
-                            src_factor: wgpu::BlendFactor::SrcAlpha,
-                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                            src_factor: wgpu::BlendFactor::Src1,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrc1,
                             operation: wgpu::BlendOperation::Add,
                         },
                         alpha: wgpu::BlendComponent::OVER,
