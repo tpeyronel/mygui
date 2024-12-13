@@ -18,7 +18,9 @@ pub struct FontEngine {
 impl FontEngine {
     pub fn new(font_dir_path: impl AsRef<OsStr>) -> Self {
         let ft_lib = freetype::Library::init().unwrap();
-        ft_lib.set_lcd_filter(freetype::LcdFilter::LcdFilterDefault).expect("TODO");
+        ft_lib
+            .set_lcd_filter(freetype::LcdFilter::LcdFilterDefault)
+            .expect("TODO");
 
         Self {
             ft_lib,
@@ -53,7 +55,8 @@ impl FontEngine {
                 continue;
             }
 
-            let glyph_index = face.get_char_index(c as usize).expect("TODO");
+            // glyph_index 0 corresponds to ".notdef" glyph (which is sometimes empty).
+            let glyph_index = face.get_char_index(c as usize).unwrap_or(0);
             let glyph: &AtlasGlyph = atlas.get_glyph(glyph_index);
 
             if pen.x + glyph.advance as f32 > options.max_line_width {
