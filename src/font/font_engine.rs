@@ -18,6 +18,7 @@ pub struct FontEngine {
 impl FontEngine {
     pub fn new(font_dir_path: impl AsRef<OsStr>) -> Self {
         let ft_lib = freetype::Library::init().unwrap();
+        ft_lib.set_lcd_filter(freetype::LcdFilter::LcdFilterDefault).expect("TODO");
 
         Self {
             ft_lib,
