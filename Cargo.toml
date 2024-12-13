@@ -8,8 +8,11 @@ bytemuck = { version = "1.19.0", features = ["derive"] }
 freetype-rs = { version = "0.37.0", features = ["bundled"] }
 futures = "0.3.31"
 glam = { version = "0.29.2", features = ["bytemuck"] }
-wgpu = "23.0.0"
+wgpu = { version = "23.0.0", features = ["spirv"] }
 winit = "0.30.5"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
+
+[patch.crates-io]
+freetype-sys = { git = "https://github.com/tpeyronel/freetype-sys", branch = "optsubpixel" }
