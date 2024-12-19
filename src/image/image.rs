@@ -97,6 +97,30 @@ impl Image {
         self.data[r_index + 3] = value[3];
     }
 
+    #[allow(unused)]
+    pub fn get_bgra(&self, x: u32, y: u32) -> [u8; 4] {
+        assert_eq!(self.format, ImageFormat::Bgra8Unorm);
+
+        let r_index = self.coords_to_index(x, y);
+        [
+            self.data[r_index],
+            self.data[r_index + 1],
+            self.data[r_index + 2],
+            self.data[r_index + 3],
+        ]
+    }
+
+    #[allow(unused)]
+    pub fn set_bgra(&mut self, x: u32, y: u32, value: [u8; 4]) {
+        assert_eq!(self.format, ImageFormat::Bgra8Unorm);
+
+        let r_index = self.coords_to_index(x, y);
+        self.data[r_index] = value[0];
+        self.data[r_index + 1] = value[1];
+        self.data[r_index + 2] = value[2];
+        self.data[r_index + 3] = value[3];
+    }
+
     pub fn width(&self) -> u32 {
         self.width
     }
