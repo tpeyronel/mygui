@@ -1040,7 +1040,7 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::FillParent)
                                 .fill_color(Color::new(0.25, 1.0, 0.25, 0.5)),
                             children: vec![UiNode::Text(TextProps {
-                                content: "ÓThis is a text!\nÓWith three lines\nÓThis is the last lineeeeeeeeee."
+                                content: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
                                 text_color: Color::ONE,
                                 font: "jetbrainsmono.ttf".to_string(),
@@ -1107,9 +1107,9 @@ pub fn example_ui() -> UiNode {
                                         .weight(1.0)
                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
-                                        content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
+                                        content: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
                                         text_color: Color::ONE,
-                                        font: "jetbrainsmono.ttf".to_string(),
+                                        font: "seguiemj.ttf".to_string(),
                                         font_size: 48.0,
                                         line_height: 48.0,
                                         modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
