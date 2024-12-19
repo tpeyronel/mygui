@@ -1,2 +1,2 @@
-pub mod font_atlas;
 pub mod font_engine;
+pub mod font_face;

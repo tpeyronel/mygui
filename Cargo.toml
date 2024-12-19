@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bitflags = "2.6.0"
 bytemuck = { version = "1.19.0", features = ["derive"] }
 freetype-rs = { version = "0.37.0", features = ["bundled"] }
 futures = "0.3.31"

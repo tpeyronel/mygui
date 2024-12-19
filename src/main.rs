@@ -96,6 +96,7 @@ impl ApplicationHandler for App {
         match event {
             WindowEvent::Resized(new_size) => {
                 let state = self.state.as_mut().unwrap();
+                state.font_engine.update(&mut state.image_manager);
                 state.renderer.on_resize(new_size.width, new_size.height);
 
                 state.draw_data.clear();
@@ -130,6 +131,8 @@ impl ApplicationHandler for App {
                 // self.window.as_ref().unwrap().request_redraw();
 
                 let state = self.state.as_mut().unwrap();
+
+                state.font_engine.update(&mut state.image_manager);
 
                 Self::process_image_manager_events(state);
 

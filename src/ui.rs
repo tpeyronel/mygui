@@ -613,7 +613,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         let dimensions = self
             .font_engine
-            .lay_out_text(self.image_manager, content, &text_options, |_| {});
+            .lay_out_text(content, &text_options, |_| {});
 
         let content_size = dimensions;
         let padding_size = content_size + modifiers.padding.delta_size();
@@ -674,7 +674,7 @@ impl<'a> UiNodeProcessor<'a> {
         };
 
         self.font_engine
-            .lay_out_text(self.image_manager, content, &options, |glyph| {
+            .lay_out_text(content, &options, |glyph| {
                 let texture = DrawElement::TextGlyph {
                     bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
                     uv_rectangle: glyph.atlas_uv_rectangle,
