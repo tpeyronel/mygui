@@ -6,6 +6,7 @@ impl ImageFormat {
             ImageFormat::R8Unorm => wgpu::TextureFormat::R8Unorm,
             ImageFormat::Rgb8Unorm => return None,
             ImageFormat::Rgba8Unorm => wgpu::TextureFormat::Rgba8Unorm,
+            ImageFormat::Bgra8Unorm => wgpu::TextureFormat::Bgra8Unorm,
         })
     }
 }
