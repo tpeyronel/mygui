@@ -1284,10 +1284,9 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
-        let mut image_manager = ImageManager::new();
         let mut font_engine = FontEngine::new("");
         let mut draw_data = vec![];
-        ui.to_draw_data(position, size, &mut image_manager, &mut font_engine, &mut draw_data);
+        ui.to_draw_data(position, size, &mut font_engine, &mut draw_data);
         draw_data
     }
 
