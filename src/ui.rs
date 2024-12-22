@@ -597,41 +597,61 @@ impl<'a> UiNodeProcessor<'a> {
         }: &TextProps,
         boundary_size: Vec2,
     ) -> Measurements {
-        // TODO: support more than FitContent
-        let boundary_size = boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size();
-        let max_line_width = if boundary_size.y == 0.0 {
-            f32::INFINITY
-        } else {
-            boundary_size.x
+        let mut computed_width = match modifiers.width {
+            Extent::FillParent => Some(boundary_size.x),
+            Extent::Px(px) => Some(px + modifiers.margin.delta_size().x),
+            Extent::FitContent => None,
         };
 
-        let mut text_options = TextLayoutOptions {
-            font,
-            font_size: *font_size,
-            line_height: *line_height,
-            max_line_width,
+        let mut computed_height = match modifiers.height {
+            Extent::FillParent => Some(boundary_size.y),
+            Extent::Px(px) => Some(px + modifiers.margin.delta_size().y),
+            Extent::FitContent => None,
         };
 
-        let mut dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+        // Check if any dimension is FitContent
+        if computed_width.is_none() || computed_height.is_none() {
+            let boundary_size =
+                boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size();
+            let max_line_width = if boundary_size.y == 0.0 { // TODO: this check should be done before shadowing boundary size (?
+                f32::INFINITY
+            } else {
+                boundary_size.x
+            };
 
-        // If max_line_width is not enough for some characters,
-        // then take advantage of the extra line length for all lines.
-        if dimensions.x > max_line_width {
-            text_options.max_line_width = dimensions.x;
-            dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+            let mut text_options = TextLayoutOptions {
+                font,
+                font_size: *font_size,
+                line_height: *line_height,
+                max_line_width,
+            };
+
+            let mut dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+
+            // If max_line_width is not enough for some characters,
+            // then take advantage of the extra line length for all lines.
+            if dimensions.x > max_line_width {
+                text_options.max_line_width = dimensions.x;
+                dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+            }
+
+            let content_size = dimensions;
+            let padding_size = content_size + modifiers.padding.delta_size();
+            let border_size = padding_size + modifiers.border_thickness.delta_size();
+            let margin_size = border_size + modifiers.margin.delta_size();
+
+            computed_width.get_or_insert(margin_size.x);
+            computed_height.get_or_insert(margin_size.y);
         }
 
-        let content_size = dimensions;
-        let padding_size = content_size + modifiers.padding.delta_size();
-        let border_size = padding_size + modifiers.border_thickness.delta_size();
-        let margin_size = border_size + modifiers.margin.delta_size();
+        let margin_size = Vec2::new(computed_width.unwrap(), computed_height.unwrap());
 
         Measurements {
             margin_size,
             margin: modifiers.margin,
             border_thickness: modifiers.border_thickness,
             padding: modifiers.padding,
-            children_boundary_size: content_size,
+            children_boundary_size: margin_size,
         }
     }
 
