@@ -109,6 +109,7 @@ pub struct GlyphUvData<'a> {
     pub pixel_mode: GlyphPixelMode,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GlyphPixelMode {
     Grayscale,
     Subpixel,

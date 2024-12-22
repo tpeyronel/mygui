@@ -1,6 +1,7 @@
 use glam::Vec4;
 
 use crate::{
+    font::font_face::GlyphPixelMode,
     image::image_manager::ImageId,
     rectangle::Rectangle,
     ui::draw_element::DrawElement,
@@ -18,6 +19,7 @@ pub enum Mesh {
         indices: Vec<u32>,
         text_color: Color,
         image_id: ImageId,
+        pixel_mode: GlyphPixelMode,
     },
 }
 
@@ -77,6 +79,7 @@ impl Mesh {
                 uv_rectangle,
                 text_color,
                 image_id,
+                pixel_mode,
             } => {
                 let vertices = rectangle_to_vertices(bounds, uv_rectangle);
                 let indices = vec![0, 1, 2, 0, 2, 3];
@@ -86,6 +89,7 @@ impl Mesh {
                     indices,
                     text_color: *text_color,
                     image_id: *image_id,
+                    pixel_mode: *pixel_mode,
                 }
             }
         }

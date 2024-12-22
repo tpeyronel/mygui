@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-use crate::{image::image_manager::ImageId, rectangle::Rectangle, vertex::Color};
+use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId, rectangle::Rectangle, vertex::Color};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DrawElement {
@@ -16,5 +16,6 @@ pub enum DrawElement {
         uv_rectangle: Rectangle,
         text_color: Color,
         image_id: ImageId,
+        pixel_mode: GlyphPixelMode,
     },
 }

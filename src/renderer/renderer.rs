@@ -4,7 +4,7 @@ use futures::executor;
 use wgpu::util::DeviceExt;
 
 use crate::{
-    config::ENABLE_SUBPIXEL_RENDERING,
+    font::font_face::GlyphPixelMode,
     image::image_manager::{ImageId, ImageManager},
     rectangle::Rectangle,
     ui::draw_element::DrawElement,
@@ -24,7 +24,8 @@ pub struct Renderer {
     box_pipeline: wgpu::RenderPipeline,
     text_grayscale_pipeline: wgpu::RenderPipeline,
     text_subpixel_pipeline: wgpu::RenderPipeline,
-    text_bind_group_layout: wgpu::BindGroupLayout,
+    texture_pipeline: wgpu::RenderPipeline,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
     textures: HashMap<ImageId, Texture>,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -98,6 +99,11 @@ impl Renderer {
             ))),
         });
 
+        let texture_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("texture shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/texture_shader.wgsl"))),
+        });
+
         let global_uniform = GlobalUniform {
             viewport_width: window_size.width as f32,
             viewport_height: window_size.height as f32,
@@ -163,7 +169,7 @@ impl Renderer {
             }],
         });
 
-        let text_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("texture bind group layout"),
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -199,7 +205,16 @@ impl Renderer {
 
         let text_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("text pipeline layout"),
-            bind_group_layouts: &[&global_uniform_bind_group_layout, &text_bind_group_layout],
+            bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
+            push_constant_ranges: &[wgpu::PushConstantRange {
+                stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                range: 0..16,
+            }],
+        });
+
+        let texture_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("texture pipeline layout"),
+            bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
             push_constant_ranges: &[wgpu::PushConstantRange {
                 stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 range: 0..16,
@@ -327,6 +342,39 @@ impl Renderer {
             cache: None,
         });
 
+        let texture_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("texture pipeline"),
+            layout: Some(&texture_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &texture_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[Vertex::vertex_buffer_layout()],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &texture_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: swapchain_format,
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::SrcAlpha,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                            operation: wgpu::BlendOperation::Add,
+                        },
+                        alpha: wgpu::BlendComponent::OVER,
+                    }),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: swapchain_format,
@@ -347,7 +395,8 @@ impl Renderer {
             box_pipeline,
             text_grayscale_pipeline,
             text_subpixel_pipeline,
-            text_bind_group_layout,
+            texture_pipeline,
+            texture_bind_group_layout,
             textures: HashMap::new(),
             vertex_buffer,
             index_buffer,
@@ -425,7 +474,7 @@ impl Renderer {
 
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!("{:?} bind group", image_id)),
-            layout: &self.text_bind_group_layout,
+            layout: &self.texture_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -483,6 +532,7 @@ impl Renderer {
                         indices,
                         text_color,
                         image_id,
+                        pixel_mode,
                     } => {
                         all_vertices.extend(vertices);
                         all_indices.extend(indices);
@@ -492,6 +542,7 @@ impl Renderer {
                             first_index,
                             text_color,
                             image_id,
+                            pixel_mode,
                         }
                     }
                 }
@@ -574,12 +625,14 @@ impl Renderer {
                         first_index,
                         text_color,
                         image_id,
+                        pixel_mode,
                     } => {
-                        if ENABLE_SUBPIXEL_RENDERING {
-                            rpass.set_pipeline(&self.text_subpixel_pipeline);
-                        } else {
-                            rpass.set_pipeline(&self.text_grayscale_pipeline);
-                        }
+                        let pipeline = match pixel_mode {
+                            GlyphPixelMode::Grayscale => &self.text_subpixel_pipeline,
+                            GlyphPixelMode::Subpixel => &self.text_grayscale_pipeline,
+                            GlyphPixelMode::Color => &self.texture_pipeline,
+                        };
+                        rpass.set_pipeline(pipeline);
                         rpass.set_push_constants(
                             wgpu::ShaderStages::VERTEX_FRAGMENT,
                             0,
@@ -627,5 +680,6 @@ enum ProcessedMesh {
         first_index: u32,
         text_color: Color,
         image_id: ImageId,
+        pixel_mode: GlyphPixelMode,
     },
 }

@@ -726,6 +726,7 @@ impl<'a> UiNodeProcessor<'a> {
                 uv_rectangle: glyph.atlas_uv_rectangle,
                 text_color: *text_color,
                 image_id: glyph.image_id,
+                pixel_mode: glyph.pixel_mode,
             };
 
             self.draw_data.push(texture);
