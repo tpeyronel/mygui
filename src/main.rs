@@ -70,7 +70,7 @@ impl ApplicationHandler for App {
 
         let ui = example_ui();
 
-        let mut image_manager = ImageManager::new();
+        let image_manager = ImageManager::new();
         // let font_engine = FontEngine::new("./assets/fonts/times.ttf");
         let mut font_engine = FontEngine::new("./assets/fonts/");
 
@@ -78,7 +78,6 @@ impl ApplicationHandler for App {
         ui.to_draw_data(
             Vec2::ZERO,
             Vec2::new(window.inner_size().width as f32, window.inner_size().height as f32),
-            &mut image_manager,
             &mut font_engine,
             &mut draw_data,
         );
@@ -103,7 +102,6 @@ impl ApplicationHandler for App {
                 example_ui().to_draw_data(
                     Vec2::ZERO,
                     Vec2::new(new_size.width as f32, new_size.height as f32),
-                    &mut state.image_manager,
                     &mut state.font_engine,
                     &mut state.draw_data,
                 );

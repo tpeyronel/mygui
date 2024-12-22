@@ -4,6 +4,8 @@ pub mod draw_element;
 mod margin;
 mod padding;
 
+use std::collections::HashMap;
+
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
 use draw_element::DrawElement;
@@ -13,7 +15,6 @@ use padding::Padding;
 
 use crate::{
     font::font_engine::{FontEngine, TextLayoutOptions},
-    image::image_manager::ImageManager,
     is_integer::IsInteger,
     rectangle::Rectangle,
     vertex::Color,
@@ -169,29 +170,24 @@ impl UiNode {
         self,
         boundary_pos: Vec2,
         boundary_size: Vec2,
-        image_manager: &mut ImageManager,
         font_engine: &mut FontEngine,
         out: &mut Vec<DrawElement>,
     ) {
-        let mut processor = UiNodeProcessor::new(image_manager, font_engine, out);
+        let mut processor = UiNodeProcessor::new(font_engine, out);
         processor.to_draw_data(self, boundary_pos, boundary_size);
     }
 }
 
 struct UiNodeProcessor<'a> {
-    image_manager: &'a mut ImageManager,
+    measurements_cache: MeasurementsCache,
     font_engine: &'a mut FontEngine,
     draw_data: &'a mut Vec<DrawElement>,
 }
 
 impl<'a> UiNodeProcessor<'a> {
-    fn new(
-        image_manager: &'a mut ImageManager,
-        font_engine: &'a mut FontEngine,
-        draw_data: &'a mut Vec<DrawElement>,
-    ) -> Self {
+    fn new(font_engine: &'a mut FontEngine, draw_data: &'a mut Vec<DrawElement>) -> Self {
         Self {
-            image_manager,
+            measurements_cache: MeasurementsCache::new(),
             font_engine,
             draw_data,
         }
@@ -476,6 +472,17 @@ impl<'a> UiNodeProcessor<'a> {
     }
 
     fn measure(&mut self, ui_node: &UiNode, boundary_size: Vec2) -> Measurements {
+        if let Some(measurements) = self.measurements_cache.get(ui_node, boundary_size) {
+            measurements.clone()
+        } else {
+            let measurements = self.do_measure(ui_node, boundary_size);
+            self.measurements_cache
+                .insert(ui_node, boundary_size, measurements.clone());
+            measurements
+        }
+    }
+
+    fn do_measure(&mut self, ui_node: &UiNode, boundary_size: Vec2) -> Measurements {
         match ui_node {
             UiNode::Text(props) => return self.measure_text(props, boundary_size),
             _ => (),
@@ -734,6 +741,42 @@ impl<'a> UiNodeProcessor<'a> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct MeasurementsKey {
+    ui_node_address: usize,
+    boundary_size_x_bits: u32,
+    boundary_size_y_bits: u32,
+}
+
+impl MeasurementsKey {
+    fn new(ui_node: &UiNode, boundary_size: Vec2) -> Self {
+        Self {
+            ui_node_address: ui_node as *const _ as usize,
+            boundary_size_x_bits: boundary_size.x.to_bits(),
+            boundary_size_y_bits: boundary_size.y.to_bits(),
+        }
+    }
+}
+
+struct MeasurementsCache {
+    cache: HashMap<MeasurementsKey, Measurements>,
+}
+
+impl MeasurementsCache {
+    fn new() -> Self {
+        Self { cache: HashMap::new() }
+    }
+
+    fn get(&self, ui_node: &UiNode, boundary_size: Vec2) -> Option<&Measurements> {
+        self.cache.get(&MeasurementsKey::new(ui_node, boundary_size))
+    }
+
+    fn insert(&mut self, ui_node: &UiNode, boundary_size: Vec2, measurements: Measurements) {
+        self.cache
+            .insert(MeasurementsKey::new(ui_node, boundary_size), measurements);
+    }
+}
+
 struct UiNodeLayout {
     layout: Layout,
     children: Vec<UiNodeLayout>,
@@ -804,7 +847,7 @@ impl Layout {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Measurements {
     margin_size: Vec2,
     margin: Margin,
