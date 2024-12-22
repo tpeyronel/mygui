@@ -599,21 +599,27 @@ impl<'a> UiNodeProcessor<'a> {
     ) -> Measurements {
         // TODO: support more than FitContent
         let boundary_size = boundary_size - modifiers.border_thickness.delta_size() - modifiers.padding.delta_size();
+        let max_line_width = if boundary_size.y == 0.0 {
+            f32::INFINITY
+        } else {
+            boundary_size.x
+        };
 
-        let text_options = TextLayoutOptions {
+        let mut text_options = TextLayoutOptions {
             font,
             font_size: *font_size,
             line_height: *line_height,
-            max_line_width: if boundary_size.y == 0.0 {
-                f32::INFINITY
-            } else {
-                boundary_size.x
-            },
+            max_line_width,
         };
 
-        let dimensions = self
-            .font_engine
-            .lay_out_text(content, &text_options, |_| {});
+        let mut dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+
+        // If max_line_width is not enough for some characters,
+        // then take advantage of the extra line length for all lines.
+        if dimensions.x > max_line_width {
+            text_options.max_line_width = dimensions.x;
+            dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+        }
 
         let content_size = dimensions;
         let padding_size = content_size + modifiers.padding.delta_size();
@@ -673,17 +679,16 @@ impl<'a> UiNodeProcessor<'a> {
             },
         };
 
-        self.font_engine
-            .lay_out_text(content, &options, |glyph| {
-                let texture = DrawElement::TextGlyph {
-                    bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
-                    uv_rectangle: glyph.atlas_uv_rectangle,
-                    text_color: *text_color,
-                    image_id: glyph.image_id,
-                };
+        self.font_engine.lay_out_text(content, &options, |glyph| {
+            let texture = DrawElement::TextGlyph {
+                bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
+                uv_rectangle: glyph.atlas_uv_rectangle,
+                text_color: *text_color,
+                image_id: glyph.image_id,
+            };
 
-                self.draw_data.push(texture);
-            });
+            self.draw_data.push(texture);
+        });
     }
 }
 
