@@ -502,8 +502,23 @@ impl<'a> UiNodeProcessor<'a> {
             Extent::FitContent => None,
         };
 
-        let (margin_size, children_boundary_size) =
-            self.measure_fit_content(ui_node, margin_width, margin_height, boundary_size);
+        let (margin_size, children_boundary_size) = if margin_width.is_none() || margin_height.is_none() {
+            self.measure_fit_content(ui_node, margin_width, margin_height, boundary_size)
+        } else {
+            (
+                Vec2::new(margin_width.unwrap(), margin_height.unwrap()),
+                Vec2::max(
+                    Vec2::new(margin_width.unwrap(), margin_height.unwrap())
+                        - modifiers.margin.delta_size()
+                        - modifiers.border_thickness.delta_size()
+                        - modifiers.padding.delta_size(),
+                    Vec2::ZERO,
+                ),
+            )
+        };
+
+        margin_width.inspect(|&w| debug_assert_eq!(w, margin_size.x));
+        margin_height.inspect(|&h| debug_assert_eq!(h, margin_size.y));
 
         Measurements {
             margin_size,
