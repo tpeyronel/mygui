@@ -700,35 +700,16 @@ impl<'a> UiNodeProcessor<'a> {
             font,
             font_size,
             line_height,
-            modifiers,
             ..
         } = props;
 
         let max_line_width = match margin_width {
-            Some(width) => {
-                let measurements = Measurements {
-                    margin_size: Vec2::new(width, 0.0),
-                    margin: modifiers.margin,
-                    border_thickness: modifiers.border_thickness,
-                    padding: modifiers.padding,
-                    children_boundary_size: Vec2::ZERO,
-                };
-
-                measurements.content_size().x
-            }
+            Some(width) => width - total_delta_size.x,
             None => {
                 if boundary_size.y == 0.0 {
                     f32::INFINITY
                 } else {
-                    let boundary_measurements = Measurements {
-                        margin_size: boundary_size,
-                        margin: modifiers.margin,
-                        border_thickness: modifiers.border_thickness,
-                        padding: modifiers.padding,
-                        children_boundary_size: Vec2::ZERO,
-                    };
-
-                    boundary_measurements.content_size().x
+                    boundary_size.x - total_delta_size.x
                 }
             }
         };
