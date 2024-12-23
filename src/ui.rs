@@ -4,6 +4,7 @@ pub mod draw_element;
 mod margin;
 mod padding;
 
+use core::f32;
 use std::collections::HashMap;
 
 use border_radius::BorderRadius;
@@ -24,6 +25,8 @@ use crate::{
 pub struct Modifiers {
     width: Extent,
     height: Extent,
+    max_width: Option<Extent>,
+    max_height: Option<Extent>,
     margin: Margin,
     padding: Padding,
     fill_color: Color,
@@ -45,6 +48,20 @@ impl Modifiers {
 
     pub fn height(self, height: Extent) -> Self {
         Self { height, ..self }
+    }
+
+    pub fn max_width(self, max_width: Extent) -> Self {
+        Self {
+            max_width: Some(max_width),
+            ..self
+        }
+    }
+
+    pub fn max_height(self, max_height: Extent) -> Self {
+        Self {
+            max_height: Some(max_height),
+            ..self
+        }
     }
 
     pub fn margin(self, margin: Margin) -> Self {
@@ -490,20 +507,75 @@ impl<'a> UiNodeProcessor<'a> {
             UiNode::Text(props) => &props.modifiers,
         };
 
-        let margin_width = match modifiers.width {
+        let (mut margin_size, mut children_boundary_size) =
+            self.resolve_extents(ui_node, boundary_size, modifiers.width, modifiers.height);
+
+        if modifiers.max_width.is_some() || modifiers.max_height.is_some() {
+            let (max_size_margin_size, max_size_children_boundary_size) = self.resolve_extents(
+                ui_node,
+                boundary_size,
+                modifiers.max_width.unwrap_or(modifiers.width),
+                modifiers.max_height.unwrap_or(modifiers.height),
+            );
+
+            if margin_size.x > max_size_margin_size.x || margin_size.y > max_size_margin_size.y {
+                // Try to use only max_width.
+                let (max_width_margin_size, max_width_children_boundary_size) = self.resolve_extents(
+                    ui_node,
+                    boundary_size,
+                    modifiers.max_width.unwrap_or(modifiers.width),
+                    modifiers.height,
+                );
+
+                if max_width_margin_size.y > max_size_margin_size.y {
+                    // Check if using max_width is enough.
+                    margin_size = max_size_margin_size;
+                    children_boundary_size = max_size_children_boundary_size;
+                } else {
+                    // If not, then use both max_width and max_height.
+                    margin_size = max_width_margin_size;
+                    children_boundary_size = max_width_children_boundary_size;
+                }
+            }
+        }
+
+        Measurements {
+            margin_size,
+            margin: modifiers.margin,
+            border_thickness: modifiers.border_thickness,
+            padding: modifiers.padding,
+            children_boundary_size,
+        }
+    }
+
+    fn resolve_extents(
+        &mut self,
+        ui_node: &UiNode,
+        boundary_size: Vec2,
+        width: Extent,
+        height: Extent,
+    ) -> (Vec2, Vec2) {
+        let modifiers = match ui_node {
+            UiNode::Box(props) => &props.modifiers,
+            UiNode::Column(props) => &props.modifiers,
+            UiNode::Row(props) => &props.modifiers,
+            UiNode::Text(props) => &props.modifiers,
+        };
+
+        let margin_width = match width {
             Extent::FillParent => Some(boundary_size.x),
             Extent::Px(px) => Some(px.round() + modifiers.margin.delta_size().x),
             Extent::FitContent => None,
         };
 
-        let margin_height = match modifiers.height {
+        let margin_height = match height {
             Extent::FillParent => Some(boundary_size.y),
             Extent::Px(px) => Some(px.round() + modifiers.margin.delta_size().y),
             Extent::FitContent => None,
         };
 
         let (margin_size, children_boundary_size) = if margin_width.is_none() || margin_height.is_none() {
-            self.measure_fit_content(ui_node, margin_width, margin_height, boundary_size)
+            self.measure_fit_content(ui_node, margin_width, margin_height)
         } else {
             (
                 Vec2::new(margin_width.unwrap(), margin_height.unwrap()),
@@ -520,13 +592,7 @@ impl<'a> UiNodeProcessor<'a> {
         margin_width.inspect(|&w| debug_assert_eq!(w, margin_size.x));
         margin_height.inspect(|&h| debug_assert_eq!(h, margin_size.y));
 
-        Measurements {
-            margin_size,
-            margin: modifiers.margin,
-            border_thickness: modifiers.border_thickness,
-            padding: modifiers.padding,
-            children_boundary_size,
-        }
+        (margin_size, children_boundary_size)
     }
 
     fn measure_fit_content(
@@ -534,7 +600,6 @@ impl<'a> UiNodeProcessor<'a> {
         ui_node: &UiNode,
         margin_width: Option<f32>,
         margin_height: Option<f32>,
-        boundary_size: Vec2,
     ) -> (Vec2, Vec2) {
         let modifiers = match ui_node {
             UiNode::Box(props) => &props.modifiers,
@@ -553,12 +618,15 @@ impl<'a> UiNodeProcessor<'a> {
             UiNode::Box(props) => self.measure_fit_box(props, content_width, content_height),
             UiNode::Column(props) => self.measure_fit_column(props, content_width, content_height),
             UiNode::Row(props) => self.measure_fit_row(props, content_width, content_height),
-            UiNode::Text(props) => {
-                self.measure_fit_text(props, content_width, content_height, total_delta_size, boundary_size)
-            }
+            UiNode::Text(props) => self.measure_fit_text(props, content_width, content_height),
         };
 
-        (content_size + total_delta_size, children_boundary_size)
+        let margin_size = Vec2::new(
+            margin_width.unwrap_or_else(|| content_size.x + total_delta_size.x),
+            margin_height.unwrap_or_else(|| content_size.y + total_delta_size.y),
+        );
+
+        (margin_size, children_boundary_size)
     }
 
     fn measure_fit_box(
@@ -670,8 +738,6 @@ impl<'a> UiNodeProcessor<'a> {
         props: &TextProps,
         content_width: Option<f32>,
         content_height: Option<f32>,
-        total_delta_size: Vec2,
-        boundary_size: Vec2,
     ) -> (Vec2, Vec2) {
         let TextProps {
             content,
@@ -681,13 +747,7 @@ impl<'a> UiNodeProcessor<'a> {
             ..
         } = props;
 
-        let max_line_width = content_width.unwrap_or_else(|| {
-            if boundary_size.y == 0.0 {
-                f32::INFINITY
-            } else {
-                boundary_size.x - total_delta_size.x
-            }
-        });
+        let max_line_width = content_width.unwrap_or(f32::INFINITY);
 
         let mut text_options = TextLayoutOptions {
             font,
