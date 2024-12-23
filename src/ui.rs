@@ -1263,7 +1263,7 @@ pub fn example_ui() -> UiNode {
                     ],
                 }),
                 UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new(),
+                    modifiers: Modifiers::new().height(Extent::FitContent),
                     children: vec![
                         UiNode::Row(RowProps {
                             modifiers: Modifiers::new()
@@ -1293,9 +1293,14 @@ pub fn example_ui() -> UiNode {
                                         content: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
                                         text_color: Color::ONE,
                                         font: "seguiemj.ttf".to_string(),
-                                        font_size: 48.0,
-                                        line_height: 48.0,
-                                        modifiers: Modifiers::new().fill_color(Color::new(0.0, 0.0, 0.0, 1.0)),
+                                        font_size: 24.0,
+                                        line_height: 24.0,
+                                        modifiers: Modifiers::new()
+                                            .width(Extent::FitContent)
+                                            .max_width(Extent::FillParent)
+                                            .height(Extent::FitContent)
+                                            .padding(Padding::all(64.0))
+                                            .fill_color(Color::new(1.0, 0.0, 0.0, 0.25)),
                                     })],
                                 }),
                             ],
@@ -1354,6 +1359,8 @@ pub fn example_ui() -> UiNode {
                                 font_size: i as f32,
                                 line_height: i as f32,
                                 modifiers: Modifiers::new()
+                                    .width(Extent::FitContent)
+                                    .height(Extent::FitContent)
                                     .self_alignment(Alignment::Left)
                                     .fill_color(if i % 2 == 0 {
                                         Color::new(1.0, 0.0, 0.0, 0.5)
