@@ -607,64 +607,14 @@ impl<'a> UiNodeProcessor<'a> {
             None
         };
 
-        match ui_node {
-            UiNode::Box(props) => return self.measure_fit_box(props, margin_width, margin_height, total_delta_size),
-            UiNode::Column(props) => {
-                return self.measure_fit_column(props, margin_width, margin_height, total_delta_size)
+        return match ui_node {
+            UiNode::Box(props) => self.measure_fit_box(props, margin_width, margin_height, total_delta_size),
+            UiNode::Column(props) => self.measure_fit_column(props, margin_width, margin_height, total_delta_size),
+            UiNode::Row(props) => self.measure_fit_row(props, margin_width, margin_height, total_delta_size),
+            UiNode::Text(props) => {
+                self.measure_fit_text(props, margin_width, margin_height, total_delta_size, boundary_size)
             }
-            UiNode::Row(props) => return self.measure_fit_row(props, margin_width, margin_height, total_delta_size),
-            UiNode::Text(props) => (),
-        }
-
-        let margin_width = margin_width.unwrap_or_else(|| {
-            let content_width = match ui_node {
-                UiNode::Box(_) | UiNode::Column(_) => {
-                    let max_child_width = min_intrinsic_children_sizes
-                        .iter()
-                        .map(|cs| cs.margin_size.x)
-                        .max_by(|a, b| a.partial_cmp(b).unwrap())
-                        .unwrap_or(0.0);
-                    final_children_boundary_size.x = max_child_width;
-                    max_child_width
-                }
-                UiNode::Row(_) => {
-                    let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
-                    final_children_boundary_size.x = min_intrinsic_width;
-                    let children_sizes = self.measure_children(final_children_boundary_size, children);
-                    children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>()
-                }
-                UiNode::Text(_) => text_dimensions.unwrap().x,
-            };
-
-            content_width + total_delta_size.x
-        });
-
-        let margin_height = margin_height.unwrap_or_else(|| {
-            let content_height = match ui_node {
-                UiNode::Box(_) | UiNode::Row(_) => {
-                    let max_child_height = min_intrinsic_children_sizes
-                        .iter()
-                        .map(|cs| cs.margin_size.y)
-                        .max_by(|a, b| a.partial_cmp(b).unwrap())
-                        .unwrap_or(0.0);
-                    final_children_boundary_size.y = max_child_height;
-                    max_child_height
-                }
-                UiNode::Column(_) => {
-                    let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
-                    final_children_boundary_size.y = min_intrinsic_height;
-                    let children_sizes = self.measure_children(final_children_boundary_size, children);
-                    children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
-                }
-                UiNode::Text(_) => text_dimensions.unwrap().y,
-            };
-
-            content_height + total_delta_size.y
-        });
-
-        let margin_size = Vec2::new(margin_width, margin_height);
-
-        (margin_size, final_children_boundary_size)
+        };
     }
 
     fn measure_fit_box(
@@ -796,6 +746,76 @@ impl<'a> UiNodeProcessor<'a> {
         let margin_size = Vec2::new(margin_width, margin_height);
 
         (margin_size, final_children_boundary_size)
+    }
+
+    fn measure_fit_text(
+        &mut self,
+        props: &TextProps,
+        margin_width: Option<f32>,
+        margin_height: Option<f32>,
+        total_delta_size: Vec2,
+        boundary_size: Vec2,
+    ) -> (Vec2, Vec2) {
+        let TextProps {
+            content,
+            font,
+            font_size,
+            line_height,
+            modifiers,
+            ..
+        } = props;
+
+        let max_line_width = match margin_width {
+            Some(width) => {
+                let measurements = Measurements {
+                    margin_size: Vec2::new(width, 0.0),
+                    margin: modifiers.margin,
+                    border_thickness: modifiers.border_thickness,
+                    padding: modifiers.padding,
+                    children_boundary_size: Vec2::ZERO,
+                };
+
+                measurements.content_size().x
+            }
+            None => {
+                if boundary_size.y == 0.0 {
+                    f32::INFINITY
+                } else {
+                    let boundary_measurements = Measurements {
+                        margin_size: boundary_size,
+                        margin: modifiers.margin,
+                        border_thickness: modifiers.border_thickness,
+                        padding: modifiers.padding,
+                        children_boundary_size: Vec2::ZERO,
+                    };
+
+                    boundary_measurements.content_size().x
+                }
+            }
+        };
+
+        let mut text_options = TextLayoutOptions {
+            font,
+            font_size: *font_size,
+            line_height: *line_height,
+            max_line_width,
+        };
+
+        let mut dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+
+        // If width is FitContent and max_line_width is not enough for some characters,
+        // then take advantage of the extra line length for all lines.
+        if dimensions.x > max_line_width && margin_width.is_none() {
+            text_options.max_line_width = dimensions.x;
+            dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+        }
+
+        let margin_width = margin_width.unwrap_or_else(|| dimensions.x + total_delta_size.x);
+        let margin_height = margin_height.unwrap_or_else(|| dimensions.y + total_delta_size.y);
+
+        let margin_size = Vec2::new(margin_width, margin_height);
+
+        (margin_size, Vec2::ZERO)
     }
 
     fn measure_children(&mut self, parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
