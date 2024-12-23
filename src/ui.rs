@@ -528,84 +528,8 @@ impl<'a> UiNodeProcessor<'a> {
             UiNode::Text(props) => &props.modifiers,
         };
 
-        let children = match ui_node {
-            UiNode::Box(props) => props.children.as_slice(),
-            UiNode::Column(props) => props.children.as_slice(),
-            UiNode::Row(props) => props.children.as_slice(),
-            UiNode::Text(_) => &[],
-        };
-
         let total_delta_size =
             modifiers.margin.delta_size() + modifiers.border_thickness.delta_size() + modifiers.padding.delta_size();
-
-        let preliminar_children_boundary_size = Vec2::max(
-            Vec2::new(margin_width.unwrap_or(0.0), margin_height.unwrap_or(0.0)) - total_delta_size,
-            Vec2::ZERO,
-        );
-
-        // TODO: only compute when necessary
-        let min_intrinsic_children_sizes: Vec<Measurements> =
-            self.measure_children(preliminar_children_boundary_size, children);
-
-        let mut final_children_boundary_size = preliminar_children_boundary_size;
-
-        let text_dimensions = if let UiNode::Text(TextProps {
-            content,
-            font,
-            font_size,
-            line_height,
-            ..
-        }) = ui_node
-        {
-            let max_line_width = match margin_width {
-                Some(width) => {
-                    let measurements = Measurements {
-                        margin_size: Vec2::new(width, 0.0),
-                        margin: modifiers.margin,
-                        border_thickness: modifiers.border_thickness,
-                        padding: modifiers.padding,
-                        children_boundary_size: Vec2::ZERO,
-                    };
-
-                    measurements.content_size().x
-                }
-                None => {
-                    if boundary_size.y == 0.0 {
-                        f32::INFINITY
-                    } else {
-                        let boundary_measurements = Measurements {
-                            margin_size: boundary_size,
-                            margin: modifiers.margin,
-                            border_thickness: modifiers.border_thickness,
-                            padding: modifiers.padding,
-                            children_boundary_size: Vec2::ZERO,
-                        };
-
-                        boundary_measurements.content_size().x
-                    }
-                }
-            };
-
-            let mut text_options = TextLayoutOptions {
-                font,
-                font_size: *font_size,
-                line_height: *line_height,
-                max_line_width,
-            };
-
-            let mut dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
-
-            // If width is FitContent and max_line_width is not enough for some characters,
-            // then take advantage of the extra line length for all lines.
-            if dimensions.x > max_line_width && margin_width.is_none() {
-                text_options.max_line_width = dimensions.x;
-                dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
-            }
-
-            Some(dimensions)
-        } else {
-            None
-        };
 
         return match ui_node {
             UiNode::Box(props) => self.measure_fit_box(props, margin_width, margin_height, total_delta_size),
