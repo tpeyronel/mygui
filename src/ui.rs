@@ -667,6 +667,47 @@ impl<'a> UiNodeProcessor<'a> {
         (margin_size, final_children_boundary_size)
     }
 
+    fn measure_fit_box(
+        &mut self,
+        props: &BoxProps,
+        margin_width: Option<f32>,
+        margin_height: Option<f32>,
+        total_delta_size: Vec2,
+    ) -> (Vec2, Vec2) {
+        let preliminar_children_boundary_size = Vec2::max(
+            Vec2::new(margin_width.unwrap_or(0.0), margin_height.unwrap_or(0.0)) - total_delta_size,
+            Vec2::ZERO,
+        );
+
+        let min_intrinsic_children_sizes: Vec<Measurements> =
+            self.measure_children(preliminar_children_boundary_size, &props.children);
+
+        let margin_width = margin_width.unwrap_or_else(|| {
+            let content_width = min_intrinsic_children_sizes
+                .iter()
+                .map(|cs| cs.margin_size.x)
+                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .unwrap_or(0.0);
+
+            content_width + total_delta_size.x
+        });
+
+        let margin_height = margin_height.unwrap_or_else(|| {
+            let content_height = min_intrinsic_children_sizes
+                .iter()
+                .map(|cs| cs.margin_size.y)
+                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .unwrap_or(0.0);
+
+            content_height + total_delta_size.y
+        });
+
+        let margin_size = Vec2::new(margin_width, margin_height);
+        let content_size = Vec2::max(margin_size - total_delta_size, Vec2::ZERO);
+
+        (margin_size, content_size)
+    }
+
     fn measure_fit_column(
         &mut self,
         props: &ColumnProps,
@@ -709,47 +750,6 @@ impl<'a> UiNodeProcessor<'a> {
         let margin_size = Vec2::new(margin_width, margin_height);
 
         (margin_size, final_children_boundary_size)
-    }
-
-    fn measure_fit_box(
-        &mut self,
-        props: &BoxProps,
-        margin_width: Option<f32>,
-        margin_height: Option<f32>,
-        total_delta_size: Vec2,
-    ) -> (Vec2, Vec2) {
-        let preliminar_children_boundary_size = Vec2::max(
-            Vec2::new(margin_width.unwrap_or(0.0), margin_height.unwrap_or(0.0)) - total_delta_size,
-            Vec2::ZERO,
-        );
-
-        let min_intrinsic_children_sizes: Vec<Measurements> =
-            self.measure_children(preliminar_children_boundary_size, &props.children);
-
-        let margin_width = margin_width.unwrap_or_else(|| {
-            let content_width = min_intrinsic_children_sizes
-                .iter()
-                .map(|cs| cs.margin_size.x)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0);
-
-            content_width + total_delta_size.x
-        });
-
-        let margin_height = margin_height.unwrap_or_else(|| {
-            let content_height = min_intrinsic_children_sizes
-                .iter()
-                .map(|cs| cs.margin_size.y)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0);
-
-            content_height + total_delta_size.y
-        });
-
-        let margin_size = Vec2::new(margin_width, margin_height);
-        let content_size = Vec2::max(margin_size - total_delta_size, Vec2::ZERO);
-
-        (margin_size, content_size)
     }
 
     fn measure_children(&mut self, parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
