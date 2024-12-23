@@ -619,9 +619,8 @@ impl<'a> UiNodeProcessor<'a> {
             final_children_boundary_size.y = min_intrinsic_height;
 
             let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
-            let content_height = children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>();
 
-            content_height
+            children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
         });
 
         let content_size = Vec2::new(content_width, content_height);
@@ -657,9 +656,8 @@ impl<'a> UiNodeProcessor<'a> {
             final_children_boundary_size.x = min_intrinsic_width;
 
             let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
-            let content_width = children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>();
 
-            content_width
+            children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>()
         });
 
         let content_size = Vec2::new(content_width, content_height);
