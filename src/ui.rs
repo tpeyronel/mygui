@@ -604,19 +604,15 @@ impl<'a> UiNodeProcessor<'a> {
         let min_intrinsic_children_sizes: Vec<Measurements> =
             self.measure_children(preliminar_children_boundary_size, &props.children);
 
-        let mut final_children_boundary_size = preliminar_children_boundary_size;
-
         let content_width = content_width.unwrap_or_else(|| {
-            let content_width = min_intrinsic_children_sizes
+            min_intrinsic_children_sizes
                 .iter()
                 .map(|cs| cs.margin_size.x)
                 .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0);
-
-            final_children_boundary_size.x = content_width;
-
-            content_width
+                .unwrap_or(0.0)
         });
+
+        let mut final_children_boundary_size = Vec2::new(content_width, preliminar_children_boundary_size.y);
 
         let content_height = content_height.unwrap_or_else(|| {
             let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
@@ -644,21 +640,17 @@ impl<'a> UiNodeProcessor<'a> {
         let min_intrinsic_children_sizes: Vec<Measurements> =
             self.measure_children(preliminar_children_boundary_size, &props.children);
 
-        let mut final_children_boundary_size = preliminar_children_boundary_size;
-
         // We compute height first to update final_children_boundary_size.y before
         // computing width.
         let content_height = content_height.unwrap_or_else(|| {
-            let content_height = min_intrinsic_children_sizes
+            min_intrinsic_children_sizes
                 .iter()
                 .map(|cs| cs.margin_size.y)
                 .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0);
-
-            final_children_boundary_size.y = content_height;
-
-            content_height
+                .unwrap_or(0.0)
         });
+
+        let mut final_children_boundary_size = Vec2::new(preliminar_children_boundary_size.x, content_height);
 
         let content_width = content_width.unwrap_or_else(|| {
             let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
