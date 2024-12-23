@@ -2186,7 +2186,7 @@ mod tests {
                 }),
                 &[
                     DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 8.0)),
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
                         fill_color: Color::ZERO,
                         border_color: Color::ZERO,
                         border_radius: Vec4::splat(0.0),
