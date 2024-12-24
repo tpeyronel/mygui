@@ -1,6 +1,7 @@
 mod border_radius;
 mod border_thickness;
 pub mod draw_element;
+pub mod immediate;
 mod margin;
 mod padding;
 
@@ -21,7 +22,7 @@ use crate::{
     vertex::Color,
 };
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Modifiers {
     width: Extent,
     height: Extent,
@@ -129,7 +130,7 @@ impl Default for Extent {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BlockProps {
     modifiers: Modifiers,
     children: Vec<UiNode>,
@@ -144,7 +145,7 @@ impl Default for BlockProps {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ColumnProps {
     modifiers: Modifiers,
     children: Vec<UiNode>,
@@ -161,7 +162,7 @@ impl Default for ColumnProps {
 
 pub type RowProps = ColumnProps;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TextProps {
     content: String,
     text_color: Color,
@@ -171,7 +172,7 @@ pub struct TextProps {
     modifiers: Modifiers,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Alignment {
     Center,
     Right,
@@ -190,7 +191,7 @@ impl Default for Alignment {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UiNode {
     Block(BlockProps),
     Column(ColumnProps),

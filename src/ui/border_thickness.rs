@@ -1,6 +1,6 @@
 use glam::{Vec2, Vec4};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BorderThickness {
     pub left: f32,
     pub bottom: f32,

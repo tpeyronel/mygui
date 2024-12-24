@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BorderRadius {
     pub bottom_left: f32,
     pub bottom_right: f32,
