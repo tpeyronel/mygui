@@ -507,35 +507,30 @@ impl<'a> UiNodeProcessor<'a> {
             UiNode::Text(props) => &props.modifiers,
         };
 
-        let (mut margin_size, mut children_boundary_size) =
-            self.resolve_extents(ui_node, boundary_size, modifiers.width, modifiers.height);
+        let mut width = modifiers.width;
+        let mut height = modifiers.height;
 
-        if modifiers.max_width.is_some() || modifiers.max_height.is_some() {
-            let (max_size_margin_size, max_size_children_boundary_size) = self.resolve_extents(
-                ui_node,
-                boundary_size,
-                modifiers.max_width.unwrap_or(modifiers.width),
-                modifiers.max_height.unwrap_or(modifiers.height),
-            );
+        let (mut margin_size, mut children_boundary_size) = self.resolve_extents(ui_node, boundary_size, width, height);
 
-            if margin_size.x > max_size_margin_size.x || margin_size.y > max_size_margin_size.y {
-                // Try to use only max_width.
-                let (max_width_margin_size, max_width_children_boundary_size) = self.resolve_extents(
-                    ui_node,
-                    boundary_size,
-                    modifiers.max_width.unwrap_or(modifiers.width),
-                    modifiers.height,
-                );
+        if let Some(max_width) = modifiers.max_width {
+            let (max_width_margin_size, max_width_children_boundary_size) =
+                self.resolve_extents(ui_node, boundary_size, max_width, height);
 
-                if max_width_margin_size.y <= max_size_margin_size.y {
-                    // Check if using max_width is enough.
-                    margin_size = max_width_margin_size;
-                    children_boundary_size = max_width_children_boundary_size;
-                } else {
-                    // If not, then use both max_width and max_height.
-                    margin_size = max_size_margin_size;
-                    children_boundary_size = max_size_children_boundary_size;
-                }
+            if margin_size.x > max_width_margin_size.x {
+                width = max_width;
+                margin_size = max_width_margin_size;
+                children_boundary_size = max_width_children_boundary_size;
+            }
+        }
+
+        if let Some(max_height) = modifiers.max_height {
+            let (max_height_margin_size, max_height_children_boundary_size) =
+                self.resolve_extents(ui_node, boundary_size, width, max_height);
+
+            if margin_size.y > max_height_margin_size.y {
+                height = max_height;
+                margin_size = max_height_margin_size;
+                children_boundary_size = max_height_children_boundary_size;
             }
         }
 
