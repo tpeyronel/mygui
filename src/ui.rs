@@ -527,14 +527,14 @@ impl<'a> UiNodeProcessor<'a> {
                     modifiers.height,
                 );
 
-                if max_width_margin_size.y > max_size_margin_size.y {
+                if max_width_margin_size.y <= max_size_margin_size.y {
                     // Check if using max_width is enough.
-                    margin_size = max_size_margin_size;
-                    children_boundary_size = max_size_children_boundary_size;
-                } else {
-                    // If not, then use both max_width and max_height.
                     margin_size = max_width_margin_size;
                     children_boundary_size = max_width_children_boundary_size;
+                } else {
+                    // If not, then use both max_width and max_height.
+                    margin_size = max_size_margin_size;
+                    children_boundary_size = max_size_children_boundary_size;
                 }
             }
         }
