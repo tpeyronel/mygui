@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 
-use super::{BlockProps, Extent, Modifiers, UiNode};
+use super::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, UiNode};
 
 #[derive(Debug)]
 pub struct UiNodeData {
@@ -39,6 +39,42 @@ impl Ui {
             children: ui.children,
         }));
     }
+
+    pub fn column(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
+        let mut ui = Ui { children: vec![] };
+        let mut modifiers = Modifiers::new();
+
+        f(
+            &mut ui,
+            &mut modifiers,
+            UiNodeData {
+                flags: UiNodeDataFlags::empty(),
+            },
+        );
+
+        self.children.push(UiNode::Column(ColumnProps {
+            modifiers,
+            children: ui.children,
+        }));
+    }
+
+    pub fn row(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
+        let mut ui = Ui { children: vec![] };
+        let mut modifiers = Modifiers::new();
+
+        f(
+            &mut ui,
+            &mut modifiers,
+            UiNodeData {
+                flags: UiNodeDataFlags::empty(),
+            },
+        );
+
+        self.children.push(UiNode::Row(RowProps {
+            modifiers,
+            children: ui.children,
+        }));
+    }
 }
 
 pub fn ui(f: impl FnOnce(&mut Ui)) -> UiNode {
@@ -55,7 +91,7 @@ pub fn ui(f: impl FnOnce(&mut Ui)) -> UiNode {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ui::{BlockProps, Extent, Modifiers, UiNode},
+        ui::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, UiNode},
         vertex::Color,
     };
 
@@ -135,6 +171,55 @@ mod tests {
                     children: vec![],
                 }),
             ],
+        );
+    }
+
+    #[test]
+    fn single_column() {
+        immediate_test(
+            |ui| {
+                ui.column(|_, _, _| {});
+            },
+            &[UiNode::Column(ColumnProps {
+                modifiers: Modifiers::new(),
+                children: vec![],
+            })],
+        );
+    }
+
+    #[test]
+    fn single_row() {
+        immediate_test(
+            |ui| {
+                ui.row(|_, _, _| {});
+            },
+            &[UiNode::Row(RowProps {
+                modifiers: Modifiers::new(),
+                children: vec![],
+            })],
+        );
+    }
+
+    #[test]
+    fn nested_block_column_row() {
+        immediate_test(
+            |ui| {
+                ui.block(|ui, _, _| {
+                    ui.column(|ui, _, _| {
+                        ui.row(|_, _, _| {});
+                    });
+                });
+            },
+            &[UiNode::Block(BlockProps {
+                modifiers: Modifiers::new(),
+                children: vec![UiNode::Column(ColumnProps {
+                    modifiers: Modifiers::new(),
+                    children: vec![UiNode::Row(RowProps {
+                        modifiers: Modifiers::new(),
+                        children: vec![],
+                    })],
+                })],
+            })],
         );
     }
 }
