@@ -54,7 +54,10 @@ pub fn ui(f: impl FnOnce(&mut Ui)) -> UiNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::{BlockProps, Extent, Modifiers, UiNode};
+    use crate::{
+        ui::{BlockProps, Extent, Modifiers, UiNode},
+        vertex::Color,
+    };
 
     use super::{ui, Ui};
 
@@ -98,6 +101,33 @@ mod tests {
                 }),
                 UiNode::Block(BlockProps {
                     modifiers: Modifiers::new(),
+                    children: vec![],
+                }),
+                UiNode::Block(BlockProps {
+                    modifiers: Modifiers::new(),
+                    children: vec![],
+                }),
+            ],
+        );
+    }
+
+    #[test]
+    fn multiple_blocks_with_custom_attributes() {
+        immediate_test(
+            |ui| {
+                ui.block(|_, _, _| {});
+                ui.block(|_, attr, _| {
+                    *attr = attr.clone().border_color(Color::new(1.0, 0.0, 0.0, 0.0));
+                });
+                ui.block(|_, _, _| {});
+            },
+            &[
+                UiNode::Block(BlockProps {
+                    modifiers: Modifiers::new(),
+                    children: vec![],
+                }),
+                UiNode::Block(BlockProps {
+                    modifiers: Modifiers::new().border_color(Color::new(1.0, 0.0, 0.0, 0.0)),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
