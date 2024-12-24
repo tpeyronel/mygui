@@ -1256,7 +1256,7 @@ pub fn example_ui() -> UiNode {
                                 text: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
                                 text_color: Color::ONE,
-                                font_family: "jetbrainsmono.ttf".to_string(),
+                                font_family: "jetbrains mono".to_string(),
                                 font_size: 24.0,
                                 line_height: 24.0 * 1.5,
                                 modifiers: Modifiers::new().self_alignment(Alignment::TopLeft),
@@ -1322,7 +1322,7 @@ pub fn example_ui() -> UiNode {
                                     children: vec![UiNode::Text(TextProps {
                                         text: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
                                         text_color: Color::ONE,
-                                        font_family: "seguiemj.ttf".to_string(),
+                                        font_family: "Segoe UI Emoji".to_string(),
                                         font_size: 24.0,
                                         line_height: 24.0,
                                         modifiers: Modifiers::new()
@@ -1364,7 +1364,7 @@ pub fn example_ui() -> UiNode {
                                     children: vec![UiNode::Text(TextProps {
                                         text: "HellÓowjdoqi129312893u!\nYegh".to_string(),
                                         text_color: Color::ONE,
-                                        font_family: "times.ttf".to_string(),
+                                        font_family: "times new roman".to_string(),
                                         font_size: 17.0,
                                         line_height: 17.0,
                                         modifiers: Modifiers::new()
@@ -1387,7 +1387,7 @@ pub fn example_ui() -> UiNode {
                             UiNode::Text(TextProps {
                                 text: "aAbBcCdDoOÓgfjpq".to_string(),
                                 text_color: Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0),
-                                font_family: "tangerine.ttf".to_string(),
+                                font_family: "tangerine".to_string(),
                                 font_size: i as f32,
                                 line_height: i as f32,
                                 modifiers: Modifiers::new()

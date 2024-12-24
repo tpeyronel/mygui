@@ -152,6 +152,10 @@ impl ApplicationHandler for App {
 }
 
 fn main() {
+    env_logger::builder()
+        .filter_module("mygui", log::LevelFilter::Trace)
+        .init();
+
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Wait);
 

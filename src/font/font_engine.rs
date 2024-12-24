@@ -1,6 +1,12 @@
-use std::{collections::HashMap, ffi::OsStr, ops::Add};
+use std::{
+    collections::HashMap,
+    ffi::OsStr,
+    ops::Add,
+    path::{Path, PathBuf},
+};
 
 use glam::Vec2;
+use walkdir::WalkDir;
 
 use crate::{
     config::ENABLE_SUBPIXEL_RENDERING,
@@ -18,6 +24,7 @@ pub struct FontEngine {
     ft_lib: freetype::Library,
     font_dir_path: String,
     faces: HashMap<FontKey, FontFace>,
+    font_files: HashMap<FontFileKey, PathBuf>,
 }
 
 impl FontEngine {
@@ -27,11 +34,16 @@ impl FontEngine {
             .set_lcd_filter(freetype::LcdFilter::LcdFilterDefault)
             .expect("TODO");
 
-        Self {
+        let mut s = Self {
             ft_lib,
             font_dir_path: font_dir_path.as_ref().to_string_lossy().into_owned(),
             faces: HashMap::new(),
-        }
+            font_files: HashMap::new(),
+        };
+
+        s.discover_fonts();
+
+        s
     }
 
     pub fn update(&mut self, image_manager: &mut ImageManager) {
@@ -49,8 +61,7 @@ impl FontEngine {
     }
 
     pub fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions, mut f: impl FnMut(&LaidOutGlyph)) -> Vec2 {
-        let font_path = self.font_dir_path.clone() + options.font_family;
-        let face: &mut FontFace = self.get_or_create_font_face(&font_path, options.font_size as u32);
+        let face: &mut FontFace = self.get_or_create_font_face(options.font_family, options.font_size as u32);
 
         let mut pen = Vec2::ZERO;
         let mut max_computed_line_width: f32 = 0.0;
@@ -111,6 +122,119 @@ impl FontEngine {
         dimensions
     }
 
+    fn discover_fonts(&mut self) {
+        log::trace!("discovering fonts at {}", self.font_dir_path);
+
+        for ttf_entry in WalkDir::new(&self.font_dir_path)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().is_some_and(|e| e.to_ascii_lowercase() == "ttf"))
+        {
+            let font_path = ttf_entry.path();
+
+            let Ok(ft_face) = self.ft_lib.new_face(font_path, 0) else {
+                log::error!("{}: failed to load face 0", font_path.display());
+                continue;
+            };
+
+            let Some(font_family) = ft_face.family_name() else {
+                log::error!("{}: font family name missing", font_path.display());
+                continue;
+            };
+
+            let font_weight = Self::get_font_weight(font_path, &ft_face);
+            let font_style = Self::get_font_style(&ft_face);
+
+            let font_file_key = FontFileKey {
+                font_family: font_family.to_lowercase(),
+                font_weight,
+                font_style,
+            };
+
+            if let Some(font_file_path) = self.font_files.get(&font_file_key) {
+                log::warn!(
+                    "{}: font file has same properties as {}. Skipping.",
+                    font_path.display(),
+                    font_file_path.display()
+                );
+                continue;
+            }
+
+            log::info!(
+                "indexed {}: F:'{}' W:{:#?} S:{:#?}",
+                font_path.display(),
+                font_family,
+                font_weight,
+                font_style,
+            );
+            self.font_files.insert(font_file_key, font_path.to_path_buf());
+        }
+    }
+
+    fn get_font_weight(font_path: &Path, ft_face: &freetype::face::Face) -> FontWeight {
+        match Self::get_os2_table(ft_face) {
+            Some(os2_table) => {
+                let weight_class = os2_table.usWeightClass;
+                if let Some(font_weight) = FontWeight::from_value(weight_class as u32) {
+                    font_weight
+                } else {
+                    log::warn!(
+                        "{}: unknown weight class {}. Using FontWeight::Regular.",
+                        font_path.display(),
+                        weight_class
+                    );
+                    FontWeight::Regular
+                }
+            }
+            None => {
+                let style_flags = ft_face.style_flags();
+                if style_flags.contains(freetype::face::StyleFlag::BOLD) {
+                    FontWeight::Bold
+                } else {
+                    FontWeight::Regular
+                }
+            }
+        }
+    }
+
+    fn get_font_style(ft_face: &freetype::face::Face) -> FontStyle {
+        const ITALIC_FLAG: u16 = 1 << 0;
+
+        let is_italic = match Self::get_os2_table(ft_face) {
+            Some(os2_table) => {
+                let fs_selection = os2_table.fsSelection;
+                (fs_selection & ITALIC_FLAG) != 0
+            }
+            None => {
+                let style_flags = ft_face.style_flags();
+                style_flags.contains(freetype::face::StyleFlag::ITALIC)
+            }
+        };
+
+        if is_italic {
+            FontStyle::Italic
+        } else {
+            FontStyle::Regular
+        }
+    }
+
+    fn get_os2_table(ft_face: &freetype::face::Face) -> Option<&freetype::freetype_sys::TT_OS2> {
+        unsafe {
+            let os2_table = freetype::freetype_sys::FT_Get_Sfnt_Table(
+                ft_face.raw() as *const _ as *mut _,
+                freetype::freetype_sys::ft_sfnt_os2,
+            );
+
+            if !os2_table.is_null() {
+                let os2_table = &*(os2_table as *const freetype::freetype_sys::TT_OS2);
+
+                Some(os2_table)
+            } else {
+                None
+            }
+        }
+    }
+
     // Not quite perfect (the round() doesn't always work), but good enough.
     fn estimate_descender(face: &FontFace, font_size: f32) -> f32 {
         let unscaled_descender = face.ft_face.descender() as f32 / 64.0;
@@ -121,14 +245,23 @@ impl FontEngine {
         scaled_descender
     }
 
-    fn get_or_create_font_face(&mut self, font: &str, font_size: u32) -> &mut FontFace {
+    fn get_or_create_font_face(&mut self, font_family: &str, font_size: u32) -> &mut FontFace {
+        let font_file_path = self
+            .font_files
+            .get(&FontFileKey {
+                font_family: font_family.to_ascii_lowercase(),
+                font_weight: FontWeight::Regular,
+                font_style: FontStyle::Regular,
+            })
+            .expect("TODO");
+
         self.faces
             .entry(FontKey {
-                path: font.to_string(),
+                path: font_file_path.to_str().unwrap().to_string(),
                 font_size,
             })
             .or_insert_with(|| {
-                let ft_face = self.ft_lib.new_face(font, 0).unwrap();
+                let ft_face = self.ft_lib.new_face(font_file_path, 0).unwrap();
                 ft_face.set_pixel_sizes(0, font_size).expect("TODO");
                 let face = FontFace::new(ft_face);
 
@@ -150,6 +283,63 @@ pub struct LaidOutGlyph {
     pub atlas_uv_rectangle: Rectangle,
     pub image_id: ImageId,
     pub pixel_mode: GlyphPixelMode,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+struct FontFileKey {
+    font_family: String,
+    font_weight: FontWeight,
+    font_style: FontStyle,
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum FontWeight {
+    Thin,
+    ExtraLight,
+    Light,
+    Regular,
+    Medium,
+    SemiBold,
+    Bold,
+    ExtraBold,
+    Black,
+}
+
+impl FontWeight {
+    fn value(&self) -> u32 {
+        match self {
+            FontWeight::Thin => 100,
+            FontWeight::ExtraLight => 200,
+            FontWeight::Light => 300,
+            FontWeight::Regular => 400,
+            FontWeight::Medium => 500,
+            FontWeight::SemiBold => 600,
+            FontWeight::Bold => 700,
+            FontWeight::ExtraBold => 800,
+            FontWeight::Black => 900,
+        }
+    }
+
+    fn from_value(value: u32) -> Option<FontWeight> {
+        match value {
+            100 => Some(FontWeight::Thin),
+            200 => Some(FontWeight::ExtraLight),
+            300 => Some(FontWeight::Light),
+            400 => Some(FontWeight::Regular),
+            500 => Some(FontWeight::Medium),
+            600 => Some(FontWeight::SemiBold),
+            700 => Some(FontWeight::Bold),
+            800 => Some(FontWeight::ExtraBold),
+            900 => Some(FontWeight::Black),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum FontStyle {
+    Regular,
+    Italic,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
