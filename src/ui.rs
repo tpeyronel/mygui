@@ -27,6 +27,8 @@ pub struct Modifiers {
     height: Extent,
     max_width: Option<Extent>,
     max_height: Option<Extent>,
+    min_width: Option<Extent>,
+    min_height: Option<Extent>,
     margin: Margin,
     padding: Padding,
     fill_color: Color,
@@ -60,6 +62,20 @@ impl Modifiers {
     pub fn max_height(self, max_height: Extent) -> Self {
         Self {
             max_height: Some(max_height),
+            ..self
+        }
+    }
+
+    pub fn min_width(self, min_width: Extent) -> Self {
+        Self {
+            min_width: Some(min_width),
+            ..self
+        }
+    }
+
+    pub fn min_height(self, min_height: Extent) -> Self {
+        Self {
+            min_height: Some(min_height),
             ..self
         }
     }
@@ -511,6 +527,28 @@ impl<'a> UiNodeProcessor<'a> {
         let mut height = modifiers.height;
 
         let (mut margin_size, mut children_boundary_size) = self.resolve_extents(ui_node, boundary_size, width, height);
+
+        if let Some(min_width) = modifiers.min_width {
+            let (min_width_margin_size, min_width_children_boundary_size) =
+                self.resolve_extents(ui_node, boundary_size, min_width, height);
+
+            if margin_size.x < min_width_margin_size.x {
+                width = min_width;
+                margin_size = min_width_margin_size;
+                children_boundary_size = min_width_children_boundary_size;
+            }
+        }
+
+        if let Some(min_height) = modifiers.min_height {
+            let (min_height_margin_size, min_height_children_boundary_size) =
+                self.resolve_extents(ui_node, boundary_size, width, min_height);
+
+            if margin_size.y < min_height_margin_size.y {
+                height = min_height;
+                margin_size = min_height_margin_size;
+                children_boundary_size = min_height_children_boundary_size;
+            }
+        }
 
         if let Some(max_width) = modifiers.max_width {
             let (max_width_margin_size, max_width_children_boundary_size) =
