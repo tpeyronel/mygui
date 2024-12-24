@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 
-use super::{BlockProps, Modifiers, UiNode};
+use super::{BlockProps, Extent, Modifiers, UiNode};
 
 #[derive(Debug)]
 pub struct UiNodeData {
@@ -22,18 +22,20 @@ pub struct Ui {
 }
 
 impl Ui {
-    pub fn block(&mut self, f: impl FnOnce(&mut Ui, UiNodeData)) {
+    pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
         let mut ui = Ui { children: vec![] };
+        let mut modifiers = Modifiers::new();
 
         f(
             &mut ui,
+            &mut modifiers,
             UiNodeData {
                 flags: UiNodeDataFlags::empty(),
             },
         );
 
         self.children.push(UiNode::Block(BlockProps {
-            modifiers: Modifiers::new(),
+            modifiers,
             children: ui.children,
         }));
     }
@@ -45,57 +47,64 @@ pub fn ui(f: impl FnOnce(&mut Ui)) -> UiNode {
     f(&mut root);
 
     UiNode::Block(BlockProps {
-        modifiers: Modifiers::new(),
+        modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
         children: root.children,
     })
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::{BlockProps, Modifiers, UiNode};
+    use crate::ui::{BlockProps, Extent, Modifiers, UiNode};
 
-    use super::ui;
+    use super::{ui, Ui};
 
-    #[test]
-    fn single_block() {
-        let ui = ui(|ui| {
-            ui.block(|_, _| {});
-        });
+    fn immediate_test(f: impl FnOnce(&mut Ui), expected: &[UiNode]) {
+        let ui = ui(f);
 
         assert_eq!(
             ui,
             UiNode::Block(BlockProps {
-                modifiers: Modifiers::new(),
-                children: vec![UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new(),
-                    children: vec![]
-                })]
+                modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
+                children: expected.to_vec(),
             })
         )
     }
 
     #[test]
-    fn two_blocks() {
-        let ui = ui(|ui| {
-            ui.block(|_, _| {});
-            ui.block(|_, _| {});
-        });
-
-        assert_eq!(
-            ui,
-            UiNode::Block(BlockProps {
+    fn single_block() {
+        immediate_test(
+            |ui| {
+                ui.block(|_, _, _| {});
+            },
+            &[UiNode::Block(BlockProps {
                 modifiers: Modifiers::new(),
-                children: vec![
-                    UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new(),
-                        children: vec![]
-                    }),
-                    UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new(),
-                        children: vec![]
-                    })
-                ]
-            })
-        )
+                children: vec![],
+            })],
+        );
+    }
+
+    #[test]
+    fn multiple_blocks() {
+        immediate_test(
+            |ui| {
+                ui.block(|_, _, _| {});
+                ui.block(|_, _, _| {});
+                ui.block(|_, _, _| {});
+            },
+            &[
+                UiNode::Block(BlockProps {
+                    modifiers: Modifiers::new(),
+                    children: vec![],
+                }),
+                UiNode::Block(BlockProps {
+                    modifiers: Modifiers::new(),
+                    children: vec![],
+                }),
+                UiNode::Block(BlockProps {
+                    modifiers: Modifiers::new(),
+                    children: vec![],
+                }),
+            ],
+        );
     }
 }
