@@ -813,11 +813,7 @@ impl<'a> UiNodeProcessor<'a> {
             font,
             font_size: *font_size,
             line_height: *line_height,
-            max_line_width: if layout.content_size().y == 0.0 {
-                f32::INFINITY
-            } else {
-                layout.content_size().x
-            },
+            max_line_width: layout.content_size().x,
         };
 
         self.font_engine.lay_out_text(content, &options, |glyph| {
