@@ -164,7 +164,7 @@ pub type RowProps = ColumnProps;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextProps {
-    content: String,
+    text: String,
     text_color: Color,
     font: String,
     font_size: f32,
@@ -774,7 +774,7 @@ impl<'a> UiNodeProcessor<'a> {
         content_height: Option<f32>,
     ) -> (Vec2, Vec2) {
         let TextProps {
-            content,
+            text,
             font,
             font_size,
             line_height,
@@ -790,13 +790,13 @@ impl<'a> UiNodeProcessor<'a> {
             max_line_width,
         };
 
-        let mut dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+        let mut dimensions = self.font_engine.lay_out_text(text, &text_options, |_| {});
 
         // If width is FitContent and max_line_width is not enough for some characters,
         // then take advantage of the extra line length for all lines.
         if dimensions.x > max_line_width && content_width.is_none() {
             text_options.max_line_width = dimensions.x;
-            dimensions = self.font_engine.lay_out_text(content, &text_options, |_| {});
+            dimensions = self.font_engine.lay_out_text(text, &text_options, |_| {});
         }
 
         let content_width = content_width.unwrap_or_else(|| dimensions.x);
@@ -833,7 +833,7 @@ impl<'a> UiNodeProcessor<'a> {
     fn emit_text_draw_data(
         &mut self,
         TextProps {
-            content,
+            text,
             text_color,
             font,
             font_size,
@@ -850,7 +850,7 @@ impl<'a> UiNodeProcessor<'a> {
             max_line_width: layout.content_size().x,
         };
 
-        self.font_engine.lay_out_text(content, &options, |glyph| {
+        self.font_engine.lay_out_text(text, &options, |glyph| {
             let texture = DrawElement::TextGlyph {
                 bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
                 uv_rectangle: glyph.atlas_uv_rectangle,
@@ -1253,7 +1253,7 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::FillParent)
                                 .fill_color(Color::new(0.25, 1.0, 0.25, 0.5)),
                             children: vec![UiNode::Text(TextProps {
-                                content: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
+                                text: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
                                 text_color: Color::ONE,
                                 font: "jetbrainsmono.ttf".to_string(),
@@ -1320,7 +1320,7 @@ pub fn example_ui() -> UiNode {
                                         .weight(1.0)
                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
-                                        content: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
+                                        text: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
                                         text_color: Color::ONE,
                                         font: "seguiemj.ttf".to_string(),
                                         font_size: 24.0,
@@ -1362,7 +1362,7 @@ pub fn example_ui() -> UiNode {
                                         .weight(3.0)
                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
                                     children: vec![UiNode::Text(TextProps {
-                                        content: "HellÓowjdoqi129312893u!\nYegh".to_string(),
+                                        text: "HellÓowjdoqi129312893u!\nYegh".to_string(),
                                         text_color: Color::ONE,
                                         font: "times.ttf".to_string(),
                                         font_size: 17.0,
@@ -1385,7 +1385,7 @@ pub fn example_ui() -> UiNode {
                     children: (5..32)
                         .map(|i| {
                             UiNode::Text(TextProps {
-                                content: "aAbBcCdDoOÓgfjpq".to_string(),
+                                text: "aAbBcCdDoOÓgfjpq".to_string(),
                                 text_color: Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0),
                                 font: "tangerine.ttf".to_string(),
                                 font_size: i as f32,
