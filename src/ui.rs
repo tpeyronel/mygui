@@ -1325,11 +1325,13 @@ pub fn example_ui() -> UiNode {
                                         font_size: 24.0,
                                         line_height: 24.0,
                                         modifiers: Modifiers::new()
-                                            .width(Extent::FitContent)
-                                            .max_width(Extent::FillParent)
+                                            .width(Extent::FillParent)
+                                            .max_width(Extent::Px(512.0))
+                                            .min_width(Extent::Px(256.0))
                                             .height(Extent::FitContent)
+                                            .max_height(Extent::Px(512.0))
                                             .padding(Padding::all(64.0))
-                                            .fill_color(Color::new(1.0, 0.0, 0.0, 0.25)),
+                                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5)),
                                     })],
                                 }),
                             ],
