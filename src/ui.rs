@@ -166,7 +166,7 @@ pub type RowProps = ColumnProps;
 pub struct TextProps {
     text: String,
     text_color: Color,
-    font: String,
+    font_family: String,
     font_size: f32,
     line_height: f32,
     modifiers: Modifiers,
@@ -775,7 +775,7 @@ impl<'a> UiNodeProcessor<'a> {
     ) -> (Vec2, Vec2) {
         let TextProps {
             text,
-            font,
+            font_family,
             font_size,
             line_height,
             ..
@@ -784,7 +784,7 @@ impl<'a> UiNodeProcessor<'a> {
         let max_line_width = content_width.unwrap_or(f32::INFINITY);
 
         let mut text_options = TextLayoutOptions {
-            font,
+            font_family,
             font_size: *font_size,
             line_height: *line_height,
             max_line_width,
@@ -835,7 +835,7 @@ impl<'a> UiNodeProcessor<'a> {
         TextProps {
             text,
             text_color,
-            font,
+            font_family,
             font_size,
             line_height,
             ..
@@ -844,7 +844,7 @@ impl<'a> UiNodeProcessor<'a> {
     ) {
         let origin = layout.content_position() + Vec2::new(0.0, layout.content_size().y);
         let options = TextLayoutOptions {
-            font,
+            font_family,
             font_size: *font_size,
             line_height: *line_height,
             max_line_width: layout.content_size().x,
@@ -1256,7 +1256,7 @@ pub fn example_ui() -> UiNode {
                                 text: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
                                 text_color: Color::ONE,
-                                font: "jetbrainsmono.ttf".to_string(),
+                                font_family: "jetbrainsmono.ttf".to_string(),
                                 font_size: 24.0,
                                 line_height: 24.0 * 1.5,
                                 modifiers: Modifiers::new().self_alignment(Alignment::TopLeft),
@@ -1322,7 +1322,7 @@ pub fn example_ui() -> UiNode {
                                     children: vec![UiNode::Text(TextProps {
                                         text: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
                                         text_color: Color::ONE,
-                                        font: "seguiemj.ttf".to_string(),
+                                        font_family: "seguiemj.ttf".to_string(),
                                         font_size: 24.0,
                                         line_height: 24.0,
                                         modifiers: Modifiers::new()
@@ -1364,7 +1364,7 @@ pub fn example_ui() -> UiNode {
                                     children: vec![UiNode::Text(TextProps {
                                         text: "HellÓowjdoqi129312893u!\nYegh".to_string(),
                                         text_color: Color::ONE,
-                                        font: "times.ttf".to_string(),
+                                        font_family: "times.ttf".to_string(),
                                         font_size: 17.0,
                                         line_height: 17.0,
                                         modifiers: Modifiers::new()
@@ -1387,7 +1387,7 @@ pub fn example_ui() -> UiNode {
                             UiNode::Text(TextProps {
                                 text: "aAbBcCdDoOÓgfjpq".to_string(),
                                 text_color: Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0),
-                                font: "tangerine.ttf".to_string(),
+                                font_family: "tangerine.ttf".to_string(),
                                 font_size: i as f32,
                                 line_height: i as f32,
                                 modifiers: Modifiers::new()

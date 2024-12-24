@@ -49,7 +49,7 @@ impl FontEngine {
     }
 
     pub fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions, mut f: impl FnMut(&LaidOutGlyph)) -> Vec2 {
-        let font_path = self.font_dir_path.clone() + options.font;
+        let font_path = self.font_dir_path.clone() + options.font_family;
         let face: &mut FontFace = self.get_or_create_font_face(&font_path, options.font_size as u32);
 
         let mut pen = Vec2::ZERO;
@@ -138,7 +138,7 @@ impl FontEngine {
 }
 
 pub struct TextLayoutOptions<'a> {
-    pub font: &'a str,
+    pub font_family: &'a str,
     pub font_size: f32,
     pub line_height: f32,
     pub max_line_width: f32,
