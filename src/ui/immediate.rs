@@ -1,6 +1,11 @@
 use bitflags::bitflags;
 
-use super::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, UiNode};
+use crate::vertex::Color;
+
+use super::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, TextProps, UiNode};
+
+const DEFAULT_FONT_SIZE: f32 = 14.0;
+const DEFAULT_LINE_HEIGHT: f32 = DEFAULT_FONT_SIZE;
 
 #[derive(Debug)]
 pub struct UiNodeData {
@@ -74,6 +79,30 @@ impl Ui {
             modifiers,
             children: ui.children,
         }));
+    }
+
+    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, UiNodeData)) {
+        let mut props = TextProps {
+            text: text.into(),
+            text_color: Color::new(1.0, 1.0, 1.0, 1.0),
+            font_family: String::new(),
+            font_size: DEFAULT_FONT_SIZE,
+            line_height: DEFAULT_LINE_HEIGHT,
+            modifiers: Modifiers::new()
+                .width(Extent::FitContent)
+                .max_width(Extent::FillParent)
+                .height(Extent::FitContent)
+                .clone(),
+        };
+
+        f(
+            &mut props,
+            UiNodeData {
+                flags: UiNodeDataFlags::empty(),
+            },
+        );
+
+        self.children.push(UiNode::Text(props));
     }
 }
 
