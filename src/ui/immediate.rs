@@ -123,11 +123,11 @@ pub fn ui(f: impl FnOnce(&mut Ui)) -> UiNode {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ui::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, UiNode},
+        ui::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, TextProps, UiNode},
         vertex::Color,
     };
 
-    use super::{ui, Ui};
+    use super::{ui, Ui, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT};
 
     fn immediate_test(f: impl FnOnce(&mut Ui), expected: &[UiNode]) {
         let ui = ui(f);
@@ -254,6 +254,27 @@ mod tests {
                         children: vec![],
                     })],
                 })],
+            })],
+        );
+    }
+
+    #[test]
+    fn single_text() {
+        immediate_test(
+            |ui| {
+                ui.text("Hello", |_, _| {});
+            },
+            &[UiNode::Text(TextProps {
+                text: "Hello".into(),
+                text_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                font_family: String::new(),
+                font_size: DEFAULT_FONT_SIZE,
+                line_height: DEFAULT_LINE_HEIGHT,
+                modifiers: Modifiers::new()
+                    .width(Extent::FitContent)
+                    .height(Extent::FitContent)
+                    .max_width(Extent::FillParent)
+                    .clone(),
             })],
         );
     }
