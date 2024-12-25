@@ -1,9 +1,9 @@
-mod border_radius;
-mod border_thickness;
+pub mod border_radius;
+pub mod border_thickness;
 pub mod draw_element;
 pub mod immediate;
-mod margin;
-mod padding;
+pub mod margin;
+pub mod padding;
 
 use core::f32;
 use std::collections::HashMap;
@@ -163,12 +163,12 @@ pub type RowProps = ColumnProps;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextProps {
-    text: String,
-    text_color: Color,
-    font_family: String,
-    font_size: f32,
-    line_height: f32,
-    modifiers: Modifiers,
+    pub text: String,
+    pub text_color: Color,
+    pub font_family: String,
+    pub font_size: f32,
+    pub line_height: f32,
+    pub modifiers: Modifiers,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
