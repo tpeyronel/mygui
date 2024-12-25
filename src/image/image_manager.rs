@@ -1,7 +1,13 @@
+use std::usize;
+
 use super::image::Image;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ImageId(usize);
+
+impl ImageId {
+    pub const NULL: ImageId = ImageId(usize::MAX);
+}
 
 pub struct ImageManager {
     images: Vec<Image>,

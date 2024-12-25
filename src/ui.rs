@@ -1483,14 +1483,14 @@ pub fn example_ui() -> UiNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::font::freetype_font_engine::FreetypeFontEngine;
+    use crate::font::mock_font_engine::MockFontEngine;
 
     use super::*;
     use glam::Vec4;
     use pretty_assertions::assert_eq;
 
     fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
-        let mut font_engine = FreetypeFontEngine::new("");
+        let mut font_engine = MockFontEngine::new();
         let mut draw_data = vec![];
         ui.to_draw_data(position, size, &mut font_engine, &mut draw_data);
         draw_data
