@@ -83,7 +83,10 @@ pub fn ui(f: impl FnOnce(&mut Ui)) -> UiNode {
     f(&mut root);
 
     UiNode::Block(BlockProps {
-        modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
+        modifiers: Modifiers::new()
+            .width(Extent::FillParent)
+            .height(Extent::FillParent)
+            .clone(),
         children: root.children,
     })
 }
@@ -103,7 +106,10 @@ mod tests {
         assert_eq!(
             ui,
             UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
+                modifiers: Modifiers::new()
+                    .width(Extent::FillParent)
+                    .height(Extent::FillParent)
+                    .clone(),
                 children: expected.to_vec(),
             })
         )
@@ -153,7 +159,7 @@ mod tests {
             |ui| {
                 ui.block(|_, _, _| {});
                 ui.block(|_, attr, _| {
-                    *attr = attr.clone().border_color(Color::new(1.0, 0.0, 0.0, 0.0));
+                    attr.border_color(Color::new(1.0, 0.0, 0.0, 0.0));
                 });
                 ui.block(|_, _, _| {});
             },
@@ -163,7 +169,7 @@ mod tests {
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().border_color(Color::new(1.0, 0.0, 0.0, 0.0)),
+                    modifiers: Modifiers::new().border_color(Color::new(1.0, 0.0, 0.0, 0.0)).clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {

@@ -233,7 +233,8 @@ impl<'a> UiNodeProcessor<'a> {
         let root_node = UiNode::Block(BlockProps {
             modifiers: Modifiers::new()
                 .width(Extent::Px(boundary_size.x))
-                .height(Extent::Px(boundary_size.y)),
+                .height(Extent::Px(boundary_size.y))
+                .clone(),
             children: vec![ui_node],
         });
 
@@ -1017,7 +1018,8 @@ pub fn example_ui() -> UiNode {
             .padding(Padding::all(16.0))
             .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
             .border_radius(BorderRadius::all(16.0))
-            .padding(Padding::all(16.0)),
+            .padding(Padding::all(16.0))
+            .clone(),
         children: vec![UiNode::Block(BlockProps {
             modifiers: Modifiers::new()
                 .width(Extent::FillParent)
@@ -1026,7 +1028,8 @@ pub fn example_ui() -> UiNode {
                 .fill_color(Color::new(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
                 .border_thickness(BorderThickness::all(4.0))
-                .border_radius(BorderRadius::all(8.0)),
+                .border_radius(BorderRadius::all(8.0))
+                .clone(),
             children: vec![
                 UiNode::Block(BlockProps {
                     modifiers: Modifiers::new()
@@ -1036,7 +1039,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(1.0, 1.0, 1.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::all(4.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1048,7 +1052,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::all(4.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1059,7 +1064,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0)),
+                        .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1069,7 +1075,8 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::Top)
                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0)),
+                        .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1078,7 +1085,8 @@ pub fn example_ui() -> UiNode {
                         .height(Extent::FitContent)
                         .self_alignment(Alignment::TopLeft)
                         .border_color(Color::new(1.0, 1.0, 1.0, 0.4))
-                        .border_thickness(BorderThickness::all(2.0)),
+                        .border_thickness(BorderThickness::all(2.0))
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
@@ -1086,9 +1094,10 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::FillParent)
                                 .padding(Padding::all(8.0))
                                 .border_color(Color::new(1.0, 0.0, 0.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0)),
+                                .border_thickness(BorderThickness::all(2.0))
+                                .clone(),
                             children: vec![UiNode::Block(BlockProps {
-                                modifiers: Modifiers::new().fill_color(Color::new(0.0, 1.0, 0.0, 0.4)),
+                                modifiers: Modifiers::new().fill_color(Color::new(0.0, 1.0, 0.0, 0.4)).clone(),
                                 children: vec![],
                             })],
                         }),
@@ -1098,7 +1107,8 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::Px(64.0))
                                 .border_color(Color::new(0.0, 1.0, 0.0, 0.4))
                                 .border_thickness(BorderThickness::all(2.0))
-                                .self_alignment(Alignment::BottomLeft),
+                                .self_alignment(Alignment::BottomLeft)
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
@@ -1107,7 +1117,8 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::Px(8.0))
                                 .border_color(Color::new(0.0, 0.0, 1.0, 0.4))
                                 .border_thickness(BorderThickness::all(2.0))
-                                .self_alignment(Alignment::TopRight),
+                                .self_alignment(Alignment::TopRight)
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -1120,7 +1131,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(0.0, 0.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::all(4.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1131,7 +1143,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::all(4.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1142,7 +1155,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::all(4.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Block(BlockProps {
@@ -1153,7 +1167,8 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.25))
                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0)),
+                        .border_radius(BorderRadius::all(4.0))
+                        .clone(),
                     children: vec![],
                 }),
                 UiNode::Row(RowProps {
@@ -1162,7 +1177,8 @@ pub fn example_ui() -> UiNode {
                         .height(Extent::FitContent)
                         .padding(Padding::all(8.0))
                         .border_thickness(BorderThickness::all(4.0))
-                        .border_color(Color::new(1.0, 1.0, 1.0, 1.0)),
+                        .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
+                        .clone(),
                     children: vec![
                         UiNode::Column(ColumnProps {
                             modifiers: Modifiers::new()
@@ -1170,7 +1186,8 @@ pub fn example_ui() -> UiNode {
                                 .height(Extent::FitContent)
                                 .padding(Padding::all(16.0))
                                 .border_thickness(BorderThickness::all(4.0))
-                                .border_color(Color::new(1.0, 1.0, 1.0, 1.0)),
+                                .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
+                                .clone(),
                             children: vec![
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
@@ -1178,7 +1195,8 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(0.0, 1.0, 1.0, 0.5))
                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0)),
+                                        .border_radius(BorderRadius::all(8.0))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
@@ -1187,7 +1205,8 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.5))
                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0)),
+                                        .border_radius(BorderRadius::all(8.0))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
@@ -1196,7 +1215,8 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.5))
                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0)),
+                                        .border_radius(BorderRadius::all(8.0))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
@@ -1209,7 +1229,8 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(4.0))
-                                        .border_radius(BorderRadius::all(8.0)),
+                                        .border_radius(BorderRadius::all(8.0))
+                                        .clone(),
                                     children: vec![UiNode::Block(BlockProps {
                                         modifiers: Modifiers::new()
                                             .width(Extent::FillParent)
@@ -1217,7 +1238,8 @@ pub fn example_ui() -> UiNode {
                                             .fill_color(Color::new(1.0, 1.0, 1.0, 0.5))
                                             .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                             .border_thickness(BorderThickness::all(1.0))
-                                            .border_radius(BorderRadius::all(8.0)),
+                                            .border_radius(BorderRadius::all(8.0))
+                                            .clone(),
                                         children: vec![],
                                     })],
                                 }),
@@ -1227,7 +1249,8 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0)),
+                                        .border_radius(BorderRadius::all(8.0))
+                                        .clone(),
                                     children: vec![],
                                 }),
                             ],
@@ -1236,21 +1259,24 @@ pub fn example_ui() -> UiNode {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(64.0))
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(0.25, 0.25, 1.0, 0.5)),
+                                .fill_color(Color::new(0.25, 0.25, 1.0, 0.5))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(64.0))
                                 .height(Extent::Px(32.0))
-                                .fill_color(Color::new(0.25, 0.25, 1.0, 0.25)),
+                                .fill_color(Color::new(0.25, 0.25, 1.0, 0.25))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(0.25, 1.0, 0.25, 0.5)),
+                                .fill_color(Color::new(0.25, 1.0, 0.25, 0.5))
+                                .clone(),
                             children: vec![UiNode::Text(TextProps {
                                 text: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
                                     .to_string(),
@@ -1258,7 +1284,7 @@ pub fn example_ui() -> UiNode {
                                 font_family: "jetbrains mono".to_string(),
                                 font_size: 24.0,
                                 line_height: 24.0 * 1.5,
-                                modifiers: Modifiers::new().self_alignment(Alignment::TopLeft),
+                                modifiers: Modifiers::new().self_alignment(Alignment::TopLeft).clone(),
                             })],
                         }),
                     ],
@@ -1266,58 +1292,66 @@ pub fn example_ui() -> UiNode {
                 UiNode::Column(ColumnProps {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(256.0))
-                        .self_alignment(Alignment::Left),
+                        .self_alignment(Alignment::Left)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(0.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.4)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.4))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(0.0))
                                 .weight(2.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.4)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.4))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(0.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
+                                .fill_color(Color::new(0.0, 0.0, 1.0, 0.4))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
                 }),
                 UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new().height(Extent::FitContent),
+                    modifiers: Modifiers::new().height(Extent::FitContent).clone(),
                     children: vec![
                         UiNode::Row(RowProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(128.0))
-                                .self_alignment(Alignment::Top),
+                                .self_alignment(Alignment::Top)
+                                .clone(),
                             children: vec![
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
                                         .width(Extent::Px(0.0))
                                         .weight(1.0)
-                                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.4)),
+                                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.4))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
                                         .width(Extent::Px(0.0))
                                         .weight(2.0)
-                                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.4)),
+                                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.4))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
                                         .width(Extent::Px(0.0))
                                         .weight(1.0)
-                                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.4)),
+                                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.4))
+                                        .clone(),
                                     children: vec![UiNode::Text(TextProps {
                                         text: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
                                         text_color: Color::ONE,
@@ -1331,7 +1365,8 @@ pub fn example_ui() -> UiNode {
                                             .height(Extent::FitContent)
                                             .max_height(Extent::Px(512.0))
                                             .padding(Padding::all(64.0))
-                                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5)),
+                                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
+                                            .clone(),
                                     })],
                                 }),
                             ],
@@ -1339,27 +1374,31 @@ pub fn example_ui() -> UiNode {
                         UiNode::Row(RowProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(128.0))
-                                .self_alignment(Alignment::Top),
+                                .self_alignment(Alignment::Top)
+                                .clone(),
                             children: vec![
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
                                         .width(Extent::Px(0.0))
                                         .weight(2.0)
-                                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.4)),
+                                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.4))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
                                         .width(Extent::Px(0.0))
                                         .weight(1.0)
-                                        .fill_color(Color::new(0.0, 1.0, 1.0, 0.4)),
+                                        .fill_color(Color::new(0.0, 1.0, 1.0, 0.4))
+                                        .clone(),
                                     children: vec![],
                                 }),
                                 UiNode::Block(BlockProps {
                                     modifiers: Modifiers::new()
                                         .width(Extent::Px(0.0))
                                         .weight(3.0)
-                                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.4)),
+                                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.4))
+                                        .clone(),
                                     children: vec![UiNode::Text(TextProps {
                                         text: "HellÓowjdoqi129312893u!\nYegh".to_string(),
                                         text_color: Color::ONE,
@@ -1369,7 +1408,8 @@ pub fn example_ui() -> UiNode {
                                         modifiers: Modifiers::new()
                                             .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
                                             .border_radius(BorderRadius::all(8.0))
-                                            .padding(Padding::all(8.0)),
+                                            .padding(Padding::all(8.0))
+                                            .clone(),
                                     })],
                                 }),
                             ],
@@ -1380,7 +1420,8 @@ pub fn example_ui() -> UiNode {
                     modifiers: Modifiers::new()
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomRight),
+                        .self_alignment(Alignment::BottomRight)
+                        .clone(),
                     children: (5..32)
                         .map(|i| {
                             UiNode::Text(TextProps {
@@ -1397,7 +1438,8 @@ pub fn example_ui() -> UiNode {
                                         Color::new(1.0, 0.0, 0.0, 0.5)
                                     } else {
                                         Color::new(0.0, 1.0, 0.0, 0.5)
-                                    }),
+                                    })
+                                    .clone(),
                             })
                         })
                         .collect(),
@@ -1451,9 +1493,9 @@ mod tests {
             32.0,
             32.0,
             UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().padding(Padding::all(8.0)),
+                modifiers: Modifiers::new().padding(Padding::all(8.0)).clone(),
                 children: vec![UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                    modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                     children: vec![],
                 })],
             }),
@@ -1482,7 +1524,7 @@ mod tests {
             32.0,
             32.0,
             UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().margin(Margin::all(8.0)),
+                modifiers: Modifiers::new().margin(Margin::all(8.0)).clone(),
                 children: vec![],
             }),
             &[DrawElement::Rectangle {
@@ -1501,9 +1543,9 @@ mod tests {
             32.0,
             32.0,
             UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().padding(Padding::all(16.0)),
+                modifiers: Modifiers::new().padding(Padding::all(16.0)).clone(),
                 children: vec![UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                    modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                     children: vec![],
                 })],
             }),
@@ -1568,7 +1610,8 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(8.0))
                         .height(Extent::Px(8.0))
-                        .self_alignment(alignment),
+                        .self_alignment(alignment)
+                        .clone(),
                     children: vec![],
                 }),
                 &[DrawElement::Rectangle {
@@ -1595,7 +1638,7 @@ mod tests {
     #[test]
     fn subpixel_alignment() {
         let ui: UiNode = UiNode::Block(BlockProps {
-            modifiers: Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)),
+            modifiers: Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
             children: vec![],
         });
 
@@ -1634,12 +1677,13 @@ mod tests {
                 32.0,
                 UiNode::Block(BlockProps {
                     // Border thickness of 4.0 makes the parent container equivalent to a 24.0 size container.
-                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(4.0)),
+                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(4.0)).clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .width(Extent::Px(8.0))
                             .height(Extent::Px(8.0))
-                            .self_alignment(alignment),
+                            .self_alignment(alignment)
+                            .clone(),
                         children: vec![],
                     })],
                 }),
@@ -1682,9 +1726,9 @@ mod tests {
                 32.0,
                 32.0,
                 UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)),
+                    modifiers: Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)).clone(),
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                         children: vec![],
                     })],
                 }),
@@ -1713,9 +1757,11 @@ mod tests {
                 32.0,
                 32.0,
                 UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().border_thickness(BorderThickness::new(1.0, 2.0, 4.0, 8.0)),
+                    modifiers: Modifiers::new()
+                        .border_thickness(BorderThickness::new(1.0, 2.0, 4.0, 8.0))
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                         children: vec![],
                     })],
                 }),
@@ -1747,27 +1793,31 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(8.0))
                                 .height(Extent::Px(64.0))
-                                .self_alignment(Alignment::BottomLeft),
+                                .self_alignment(Alignment::BottomLeft)
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(96.0))
                                 .height(Extent::Px(8.0))
-                                .self_alignment(Alignment::TopRight),
+                                .self_alignment(Alignment::TopRight)
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -1815,14 +1865,16 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
                                 .border_thickness(BorderThickness::all(8.0))
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
@@ -1830,7 +1882,8 @@ mod tests {
                                 .width(Extent::Px(8.0))
                                 .height(Extent::Px(64.0))
                                 .border_thickness(BorderThickness::all(8.0))
-                                .self_alignment(Alignment::BottomLeft),
+                                .self_alignment(Alignment::BottomLeft)
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
@@ -1838,7 +1891,8 @@ mod tests {
                                 .width(Extent::Px(96.0))
                                 .height(Extent::Px(8.0))
                                 .border_thickness(BorderThickness::all(8.0))
-                                .self_alignment(Alignment::TopRight),
+                                .self_alignment(Alignment::TopRight)
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -1886,27 +1940,31 @@ mod tests {
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
                         .border_thickness(BorderThickness::all(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(8.0))
                                 .height(Extent::Px(64.0))
-                                .self_alignment(Alignment::BottomLeft),
+                                .self_alignment(Alignment::BottomLeft)
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(96.0))
                                 .height(Extent::Px(8.0))
-                                .self_alignment(Alignment::TopRight),
+                                .self_alignment(Alignment::TopRight)
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -1955,27 +2013,31 @@ mod tests {
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
                         .padding(Padding::all(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(8.0))
                                 .height(Extent::Px(64.0))
-                                .self_alignment(Alignment::BottomLeft),
+                                .self_alignment(Alignment::BottomLeft)
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(96.0))
                                 .height(Extent::Px(8.0))
-                                .self_alignment(Alignment::TopRight),
+                                .self_alignment(Alignment::TopRight)
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2026,11 +2088,11 @@ mod tests {
                     modifiers: Modifiers::new(),
                     children: vec![
                         UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(24.0)),
+                            modifiers: Modifiers::new().height(Extent::Px(24.0)).clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(48.0)),
+                            modifiers: Modifiers::new().height(Extent::Px(48.0)).clone(),
                             children: vec![],
                         }),
                     ],
@@ -2073,14 +2135,17 @@ mod tests {
                     modifiers: Modifiers::new(),
                     children: vec![
                         UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(24.0)).padding(Padding::all(2.0)),
+                            modifiers: Modifiers::new()
+                                .height(Extent::Px(24.0))
+                                .padding(Padding::all(2.0))
+                                .clone(),
                             children: vec![UiNode::Block(BlockProps {
                                 modifiers: Modifiers::new(),
                                 children: vec![],
                             })],
                         }),
                         UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(48.0)),
+                            modifiers: Modifiers::new().height(Extent::Px(48.0)).clone(),
                             children: vec![],
                         }),
                     ],
@@ -2132,7 +2197,10 @@ mod tests {
                 UiNode::Column(ColumnProps {
                     modifiers: Modifiers::new(),
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().height(Extent::Px(16.0)).margin(Margin::all(2.0)),
+                        modifiers: Modifiers::new()
+                            .height(Extent::Px(16.0))
+                            .margin(Margin::all(2.0))
+                            .clone(),
                         children: vec![],
                     })],
                 }),
@@ -2167,20 +2235,23 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(64.0))
                                 .height(Extent::Px(32.0))
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2221,9 +2292,10 @@ mod tests {
                         .width(Extent::FillParent)
                         .height(Extent::FitContent)
                         .padding(Padding::all(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().height(Extent::Px(32.0)),
+                        modifiers: Modifiers::new().height(Extent::Px(32.0)).clone(),
                         children: vec![],
                     })],
                 }),
@@ -2255,9 +2327,13 @@ mod tests {
                     modifiers: Modifiers::new()
                         .self_alignment(Alignment::BottomLeft)
                         .width(Extent::FitContent)
-                        .height(Extent::FitContent),
+                        .height(Extent::FitContent)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().width(Extent::FillParent).height(Extent::FillParent),
+                        modifiers: Modifiers::new()
+                            .width(Extent::FillParent)
+                            .height(Extent::FillParent)
+                            .clone(),
                         children: vec![],
                     })],
                 }),
@@ -2289,12 +2365,14 @@ mod tests {
                     modifiers: Modifiers::new()
                         .self_alignment(Alignment::BottomLeft)
                         .width(Extent::FitContent)
-                        .height(Extent::FitContent),
+                        .height(Extent::FitContent)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .width(Extent::FillParent)
                             .height(Extent::FillParent)
-                            .margin(Margin::all(4.0)),
+                            .margin(Margin::all(4.0))
+                            .clone(),
                         children: vec![],
                     })],
                 }),
@@ -2326,20 +2404,23 @@ mod tests {
                     modifiers: Modifiers::new()
                         .self_alignment(Alignment::BottomLeft)
                         .width(Extent::FitContent)
-                        .height(Extent::Px(48.0)),
+                        .height(Extent::Px(48.0))
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(64.0))
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2383,20 +2464,23 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(64.0))
                                 .height(Extent::Px(32.0))
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2440,20 +2524,23 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(100.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(20.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(40.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2496,20 +2583,23 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(100.0))
                         .height(Extent::Px(50.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(20.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::Px(40.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2549,27 +2639,31 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(100.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(0.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(0.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                         UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .height(Extent::Px(0.0))
                                 .weight(1.0)
-                                .fill_color(Color::new(0.0, 0.0, 1.0, 1.0)),
+                                .fill_color(Color::new(0.0, 0.0, 1.0, 1.0))
+                                .clone(),
                             children: vec![],
                         }),
                     ],
@@ -2619,13 +2713,15 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .height(Extent::Px(0.0))
                             .weight(1.0)
                             .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                            .clone(),
                         children: vec![],
                     })],
                 }),
@@ -2657,18 +2753,21 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .height(Extent::Px(0.0))
                             .weight(1.0)
                             .border_thickness(BorderThickness::all(3.0)) // This border thickness should only allow for a height of the child of 2.0.
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                            .clone(),
                         children: vec![UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         })],
                     })],
@@ -2708,18 +2807,21 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .height(Extent::Px(0.0))
                             .weight(1.0)
                             .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                            .clone(),
                         children: vec![UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![],
                         })],
                     })],
@@ -2759,22 +2861,26 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(50.0))
                         .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .height(Extent::Px(0.0))
                             .weight(1.0)
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                            .clone(),
                         children: vec![UiNode::Block(BlockProps {
                             modifiers: Modifiers::new()
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0)),
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+                                .clone(),
                             children: vec![UiNode::Block(BlockProps {
                                 modifiers: Modifiers::new()
                                     .width(Extent::FillParent)
                                     .height(Extent::FillParent)
-                                    .fill_color(Color::new(0.0, 0.0, 1.0, 1.0)),
+                                    .fill_color(Color::new(0.0, 0.0, 1.0, 1.0))
+                                    .clone(),
                                 children: vec![],
                             })],
                         })],
@@ -2823,9 +2929,9 @@ mod tests {
                 32.0,
                 32.0,
                 UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(3.5)), // Should all be rounded to 4.0
+                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(3.5)).clone(), // Should all be rounded to 4.0
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                         children: vec![],
                     })],
                 }),
@@ -2854,9 +2960,9 @@ mod tests {
                 32.0,
                 32.0,
                 UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().padding(Padding::all(3.5)), // Should all be rounded to 4.0
+                    modifiers: Modifiers::new().padding(Padding::all(3.5)).clone(), // Should all be rounded to 4.0
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                         children: vec![],
                     })],
                 }),
@@ -2885,9 +2991,9 @@ mod tests {
                 32.0,
                 32.0,
                 UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().margin(Margin::all(3.5)), // Should all be rounded to 4.0
+                    modifiers: Modifiers::new().margin(Margin::all(3.5)).clone(), // Should all be rounded to 4.0
                     children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
                         children: vec![],
                     })],
                 }),
@@ -2943,12 +3049,14 @@ mod tests {
                     modifiers: Modifiers::new()
                         .width(Extent::Px(9.0))
                         .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft),
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
                     children: vec![UiNode::Block(BlockProps {
                         modifiers: Modifiers::new()
                             .width(Extent::Px(8.0))
                             .self_alignment(Alignment::Center)
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+                            .clone(),
                         children: vec![],
                     })],
                 }),
