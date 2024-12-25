@@ -45,75 +45,74 @@ impl Modifiers {
         Self::default()
     }
 
-    pub fn width(self, width: Extent) -> Self {
-        Self { width, ..self }
+    pub fn width(&mut self, width: Extent) -> &mut Self {
+        self.width = width;
+        self
     }
 
-    pub fn height(self, height: Extent) -> Self {
-        Self { height, ..self }
+    pub fn height(&mut self, height: Extent) -> &mut Self {
+        self.height = height;
+        self
     }
 
-    pub fn max_width(self, max_width: Extent) -> Self {
-        Self {
-            max_width: Some(max_width),
-            ..self
-        }
+    pub fn max_width(&mut self, max_width: Extent) -> &mut Self {
+        self.max_width = Some(max_width);
+        self
     }
 
-    pub fn max_height(self, max_height: Extent) -> Self {
-        Self {
-            max_height: Some(max_height),
-            ..self
-        }
+    pub fn max_height(&mut self, max_height: Extent) -> &mut Self {
+        self.max_height = Some(max_height);
+        self
     }
 
-    pub fn min_width(self, min_width: Extent) -> Self {
-        Self {
-            min_width: Some(min_width),
-            ..self
-        }
+    pub fn min_width(&mut self, min_width: Extent) -> &mut Self {
+        self.min_width = Some(min_width);
+        self
     }
 
-    pub fn min_height(self, min_height: Extent) -> Self {
-        Self {
-            min_height: Some(min_height),
-            ..self
-        }
+    pub fn min_height(&mut self, min_height: Extent) -> &mut Self {
+        self.min_height = Some(min_height);
+        self
     }
 
-    pub fn margin(self, margin: Margin) -> Self {
-        Self { margin, ..self }
+    pub fn margin(&mut self, margin: Margin) -> &mut Self {
+        self.margin = margin;
+        self
     }
 
-    pub fn padding(self, padding: Padding) -> Self {
-        Self { padding, ..self }
+    pub fn padding(&mut self, padding: Padding) -> &mut Self {
+        self.padding = padding;
+        self
     }
 
-    pub fn fill_color(self, fill_color: Color) -> Self {
-        Self { fill_color, ..self }
+    pub fn fill_color(&mut self, fill_color: Color) -> &mut Self {
+        self.fill_color = fill_color;
+        self
     }
 
-    pub fn border_color(self, border_color: Color) -> Self {
-        Self { border_color, ..self }
+    pub fn border_color(&mut self, border_color: Color) -> &mut Self {
+        self.border_color = border_color;
+        self
     }
 
-    pub fn border_thickness(self, border_thickness: BorderThickness) -> Self {
-        Self {
-            border_thickness,
-            ..self
-        }
+    pub fn border_thickness(&mut self, border_thickness: BorderThickness) -> &mut Self {
+        self.border_thickness = border_thickness;
+        self
     }
 
-    pub fn border_radius(self, border_radius: BorderRadius) -> Self {
-        Self { border_radius, ..self }
+    pub fn border_radius(&mut self, border_radius: BorderRadius) -> &mut Self {
+        self.border_radius = border_radius;
+        self
     }
 
-    pub fn self_alignment(self, self_alignment: Alignment) -> Self {
-        Self { self_alignment, ..self }
+    pub fn self_alignment(&mut self, self_alignment: Alignment) -> &mut Self {
+        self.self_alignment = self_alignment;
+        self
     }
 
-    pub fn weight(self, weight: f32) -> Self {
-        Self { weight, ..self }
+    pub fn weight(&mut self, weight: f32) -> &mut Self {
+        self.weight = weight;
+        self
     }
 }
 
