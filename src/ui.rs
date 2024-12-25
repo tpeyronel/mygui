@@ -736,35 +736,66 @@ impl<'a> UiNodeProcessor<'a> {
         content_width: Option<f32>,
         content_height: Option<f32>,
     ) -> (Vec2, Vec2) {
-        let preliminar_children_boundary_size = Vec2::new(content_width.unwrap_or(0.0), content_height.unwrap_or(0.0));
+        match (content_width, content_height) {
+            (Some(content_width), Some(content_height)) => {
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, content_size)
+            }
+            (Some(content_width), None) => {
+                let preliminar_children_boundary_size = Vec2::new(content_width, 0.0);
 
-        let min_intrinsic_children_sizes: Vec<Measurements> =
-            self.measure_children(preliminar_children_boundary_size, &props.children);
+                let min_intrinsic_children_sizes: Vec<Measurements> =
+                    self.measure_children(preliminar_children_boundary_size, &props.children);
 
-        // We compute height first to update final_children_boundary_size.y before
-        // computing width.
-        let content_height = content_height.unwrap_or_else(|| {
-            min_intrinsic_children_sizes
-                .iter()
-                .map(|cs| cs.margin_size.y)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0)
-        });
+                let content_height = min_intrinsic_children_sizes
+                    .iter()
+                    .map(|cs| cs.margin_size.y)
+                    .max_by(|a, b| a.partial_cmp(b).unwrap())
+                    .unwrap_or(0.0);
 
-        let mut final_children_boundary_size = Vec2::new(preliminar_children_boundary_size.x, content_height);
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, content_size)
+            }
+            (None, Some(content_height)) => {
+                let preliminar_children_boundary_size = Vec2::new(0.0, content_height);
 
-        let content_width = content_width.unwrap_or_else(|| {
-            let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
-            final_children_boundary_size.x = min_intrinsic_width;
+                let min_intrinsic_children_sizes: Vec<Measurements> =
+                    self.measure_children(preliminar_children_boundary_size, &props.children);
 
-            let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
+                let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
+                let final_children_boundary_size = Vec2::new(min_intrinsic_width, content_height);
 
-            children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>()
-        });
+                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
 
-        let content_size = Vec2::new(content_width, content_height);
+                let content_width = children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>();
 
-        (content_size, final_children_boundary_size)
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, final_children_boundary_size)
+            }
+            (None, None) => {
+                let preliminar_children_boundary_size = Vec2::new(0.0, 0.0);
+
+                let min_intrinsic_children_sizes: Vec<Measurements> =
+                    self.measure_children(preliminar_children_boundary_size, &props.children);
+
+                // We compute height first to use it in final_children_boundary_size.
+                let content_height = min_intrinsic_children_sizes
+                    .iter()
+                    .map(|cs| cs.margin_size.y)
+                    .max_by(|a, b| a.partial_cmp(b).unwrap())
+                    .unwrap_or(0.0);
+
+                let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
+                let final_children_boundary_size = Vec2::new(min_intrinsic_width, content_height);
+
+                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
+
+                let content_width = children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>();
+
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, final_children_boundary_size)
+            }
+        }
     }
 
     fn measure_fit_text(
