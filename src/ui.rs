@@ -199,11 +199,11 @@ pub enum UiNode {
 }
 
 impl UiNode {
-    pub fn to_draw_data(
+    pub fn to_draw_data<F: FontEngine>(
         self,
         boundary_pos: Vec2,
         boundary_size: Vec2,
-        font_engine: &mut FontEngine,
+        font_engine: &mut F,
         out: &mut Vec<DrawElement>,
     ) {
         let mut processor = UiNodeProcessor::new(font_engine, out);
@@ -211,14 +211,14 @@ impl UiNode {
     }
 }
 
-struct UiNodeProcessor<'a> {
+struct UiNodeProcessor<'a, F: FontEngine> {
     measurements_cache: MeasurementsCache,
-    font_engine: &'a mut FontEngine,
+    font_engine: &'a mut F,
     draw_data: &'a mut Vec<DrawElement>,
 }
 
-impl<'a> UiNodeProcessor<'a> {
-    fn new(font_engine: &'a mut FontEngine, draw_data: &'a mut Vec<DrawElement>) -> Self {
+impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
+    fn new(font_engine: &'a mut F, draw_data: &'a mut Vec<DrawElement>) -> Self {
         Self {
             measurements_cache: MeasurementsCache::new(),
             font_engine,
@@ -1483,12 +1483,14 @@ pub fn example_ui() -> UiNode {
 
 #[cfg(test)]
 mod tests {
+    use crate::font::freetype_font_engine::FreetypeFontEngine;
+
     use super::*;
     use glam::Vec4;
     use pretty_assertions::assert_eq;
 
     fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
-        let mut font_engine = FontEngine::new("");
+        let mut font_engine = FreetypeFontEngine::new("");
         let mut draw_data = vec![];
         ui.to_draw_data(position, size, &mut font_engine, &mut draw_data);
         draw_data

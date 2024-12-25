@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use font::font_engine::FontEngine;
+use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use renderer::renderer::Renderer;
@@ -31,7 +31,7 @@ struct AppState {
     window: Arc<Window>,
     draw_data: Vec<DrawElement>,
     image_manager: ImageManager,
-    font_engine: FontEngine,
+    font_engine: FreetypeFontEngine,
     renderer: Renderer,
 }
 
@@ -71,8 +71,7 @@ impl ApplicationHandler for App {
         let ui = example_ui();
 
         let image_manager = ImageManager::new();
-        // let font_engine = FontEngine::new("./assets/fonts/times.ttf");
-        let mut font_engine = FontEngine::new("./assets/fonts/");
+        let mut font_engine = FreetypeFontEngine::new("./assets/fonts/");
 
         let mut draw_data = vec![];
         ui.to_draw_data(
