@@ -436,49 +436,20 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         RowProps { children, .. }: &RowProps,
         layout: &Layout,
     ) -> Vec<UiNodeLayout> {
-        let total_children_weight: f32 = children
-            .iter()
-            .map(|c| match c {
-                UiNode::Block(props) => props.modifiers.weight,
-                UiNode::Column(props) => props.modifiers.weight,
-                UiNode::Row(props) => props.modifiers.weight,
-                UiNode::Text(props) => props.modifiers.weight,
-            })
-            .sum();
-
-        let total_children_width: f32 = children
-            .iter()
-            .map(|c| self.measure(c, layout.children_boundary_size()).margin_size.x)
-            .sum();
-
-        let extra_column_width = (layout.content_size().x - total_children_width).max(0.0);
-
-        let mut remaining_column_width = extra_column_width;
-        let mut remaining_children_weight = total_children_weight;
+        let initial_children_measurements = self.measure_children(layout.children_boundary_size(), children);
+        let children_measurements =
+            self.apply_horizontal_weights(layout.content_size().x, children, initial_children_measurements);
 
         let mut horizontal_offset = 0.0;
-        children
-            .iter()
-            .map(|c| {
-                let child_modifiers = match c {
+
+        std::iter::zip(children.iter(), children_measurements.into_iter())
+            .map(|(child, child_measurements)| {
+                let child_modifiers = match child {
                     UiNode::Block(props) => &props.modifiers,
                     UiNode::Column(props) => &props.modifiers,
                     UiNode::Row(props) => &props.modifiers,
                     UiNode::Text(props) => &props.modifiers,
                 };
-
-                let mut child_measurements = self.measure(c, layout.children_boundary_size());
-
-                if remaining_children_weight > 0.0 {
-                    let child_weight = child_modifiers.weight;
-                    let child_extra_width = remaining_column_width * (child_weight / remaining_children_weight);
-                    let child_extra_width = child_extra_width.ceil().min(remaining_column_width);
-                    remaining_column_width -= child_extra_width;
-                    remaining_children_weight -= child_weight;
-
-                    child_measurements.margin_size.x += child_extra_width;
-                    child_measurements.children_boundary_size = child_measurements.content_size();
-                }
 
                 let child_margin_size = child_measurements.margin_size;
 
@@ -500,7 +471,7 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
                 horizontal_offset += child_margin_size.x;
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                self.compute_layout_rec(c, child_layout)
+                self.compute_layout_rec(child, child_layout)
             })
             .collect()
     }
@@ -796,6 +767,71 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
                 (content_size, final_children_boundary_size)
             }
         }
+    }
+
+    fn apply_horizontal_weights(
+        &mut self,
+        content_width: f32,
+        children: &[UiNode],
+        children_measurements: Vec<Measurements>,
+    ) -> Vec<Measurements> {
+        assert_eq!(children.len(), children_measurements.len());
+
+        let total_children_weight: f32 = children
+            .iter()
+            .map(|c| match c {
+                UiNode::Block(props) => props.modifiers.weight.max(0.0),
+                UiNode::Column(props) => props.modifiers.weight.max(0.0),
+                UiNode::Row(props) => props.modifiers.weight.max(0.0),
+                UiNode::Text(props) => props.modifiers.weight.max(0.0),
+            })
+            .sum();
+
+        if total_children_weight == 0.0 {
+            return children_measurements;
+        }
+
+        let total_children_width: f32 = children_measurements.iter().map(|m| m.margin_size.x).sum();
+
+        let extra_column_width = (content_width - total_children_width).max(0.0);
+
+        let mut remaining_column_width = extra_column_width;
+        let mut remaining_children_weight = total_children_weight;
+
+        std::iter::zip(children.iter(), children_measurements.into_iter())
+            .map(|(child, mut child_measurements)| {
+                let child_modifiers = match child {
+                    UiNode::Block(props) => &props.modifiers,
+                    UiNode::Column(props) => &props.modifiers,
+                    UiNode::Row(props) => &props.modifiers,
+                    UiNode::Text(props) => &props.modifiers,
+                };
+
+                if remaining_children_weight > 0.0 {
+                    let child_weight = child_modifiers.weight;
+                    let child_extra_width = remaining_column_width * (child_weight / remaining_children_weight);
+                    let child_extra_width = child_extra_width.ceil().min(remaining_column_width);
+                    remaining_column_width -= child_extra_width;
+                    remaining_children_weight -= child_weight;
+
+                    if child_modifiers.height == Extent::FitContent {
+                        (
+                            child_measurements.margin_size,
+                            child_measurements.children_boundary_size,
+                        ) = self.measure_fit_content(
+                            child,
+                            Some(child_measurements.margin_size.x + child_extra_width),
+                            None,
+                        );
+                    } else {
+                        child_measurements.margin_size.x += child_extra_width;
+                        child_measurements.children_boundary_size = child_measurements.content_size();
+                    }
+                }
+
+                child_measurements
+            })
+            .collect()
     }
 
     fn measure_fit_text(
