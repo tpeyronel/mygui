@@ -66,24 +66,13 @@ impl ApplicationHandler for App {
                 .unwrap(),
         );
 
-        let renderer = Renderer::new(Arc::clone(&window));
-
-        let ui = example_ui();
-
         let image_manager = ImageManager::new();
-        let mut font_engine = FreetypeFontEngine::new("./assets/fonts/");
-
-        let mut draw_data = vec![];
-        ui.to_draw_data(
-            Vec2::ZERO,
-            Vec2::new(window.inner_size().width as f32, window.inner_size().height as f32),
-            &mut font_engine,
-            &mut draw_data,
-        );
+        let font_engine = FreetypeFontEngine::new("./assets/fonts/");
+        let renderer = Renderer::new(Arc::clone(&window));
 
         self.state = Some(AppState {
             window,
-            draw_data,
+            draw_data: vec![],
             image_manager,
             font_engine,
             renderer,
