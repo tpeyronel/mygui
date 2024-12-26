@@ -3112,4 +3112,155 @@ mod tests {
             )
         }
     }
+
+    mod text {
+        use glam::{Vec2, Vec4};
+
+        use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId};
+
+        use super::{test_converter, Alignment, Color, DrawElement, Extent, Modifiers, Rectangle, TextProps, UiNode};
+
+        #[test]
+        fn text_fit_content() {
+            test_converter(
+                32.0,
+                32.0,
+                UiNode::Text(TextProps {
+                    text: "abcdef".into(),
+                    text_color: Color::ONE,
+                    font_family: String::new(),
+                    font_size: 13.0,
+                    line_height: 16.0,
+                    modifiers: Modifiers::new()
+                        .width(Extent::FitContent)
+                        .height(Extent::FitContent)
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
+                }),
+                &[
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(6.0 * 13.0, 16.0)),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(2.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(3.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(4.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(5.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                ],
+            )
+        }
+
+        #[test]
+        fn text_fit_content_with_max_width() {
+            test_converter(
+                32.0,
+                32.0,
+                UiNode::Text(TextProps {
+                    text: "abcdef".into(),
+                    text_color: Color::ONE,
+                    font_family: String::new(),
+                    font_size: 13.0,
+                    line_height: 16.0,
+                    modifiers: Modifiers::new()
+                        .width(Extent::FitContent)
+                        .max_width(Extent::FillParent)
+                        .height(Extent::FitContent)
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
+                }),
+                &[
+                    DrawElement::Rectangle {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
+                        fill_color: Color::ZERO,
+                        border_color: Color::ZERO,
+                        border_radius: Vec4::ZERO,
+                        border_width: Vec4::ZERO,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                    DrawElement::TextGlyph {
+                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+                        text_color: Color::ONE,
+                        image_id: ImageId::NULL,
+                        pixel_mode: GlyphPixelMode::Grayscale,
+                    },
+                ],
+            )
+        }
+    }
 }
