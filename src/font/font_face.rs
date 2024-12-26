@@ -6,8 +6,8 @@ use crate::{image::image_manager::ImageId, rectangle::Rectangle};
 
 pub struct FontFace {
     pub ft_face: freetype::Face,
-    pub advances: Vec<i32>,              // Maps glyph indices to their advances.
-    charmap: HashMap<char, Option<u32>>, // Maps chars to glyph indices.
+    pub advances: Vec<i32>,      // Maps glyph indices to their advances.
+    charmap: HashMap<char, u32>, // Maps chars to glyph indices.
     pub usage_flags: FontFaceUsageFlags,
     pub grayscale_atlas_metadata: Option<GlyphAtlasMetadata>,
     pub subpixel_atlas_metadata: Option<GlyphAtlasMetadata>,
@@ -17,11 +17,12 @@ pub struct FontFace {
 impl FontFace {
     pub fn new(ft_face: freetype::Face) -> Self {
         let advances = Self::load_advances(&ft_face);
+        let charmap = Self::load_charmap(&ft_face);
 
         Self {
             ft_face,
             advances,
-            charmap: HashMap::new(),
+            charmap,
             usage_flags: FontFaceUsageFlags::empty(),
             grayscale_atlas_metadata: None,
             subpixel_atlas_metadata: None,
@@ -44,11 +45,28 @@ impl FontFace {
         advances
     }
 
+    fn load_charmap(ft_face: &freetype::Face) -> HashMap<char, u32> {
+        let mut charmap = HashMap::new();
+
+        for (c, g) in ft_face.chars() {
+            let Some(c) = char::from_u32(c as u32) else {
+                log::error!("error loading charmap: invalid char {}", c);
+                continue;
+            };
+
+            if charmap.contains_key(&c) {
+                log::warn!("error loading charmap: char {} already mapped. Skipping.", c);
+                continue;
+            }
+
+            charmap.insert(c, g.get());
+        }
+
+        charmap
+    }
+
     fn get_glyph_index(&mut self, c: char) -> Option<usize> {
-        self.charmap
-            .entry(c)
-            .or_insert_with(|| self.ft_face.get_char_index(c as usize))
-            .map(|g| g as usize)
+        self.charmap.get(&c).map(|&g| g as usize)
     }
 
     pub fn get_glyph_advance(&mut self, c: char) -> Option<i32> {
