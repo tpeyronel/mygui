@@ -28,9 +28,14 @@ impl FontEngine for MockFontEngine {
 
         for line in text.split("\n") {
             let mut x = 0.0;
-            let y = -height * options.font_size;
 
             for _c in line.chars() {
+                if x + options.font_size > options.max_line_width {
+                    x = 0.0;
+                    height += 1.0;
+                }
+
+                let y = -(height + 1.0) * options.line_height;
                 f(&LaidOutGlyph {
                     position: Vec2::new(x, y),
                     size: Vec2::splat(options.font_size),
@@ -38,6 +43,7 @@ impl FontEngine for MockFontEngine {
                     image_id: ImageId::NULL,
                     pixel_mode: GlyphPixelMode::Grayscale,
                 });
+
                 x += options.font_size;
             }
 
@@ -46,7 +52,7 @@ impl FontEngine for MockFontEngine {
         }
 
         width *= options.font_size;
-        height *= options.font_size;
+        height *= options.line_height;
 
         Vec2::new(width, height)
     }
