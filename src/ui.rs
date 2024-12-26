@@ -975,6 +975,7 @@ struct UiNodeLayout {
     children: Vec<UiNodeLayout>,
 }
 
+#[derive(Debug, Clone)]
 struct Layout {
     margin_position: Vec2,
     margin_size: Vec2,
