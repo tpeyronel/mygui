@@ -628,8 +628,8 @@ impl Renderer {
                         pixel_mode,
                     } => {
                         let pipeline = match pixel_mode {
-                            GlyphPixelMode::Grayscale => &self.text_subpixel_pipeline,
-                            GlyphPixelMode::Subpixel => &self.text_grayscale_pipeline,
+                            GlyphPixelMode::Grayscale => &self.text_grayscale_pipeline,
+                            GlyphPixelMode::Subpixel => &self.text_subpixel_pipeline,
                             GlyphPixelMode::Color => &self.texture_pipeline,
                         };
                         rpass.set_pipeline(pipeline);
