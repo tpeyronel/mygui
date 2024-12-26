@@ -113,7 +113,7 @@ pub struct GlyphUvData<'a> {
 pub enum GlyphPixelMode {
     Grayscale,
     Subpixel,
-    Color,
+    Color, // NOTE: this uses premultiplied alpha.
 }
 
 pub enum FontFaceJob {}
