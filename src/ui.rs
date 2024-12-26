@@ -715,10 +715,13 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (Some(content_width), None) => {
                 let preliminar_children_boundary_size = Vec2::new(content_width, 0.0);
 
-                let min_intrinsic_children_sizes: Vec<Measurements> =
+                let min_intrinsic_children_measurements: Vec<Measurements> =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
-                let content_height = min_intrinsic_children_sizes
+                let children_measurements =
+                    self.apply_horizontal_weights(content_width, &props.children, min_intrinsic_children_measurements);
+
+                let content_height = children_measurements
                     .iter()
                     .map(|cs| cs.margin_size.y)
                     .max_by(|a, b| a.partial_cmp(b).unwrap())
