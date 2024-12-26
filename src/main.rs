@@ -4,7 +4,8 @@ use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use renderer::renderer::Renderer;
-use ui::{draw_element::DrawElement, example_ui};
+use ui::{draw_element::DrawElement, example_ui, immediate::ui, margin::Margin, Extent, UiNode};
+use vertex::Color;
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -87,7 +88,7 @@ impl ApplicationHandler for App {
                 state.renderer.on_resize(new_size.width, new_size.height);
 
                 state.draw_data.clear();
-                example_ui().to_draw_data(
+                simple_ui().to_draw_data(
                     Vec2::ZERO,
                     Vec2::new(new_size.width as f32, new_size.height as f32),
                     &mut state.font_engine,
@@ -137,6 +138,45 @@ impl ApplicationHandler for App {
             _ => (),
         }
     }
+}
+
+fn simple_ui() -> UiNode {
+    ui(|ui| {
+        ui.column(|ui, _, _| {
+            ui.row(|ui, attr, _| {
+                attr.height(Extent::FitContent);
+
+                ui.block(|ui, attr, _| {
+                    attr.width(Extent::Px(0.0))
+                        .height(Extent::Px(48.0))
+                        .weight(1.0)
+                        .fill_color(Color::new(1.0, 0.0, 0.0, 1.0));
+
+                    ui.block(|_, attr, _| {
+                        attr.margin(Margin::all(16.0))
+                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5));
+                    });
+                });
+
+                ui.text("Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw", |props, _| {
+                    props.font_family = "Jetbrains Mono".into();
+                    props
+                        .modifiers
+                        .width(Extent::Px(0.0))
+                        .weight(1.0)
+                        .height(Extent::FitContent)
+                        .fill_color(Color::new(0.5, 0.5, 0.5, 0.5))
+                        .self_alignment(ui::Alignment::Bottom);
+                });
+
+                ui.block(|_, attr, _| {
+                    attr.width(Extent::Px(0.0))
+                        .weight(1.0)
+                        .fill_color(Color::new(0.0, 0.0, 1.0, 1.0));
+                });
+            });
+        });
+    })
 }
 
 fn main() {
