@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     ffi::OsStr,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use glam::Vec2;
@@ -12,6 +12,7 @@ use crate::{config::ENABLE_SUBPIXEL_RENDERING, image::image_manager::ImageManage
 use super::{
     font_engine::{FontEngine, LaidOutGlyph, TextLayoutOptions},
     font_face::FontFace,
+    font_weight::FontWeight,
 };
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -25,51 +26,6 @@ struct FontFaceDescriptor {
     font_family: String,
     font_weight: FontWeight,
     font_style: FontStyle,
-}
-
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum FontWeight {
-    Thin,
-    ExtraLight,
-    Light,
-    Regular,
-    Medium,
-    SemiBold,
-    Bold,
-    ExtraBold,
-    Black,
-}
-
-impl FontWeight {
-    #[allow(unused)]
-    fn value(&self) -> u32 {
-        match self {
-            FontWeight::Thin => 100,
-            FontWeight::ExtraLight => 200,
-            FontWeight::Light => 300,
-            FontWeight::Regular => 400,
-            FontWeight::Medium => 500,
-            FontWeight::SemiBold => 600,
-            FontWeight::Bold => 700,
-            FontWeight::ExtraBold => 800,
-            FontWeight::Black => 900,
-        }
-    }
-
-    fn from_value(value: u32) -> Option<FontWeight> {
-        match value {
-            100 => Some(FontWeight::Thin),
-            200 => Some(FontWeight::ExtraLight),
-            300 => Some(FontWeight::Light),
-            400 => Some(FontWeight::Regular),
-            500 => Some(FontWeight::Medium),
-            600 => Some(FontWeight::SemiBold),
-            700 => Some(FontWeight::Bold),
-            800 => Some(FontWeight::ExtraBold),
-            900 => Some(FontWeight::Black),
-            _ => None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -232,7 +188,7 @@ impl FreetypeFontEngine {
                 continue;
             };
 
-            let font_weight = Self::get_font_weight(font_path, &ft_face);
+            let font_weight = Self::get_font_weight(&ft_face);
             let font_style = Self::get_font_style(&ft_face);
 
             let font_file_descriptor = FontFaceDescriptor {
@@ -262,27 +218,18 @@ impl FreetypeFontEngine {
         }
     }
 
-    fn get_font_weight(font_path: &Path, ft_face: &freetype::face::Face) -> FontWeight {
+    fn get_font_weight(ft_face: &freetype::face::Face) -> FontWeight {
         match Self::get_os2_table(ft_face) {
             Some(os2_table) => {
                 let weight_class = os2_table.usWeightClass;
-                if let Some(font_weight) = FontWeight::from_value(weight_class as u32) {
-                    font_weight
-                } else {
-                    log::warn!(
-                        "{}: unknown weight class {}. Using FontWeight::Regular.",
-                        font_path.display(),
-                        weight_class
-                    );
-                    FontWeight::Regular
-                }
+                FontWeight::new(weight_class as u32)
             }
             None => {
                 let style_flags = ft_face.style_flags();
                 if style_flags.contains(freetype::face::StyleFlag::BOLD) {
-                    FontWeight::Bold
+                    FontWeight::BOLD
                 } else {
-                    FontWeight::Regular
+                    FontWeight::REGULAR
                 }
             }
         }
@@ -331,7 +278,7 @@ impl FreetypeFontEngine {
             .font_faces_map
             .entry(FontFaceDescriptor {
                 font_family: font_family.to_ascii_lowercase(),
-                font_weight: FontWeight::Regular,
+                font_weight: FontWeight::REGULAR,
                 font_style: FontStyle::Regular,
             })
             .or_insert_with_key(|descriptor| {
