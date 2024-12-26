@@ -12,6 +12,7 @@ use crate::{config::ENABLE_SUBPIXEL_RENDERING, image::image_manager::ImageManage
 use super::{
     font_engine::{FontEngine, LaidOutGlyph, TextLayoutOptions},
     font_face::FontFace,
+    font_style::FontStyle,
     font_weight::FontWeight,
 };
 
@@ -26,12 +27,6 @@ struct FontFaceDescriptor {
     font_family: String,
     font_weight: FontWeight,
     font_style: FontStyle,
-}
-
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum FontStyle {
-    Regular,
-    Italic,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
