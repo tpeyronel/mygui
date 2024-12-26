@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     ffi::OsStr,
     path::PathBuf,
+    str::FromStr,
 };
 
 use glam::Vec2;
@@ -36,6 +37,7 @@ struct FontFaceId(usize);
 pub struct FreetypeFontEngine {
     ft_lib: freetype::Library,
     font_dir_path: String,
+    font_cache_dir_path: String,
     font_faces: Vec<FontFace>,
     font_faces_map: HashMap<FontFaceDescriptor, FontFaceId>,
     font_files_map: HashMap<FontFaceDescriptor, PathBuf>,
@@ -137,7 +139,7 @@ impl FontEngine for FreetypeFontEngine {
 }
 
 impl FreetypeFontEngine {
-    pub fn new(font_dir_path: impl AsRef<OsStr>) -> Self {
+    pub fn new(font_dir_path: impl AsRef<OsStr>, font_cache_dir_path: impl AsRef<OsStr>) -> Self {
         let ft_lib = freetype::Library::init().unwrap();
         ft_lib
             .set_lcd_filter(freetype::LcdFilter::LcdFilterDefault)
@@ -146,6 +148,7 @@ impl FreetypeFontEngine {
         let mut s = Self {
             ft_lib,
             font_dir_path: font_dir_path.as_ref().to_string_lossy().into_owned(),
+            font_cache_dir_path: font_cache_dir_path.as_ref().to_string_lossy().into_owned(),
             font_faces: Vec::new(),
             font_faces_map: HashMap::new(),
             load_requests: HashSet::new(),
@@ -155,6 +158,13 @@ impl FreetypeFontEngine {
         s.discover_fonts();
 
         s
+    }
+
+    pub fn save_to_disk(&self, image_manager: &ImageManager) {
+        let font_cache_dir_path = PathBuf::from_str(&self.font_cache_dir_path).unwrap();
+        for f in &self.font_faces {
+            f.save_to_disk(&font_cache_dir_path, &image_manager).unwrap();
+        }
     }
 
     fn discover_fonts(&mut self) {

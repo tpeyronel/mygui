@@ -1,6 +1,7 @@
 use glam::Vec2;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct Rectangle {
     pub left: f32,
     pub bottom: f32,
