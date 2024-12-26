@@ -17,12 +17,6 @@ use super::{
 };
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct FontKey {
-    path: String,
-    font_size: u32,
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct FontFaceDescriptor {
     font_family: String,
     font_weight: FontWeight,
@@ -30,7 +24,7 @@ struct FontFaceDescriptor {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-struct FontRequest {
+struct FontFaceLoadRequest {
     font_face_id: FontFaceId,
     font_size: u32,
     use_subpixel_rendering: bool,
@@ -45,36 +39,36 @@ pub struct FreetypeFontEngine {
     font_faces: Vec<FontFace>,
     font_faces_map: HashMap<FontFaceDescriptor, FontFaceId>,
     font_files_map: HashMap<FontFaceDescriptor, PathBuf>,
-    font_requests: HashSet<FontRequest>,
+    load_requests: HashSet<FontFaceLoadRequest>,
 }
 
 impl FontEngine for FreetypeFontEngine {
     fn update(&mut self, image_manager: &mut ImageManager) {
-        for req in &self.font_requests {
+        for req in &self.load_requests {
             let font_face = &mut self.font_faces[req.font_face_id.0];
             font_face.load_size_data(req.font_size, req.use_subpixel_rendering, image_manager);
         }
 
-        self.font_requests.clear();
+        self.load_requests.clear();
     }
 
     fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions, mut f: impl FnMut(&LaidOutGlyph)) -> Vec2 {
         let font_size = options.font_size as u32;
 
-        let face_id = self.get_or_create_font_face(options.font_family);
-        let face = &mut self.font_faces[face_id.0];
+        let font_face_id = self.get_or_create_font_face(options.font_family);
+        let face = &mut self.font_faces[font_face_id.0];
         face.ensure_size_data(options.font_size as u32);
         let size_data = face.get_size_data(font_size);
 
         if ENABLE_SUBPIXEL_RENDERING && size_data.subpixel_atlas_metadata.is_none() {
-            self.font_requests.insert(FontRequest {
-                font_face_id: face_id,
+            self.load_requests.insert(FontFaceLoadRequest {
+                font_face_id,
                 font_size,
                 use_subpixel_rendering: true,
             });
         } else if !ENABLE_SUBPIXEL_RENDERING && size_data.grayscale_atlas_metadata.is_none() {
-            self.font_requests.insert(FontRequest {
-                font_face_id: face_id,
+            self.load_requests.insert(FontFaceLoadRequest {
+                font_face_id,
                 font_size,
                 use_subpixel_rendering: false,
             });
@@ -154,7 +148,7 @@ impl FreetypeFontEngine {
             font_dir_path: font_dir_path.as_ref().to_string_lossy().into_owned(),
             font_faces: Vec::new(),
             font_faces_map: HashMap::new(),
-            font_requests: HashSet::new(),
+            load_requests: HashSet::new(),
             font_files_map: HashMap::new(),
         };
 
