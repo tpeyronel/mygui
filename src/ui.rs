@@ -647,27 +647,13 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
     ) -> (Vec2, Vec2) {
         let preliminar_children_boundary_size = Vec2::new(content_width.unwrap_or(0.0), content_height.unwrap_or(0.0));
 
-        let min_intrinsic_children_sizes: Vec<Measurements> =
+        let min_intrinsic_children_measurements =
             self.measure_children(preliminar_children_boundary_size, &props.children);
 
-        let content_width = content_width.unwrap_or_else(|| {
-            min_intrinsic_children_sizes
-                .iter()
-                .map(|cs| cs.margin_size.x)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0)
-        });
-
-        let content_height = content_height.unwrap_or_else(|| {
-            min_intrinsic_children_sizes
-                .iter()
-                .map(|cs| cs.margin_size.y)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0)
-        });
+        let content_width = content_width.unwrap_or_else(|| min_intrinsic_children_measurements.max_width());
+        let content_height = content_height.unwrap_or_else(|| min_intrinsic_children_measurements.max_height());
 
         let content_size = Vec2::new(content_width, content_height);
-
         (content_size, content_size)
     }
 
@@ -685,18 +671,18 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (Some(content_width), None) => {
                 let preliminar_children_boundary_size = Vec2::new(content_width, 0.0);
 
-                let min_intrinsic_children_measurements: Vec<Measurements> =
+                let min_intrinsic_children_measurements =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
-                let min_intrinsic_height = min_intrinsic_children_measurements
-                    .iter()
-                    .map(|cm| cm.margin_size.y)
-                    .sum();
-                let final_children_boundary_size = Vec2::new(content_width, min_intrinsic_height);
+                let final_children_boundary_size = {
+                    let min_intrinsic_height = min_intrinsic_children_measurements.height_sum();
+                    Vec2::new(content_width, min_intrinsic_height)
+                };
 
-                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
-
-                let content_height = children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>();
+                let content_height = {
+                    let children_measurements = self.measure_children(final_children_boundary_size, &props.children);
+                    children_measurements.height_sum()
+                };
 
                 let content_size = Vec2::new(content_width, content_height);
                 (content_size, final_children_boundary_size)
@@ -704,17 +690,13 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (None, Some(content_height)) => {
                 let preliminar_children_boundary_size = Vec2::new(0.0, content_height);
 
-                let min_intrinsic_children_measurements: Vec<Measurements> =
+                let min_intrinsic_children_measurements =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
                 let children_measurements =
                     self.apply_vertical_weights(content_height, &props.children, min_intrinsic_children_measurements);
 
-                let content_width = children_measurements
-                    .iter()
-                    .map(|cm: &Measurements| cm.margin_size.x)
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .unwrap_or(0.0);
+                let content_width = children_measurements.max_width();
 
                 let content_size = Vec2::new(content_width, content_height);
                 // TODO: should pass preliminar_children_boundry_size ?
@@ -723,24 +705,20 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (None, None) => {
                 let preliminar_children_boundary_size = Vec2::new(0.0, 0.0);
 
-                let min_intrinsic_children_measurements: Vec<Measurements> =
+                let min_intrinsic_children_measurements =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
-                let content_width = min_intrinsic_children_measurements
-                    .iter()
-                    .map(|cs| cs.margin_size.x)
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .unwrap_or(0.0);
+                let content_width = min_intrinsic_children_measurements.max_width();
 
-                let min_intrinsic_height = min_intrinsic_children_measurements
-                    .iter()
-                    .map(|cs| cs.margin_size.y)
-                    .sum();
-                let final_children_boundary_size = Vec2::new(content_width, min_intrinsic_height);
+                let final_children_boundary_size = {
+                    let min_intrinsic_height = min_intrinsic_children_measurements.height_sum();
+                    Vec2::new(content_width, min_intrinsic_height)
+                };
 
-                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
-
-                let content_height = children_sizes.iter().map(|cm| cm.margin_size.y).sum::<f32>();
+                let content_height = {
+                    let children_measurements = self.measure_children(final_children_boundary_size, &props.children);
+                    children_measurements.height_sum()
+                };
 
                 let content_size = Vec2::new(content_width, content_height);
                 (content_size, final_children_boundary_size)
@@ -762,17 +740,13 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (Some(content_width), None) => {
                 let preliminar_children_boundary_size = Vec2::new(content_width, 0.0);
 
-                let min_intrinsic_children_measurements: Vec<Measurements> =
+                let min_intrinsic_children_measurements =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
                 let children_measurements =
                     self.apply_horizontal_weights(content_width, &props.children, min_intrinsic_children_measurements);
 
-                let content_height = children_measurements
-                    .iter()
-                    .map(|cs| cs.margin_size.y)
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .unwrap_or(0.0);
+                let content_height = children_measurements.max_height();
 
                 let content_size = Vec2::new(content_width, content_height);
                 // TODO: should pass preliminar_children_boundry_size ?
@@ -781,15 +755,18 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (None, Some(content_height)) => {
                 let preliminar_children_boundary_size = Vec2::new(0.0, content_height);
 
-                let min_intrinsic_children_sizes: Vec<Measurements> =
+                let min_intrinsic_children_measurements =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
-                let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
-                let final_children_boundary_size = Vec2::new(min_intrinsic_width, content_height);
+                let final_children_boundary_size = {
+                    let min_intrinsic_width = min_intrinsic_children_measurements.width_sum();
+                    Vec2::new(min_intrinsic_width, content_height)
+                };
 
-                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
-
-                let content_width = children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>();
+                let content_width = {
+                    let children_measurements = self.measure_children(final_children_boundary_size, &props.children);
+                    children_measurements.width_sum()
+                };
 
                 let content_size = Vec2::new(content_width, content_height);
                 (content_size, final_children_boundary_size)
@@ -797,22 +774,21 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             (None, None) => {
                 let preliminar_children_boundary_size = Vec2::new(0.0, 0.0);
 
-                let min_intrinsic_children_sizes: Vec<Measurements> =
+                let min_intrinsic_children_measurements =
                     self.measure_children(preliminar_children_boundary_size, &props.children);
 
                 // We compute height first to use it in final_children_boundary_size.
-                let content_height = min_intrinsic_children_sizes
-                    .iter()
-                    .map(|cs| cs.margin_size.y)
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .unwrap_or(0.0);
+                let content_height = min_intrinsic_children_measurements.max_height();
 
-                let min_intrinsic_width = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.x).sum();
-                let final_children_boundary_size = Vec2::new(min_intrinsic_width, content_height);
+                let final_children_boundary_size = {
+                    let min_intrinsic_width = min_intrinsic_children_measurements.width_sum();
+                    Vec2::new(min_intrinsic_width, content_height)
+                };
 
-                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
-
-                let content_width = children_sizes.iter().map(|cs| cs.margin_size.x).sum::<f32>();
+                let content_width = {
+                    let children_measurements = self.measure_children(final_children_boundary_size, &props.children);
+                    children_measurements.width_sum()
+                };
 
                 let content_size = Vec2::new(content_width, content_height);
                 (content_size, final_children_boundary_size)
@@ -824,8 +800,8 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         &mut self,
         content_width: f32,
         children: &[UiNode],
-        children_measurements: Vec<Measurements>,
-    ) -> Vec<Measurements> {
+        children_measurements: ChildrenMeasurements,
+    ) -> ChildrenMeasurements {
         self.apply_weights(content_width, Axis::X, children, children_measurements)
     }
 
@@ -833,8 +809,8 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         &mut self,
         content_height: f32,
         children: &[UiNode],
-        children_measurements: Vec<Measurements>,
-    ) -> Vec<Measurements> {
+        children_measurements: ChildrenMeasurements,
+    ) -> ChildrenMeasurements {
         self.apply_weights(content_height, Axis::Y, children, children_measurements)
     }
 
@@ -843,9 +819,9 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         content_extent: f32,
         extent_axis: Axis,
         children: &[UiNode],
-        children_measurements: Vec<Measurements>,
-    ) -> Vec<Measurements> {
-        assert_eq!(children.len(), children_measurements.len());
+        children_measurements: ChildrenMeasurements,
+    ) -> ChildrenMeasurements {
+        assert_eq!(children.len(), children_measurements.0.len());
 
         let total_children_weight: f32 = children
             .iter()
@@ -862,8 +838,8 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         }
 
         let total_children_extent: f32 = match extent_axis {
-            Axis::X => children_measurements.iter().map(|m| m.margin_size.x).sum(),
-            Axis::Y => children_measurements.iter().map(|m| m.margin_size.y).sum(),
+            Axis::X => children_measurements.width_sum(),
+            Axis::Y => children_measurements.height_sum(),
         };
 
         let extra_extent = (content_extent - total_children_extent).max(0.0);
@@ -874,7 +850,7 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         let mut remaining_extent = extra_extent;
         let mut remaining_children_weight = total_children_weight;
 
-        std::iter::zip(children.iter(), children_measurements.into_iter())
+        let measurements: Vec<_> = std::iter::zip(children.iter(), children_measurements.into_iter())
             .map(|(child, mut child_measurements)| {
                 let child_modifiers = match child {
                     UiNode::Block(props) => &props.modifiers,
@@ -924,7 +900,9 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
 
                 child_measurements
             })
-            .collect()
+            .collect();
+
+        ChildrenMeasurements(measurements)
     }
 
     fn measure_fit_text(
@@ -966,8 +944,8 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         (content_size, Vec2::ZERO)
     }
 
-    fn measure_children(&mut self, parent_size: Vec2, children: &[UiNode]) -> Vec<Measurements> {
-        return children.iter().map(|c| self.measure(c, parent_size)).collect();
+    fn measure_children(&mut self, parent_size: Vec2, children: &[UiNode]) -> ChildrenMeasurements {
+        return ChildrenMeasurements(children.iter().map(|c| self.measure(c, parent_size)).collect());
     }
 
     fn emit_rectangle(
@@ -1021,6 +999,44 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
 
             self.draw_data.push(texture);
         });
+    }
+}
+
+struct ChildrenMeasurements(Vec<Measurements>);
+
+impl ChildrenMeasurements {
+    fn max_width(&self) -> f32 {
+        self.0
+            .iter()
+            .map(|cs| cs.margin_size.x)
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap_or(0.0)
+    }
+
+    fn width_sum(&self) -> f32 {
+        self.0.iter().map(|cm| cm.margin_size.x).sum()
+    }
+
+    fn max_height(&self) -> f32 {
+        self.0
+            .iter()
+            .map(|cs| cs.margin_size.y)
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap_or(0.0)
+    }
+
+    fn height_sum(&self) -> f32 {
+        self.0.iter().map(|cm| cm.margin_size.y).sum()
+    }
+}
+
+impl IntoIterator for ChildrenMeasurements {
+    type Item = Measurements;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
