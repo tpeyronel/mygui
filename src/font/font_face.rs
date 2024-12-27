@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs::File,
-    io::{self, BufWriter, Write},
+    io::{self, BufReader, BufWriter, Write},
     ops::Add,
     path::{Path, PathBuf},
 };
@@ -37,6 +37,80 @@ impl FontFace {
             charmap,
             per_size_data: HashMap::new(),
         }
+    }
+
+    pub fn try_from_cache(
+        path: &Path,
+        cache_dir_path: &Path, // The path of the cache for this *specific* font file.
+        ft_lib: &freetype::Library,
+        image_manager: &mut ImageManager,
+    ) -> io::Result<Self> {
+        let file_path = path.to_path_buf();
+        let ft_face = ft_lib.new_face(&file_path, 0).expect("TODO");
+
+        let mut metadata_path = cache_dir_path.to_path_buf();
+        metadata_path.push("metadata");
+        let metadata_file = File::open(metadata_path)?;
+        log::info!("loading {:?} from cache", path.file_name().unwrap());
+
+        let reader = BufReader::new(metadata_file);
+
+        let FontFaceMetadata {
+            glyph_count,
+            charmap,
+            instances,
+        } = bincode::deserialize_from(reader).expect("TODO");
+
+        let per_size_data: HashMap<u32, FontPerSizeData> = instances
+            .into_iter()
+            .map(|(font_size, instance_metadata)| {
+                let size_data = FontPerSizeData {
+                    advances: instance_metadata.advances,
+                    grayscale_atlas_metadata: instance_metadata.grayscale_atlas_metadata.map(|m| {
+                        Self::load_atlas_metadata_from_cache(
+                            m,
+                            cache_dir_path,
+                            font_size,
+                            GlyphPixelMode::Grayscale,
+                            glyph_count,
+                            image_manager,
+                        )
+                        .expect("TODO")
+                    }),
+                    subpixel_atlas_metadata: instance_metadata.subpixel_atlas_metadata.map(|m| {
+                        Self::load_atlas_metadata_from_cache(
+                            m,
+                            cache_dir_path,
+                            font_size,
+                            GlyphPixelMode::Subpixel,
+                            glyph_count,
+                            image_manager,
+                        )
+                        .expect("TODO")
+                    }),
+                    color_atlas_metadata: instance_metadata.color_atlas_metadata.map(|m| {
+                        Self::load_atlas_metadata_from_cache(
+                            m,
+                            cache_dir_path,
+                            font_size,
+                            GlyphPixelMode::Color,
+                            glyph_count,
+                            image_manager,
+                        )
+                        .expect("TODO")
+                    }),
+                };
+
+                (font_size, size_data)
+            })
+            .collect();
+
+        Ok(Self {
+            file_path,
+            ft_face,
+            charmap,
+            per_size_data,
+        })
     }
 
     pub fn get_glyph_index(&self, c: char) -> Option<u32> {
@@ -104,6 +178,7 @@ impl FontFace {
         std::fs::create_dir_all(&dir_path)?;
 
         let main_file_contents = FontFaceMetadata {
+            glyph_count: self.ft_face.num_glyphs() as u32,
             charmap: self.charmap.clone(),
             instances: self
                 .per_size_data
@@ -140,22 +215,46 @@ impl FontFace {
 
         for (&font_size, size_data) in &self.per_size_data {
             if let Some(color_atlas_metadata) = &size_data.color_atlas_metadata {
-                Self::save_atlas_to_disk(&dir_path, font_size, "color", color_atlas_metadata, image_manager)?;
+                Self::save_atlas_to_disk(
+                    &dir_path,
+                    font_size,
+                    GlyphPixelMode::Color,
+                    color_atlas_metadata,
+                    image_manager,
+                )?;
             }
             if let Some(subpixel_atlas_metadata) = &size_data.subpixel_atlas_metadata {
-                Self::save_atlas_to_disk(&dir_path, font_size, "subpixel", subpixel_atlas_metadata, image_manager)?;
+                Self::save_atlas_to_disk(
+                    &dir_path,
+                    font_size,
+                    GlyphPixelMode::Subpixel,
+                    subpixel_atlas_metadata,
+                    image_manager,
+                )?;
             }
             if let Some(grayscale_atlas_metadata) = &size_data.grayscale_atlas_metadata {
-                Self::save_atlas_to_disk(&dir_path, font_size, "grayscale", grayscale_atlas_metadata, image_manager)?;
+                Self::save_atlas_to_disk(
+                    &dir_path,
+                    font_size,
+                    GlyphPixelMode::Grayscale,
+                    grayscale_atlas_metadata,
+                    image_manager,
+                )?;
             }
         }
 
         Ok(())
     }
 
-    fn save_atlas_to_disk(dir_path: &Path, font_size: u32, suffix: &str, metadata: &GlyphAtlasMetadata, image_manager: &ImageManager) -> io::Result<()> {
+    fn save_atlas_to_disk(
+        dir_path: &Path,
+        font_size: u32,
+        pixel_mode: GlyphPixelMode,
+        metadata: &GlyphAtlasMetadata,
+        image_manager: &ImageManager,
+    ) -> io::Result<()> {
         let mut color_atlas_data_path = dir_path.to_path_buf();
-        color_atlas_data_path.push(format!("{}-{}", font_size, suffix));
+        color_atlas_data_path.push(Self::atlas_file_name(font_size, pixel_mode));
         let color_atlas_file = File::create(color_atlas_data_path)?;
         let writer = BufWriter::new(color_atlas_file);
         let atlas_image = image_manager.get_image(metadata.image_id);
@@ -163,6 +262,14 @@ impl FontFace {
         zstd::stream::copy_encode(atlas_data, writer, 5)?;
 
         Ok(())
+    }
+
+    fn atlas_file_name(font_size: u32, pixel_mode: GlyphPixelMode) -> String {
+        match pixel_mode {
+            GlyphPixelMode::Grayscale => format!("{}-{}", font_size, "grayscale"),
+            GlyphPixelMode::Subpixel => format!("{}-{}", font_size, "subpixel"),
+            GlyphPixelMode::Color => format!("{}-{}", font_size, "color"),
+        }
     }
 
     fn atlas_metadata_from_atlas(atlas: &GlyphAtlasMetadata, image_manager: &ImageManager) -> FontFaceAtlasMetadata {
@@ -174,14 +281,15 @@ impl FontFace {
         let glyph_metadata: Vec<_> = atlas
             .glyph_indices_table
             .iter()
-            .filter_map(|&i| {
+            .enumerate()
+            .filter_map(|(g, &i)| {
                 if i == u32::MAX {
                     return None;
                 }
 
                 let glyph_metadata = atlas.glyph_metadata[i as usize].clone();
 
-                Some((i, glyph_metadata))
+                Some((g as u32, glyph_metadata))
             })
             .collect();
 
@@ -191,6 +299,45 @@ impl FontFace {
             format,
             glyph_metadata,
         }
+    }
+
+    fn load_atlas_metadata_from_cache(
+        atlas_metadata: FontFaceAtlasMetadata,
+        font_cache_path: &Path,
+        font_size: u32,
+        pixel_mode: GlyphPixelMode,
+        glyph_count: u32,
+        image_manager: &mut ImageManager,
+    ) -> io::Result<GlyphAtlasMetadata> {
+        let width = atlas_metadata.width;
+        let height = atlas_metadata.height;
+        let format = atlas_metadata.format;
+        let data = {
+            let mut atlas_path = font_cache_path.to_path_buf();
+            atlas_path.push(Self::atlas_file_name(font_size, pixel_mode));
+            let atlas_file = File::open(atlas_path)?;
+            let reader = BufReader::new(atlas_file);
+            zstd::stream::decode_all(reader)?
+        };
+
+        let atlas_image = Image::from_data(data, width, height, width * format.bytes_per_pixel(), format);
+        let image_id = image_manager.add_image(atlas_image);
+
+        let mut glyph_metadata = vec![];
+        let mut glyph_indices_table = vec![u32::MAX; glyph_count as usize];
+
+        for (g, metadata) in atlas_metadata.glyph_metadata {
+            let i = glyph_metadata.len();
+            glyph_metadata.push(metadata);
+            assert_eq!(glyph_indices_table[g as usize], u32::MAX);
+            glyph_indices_table[g as usize] = i as u32;
+        }
+
+        Ok(GlyphAtlasMetadata {
+            image_id,
+            glyph_metadata,
+            glyph_indices_table,
+        })
     }
 
     fn load_advances(ft_face: &freetype::Face, font_size: u32) -> Vec<i32> {
@@ -562,6 +709,7 @@ pub enum GetGlyphError {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct FontFaceMetadata {
+    glyph_count: u32,
     charmap: HashMap<char, u32>, // Maps chars to glyph indices.
     instances: HashMap<u32, FontFaceInstanceMetadata>,
 }

@@ -67,8 +67,8 @@ impl ApplicationHandler for App {
                 .unwrap(),
         );
 
-        let image_manager = ImageManager::new();
-        let font_engine = FreetypeFontEngine::new("./assets/fonts/", "./cache/fonts/");
+        let mut image_manager = ImageManager::new();
+        let font_engine = FreetypeFontEngine::new("./assets/fonts/", "./cache/fonts/", &mut image_manager);
         let renderer = Renderer::new(Arc::clone(&window));
 
         self.state = Some(AppState {
@@ -99,8 +99,6 @@ impl ApplicationHandler for App {
             }
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
-                let state = self.state.as_mut().unwrap();
-                state.font_engine.save_to_disk(&state.image_manager);
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
@@ -139,6 +137,12 @@ impl ApplicationHandler for App {
             },
             _ => (),
         }
+    }
+
+    fn exiting(&mut self, _: &ActiveEventLoop) {
+        println!("exiting...");
+        let state = self.state.as_mut().unwrap();
+        state.font_engine.save_to_disk(&state.image_manager);
     }
 }
 

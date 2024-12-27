@@ -1,8 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
-    ffi::OsStr,
-    path::PathBuf,
-    str::FromStr,
+    io::{self},
+    path::{Path, PathBuf},
 };
 
 use glam::Vec2;
@@ -36,8 +35,8 @@ struct FontFaceId(usize);
 
 pub struct FreetypeFontEngine {
     ft_lib: freetype::Library,
-    font_dir_path: String,
-    font_cache_dir_path: String,
+    font_dir_path: PathBuf,
+    font_cache_dir_path: PathBuf,
     font_faces: Vec<FontFace>,
     font_faces_map: HashMap<FontFaceDescriptor, FontFaceId>,
     font_files_map: HashMap<FontFaceDescriptor, PathBuf>,
@@ -139,16 +138,23 @@ impl FontEngine for FreetypeFontEngine {
 }
 
 impl FreetypeFontEngine {
-    pub fn new(font_dir_path: impl AsRef<OsStr>, font_cache_dir_path: impl AsRef<OsStr>) -> Self {
+    pub fn new(
+        font_dir_path: impl AsRef<Path>,
+        font_cache_dir_path: impl AsRef<Path>,
+        image_manager: &mut ImageManager,
+    ) -> Self {
         let ft_lib = freetype::Library::init().unwrap();
         ft_lib
             .set_lcd_filter(freetype::LcdFilter::LcdFilterDefault)
             .expect("TODO");
 
+        let font_dir_path = font_dir_path.as_ref().to_path_buf();
+        let font_cache_dir_path = font_cache_dir_path.as_ref().to_path_buf();
+
         let mut s = Self {
             ft_lib,
-            font_dir_path: font_dir_path.as_ref().to_string_lossy().into_owned(),
-            font_cache_dir_path: font_cache_dir_path.as_ref().to_string_lossy().into_owned(),
+            font_dir_path,
+            font_cache_dir_path,
             font_faces: Vec::new(),
             font_faces_map: HashMap::new(),
             load_requests: HashSet::new(),
@@ -156,19 +162,37 @@ impl FreetypeFontEngine {
         };
 
         s.discover_fonts();
+        s.load_cache(image_manager).unwrap();
 
         s
     }
 
+    pub fn load_cache(&mut self, image_manager: &mut ImageManager) -> io::Result<()> {
+        for (font_face_descriptor, font_file_path) in &self.font_files_map {
+            let mut cache_dir_path = self.font_cache_dir_path.to_path_buf();
+            cache_dir_path.push(font_file_path.file_name().unwrap());
+
+            let Ok(font_face) = FontFace::try_from_cache(font_file_path, &cache_dir_path, &self.ft_lib, image_manager)
+            else {
+                continue;
+            };
+
+            let font_face_id = FontFaceId(self.font_faces.len());
+            self.font_faces.push(font_face);
+            self.font_faces_map.insert(font_face_descriptor.clone(), font_face_id);
+        }
+
+        Ok(())
+    }
+
     pub fn save_to_disk(&self, image_manager: &ImageManager) {
-        let font_cache_dir_path = PathBuf::from_str(&self.font_cache_dir_path).unwrap();
         for f in &self.font_faces {
-            f.save_to_disk(&font_cache_dir_path, &image_manager).unwrap();
+            f.save_to_disk(&self.font_cache_dir_path, &image_manager).unwrap();
         }
     }
 
     fn discover_fonts(&mut self) {
-        log::trace!("discovering fonts at {}", self.font_dir_path);
+        log::trace!("discovering fonts at {}", self.font_dir_path.display());
 
         for ttf_entry in WalkDir::new(&self.font_dir_path)
             .into_iter()
