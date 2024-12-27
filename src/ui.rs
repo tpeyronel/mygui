@@ -368,50 +368,20 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         ColumnProps { children, .. }: &ColumnProps,
         layout: &Layout,
     ) -> Vec<UiNodeLayout> {
-        let total_children_weight: f32 = children
-            .iter()
-            .map(|c| match c {
-                UiNode::Block(props) => props.modifiers.weight,
-                UiNode::Column(props) => props.modifiers.weight,
-                UiNode::Row(props) => props.modifiers.weight,
-                UiNode::Text(props) => props.modifiers.weight,
-            })
-            .sum();
-
-        let total_children_height: f32 = children
-            .iter()
-            .map(|c| self.measure(c, layout.children_boundary_size()).margin_size.y)
-            .sum();
-
-        let extra_column_height = (layout.content_size().y - total_children_height).max(0.0);
-
-        let mut remaining_column_height = extra_column_height;
-        let mut remaining_children_weight = total_children_weight;
+        let initial_children_measurements = self.measure_children(layout.children_boundary_size(), children);
+        let children_measurements =
+            self.apply_vertical_weights(layout.content_size().y, children, initial_children_measurements);
 
         let mut vertical_offset = 0.0;
         let column_top = layout.content_position().y + layout.content_size().y;
-        children
-            .iter()
-            .map(|c| {
-                let child_modifiers = match c {
+        std::iter::zip(children.iter(), children_measurements.into_iter())
+            .map(|(child, child_measurements)| {
+                let child_modifiers = match child {
                     UiNode::Block(props) => &props.modifiers,
                     UiNode::Column(props) => &props.modifiers,
                     UiNode::Row(props) => &props.modifiers,
                     UiNode::Text(props) => &props.modifiers,
                 };
-
-                let mut child_measurements = self.measure(c, layout.children_boundary_size());
-
-                if remaining_children_weight > 0.0 {
-                    let child_weight = child_modifiers.weight;
-                    let child_extra_height = remaining_column_height * (child_weight / remaining_children_weight);
-                    let child_extra_height = child_extra_height.ceil().min(remaining_column_height);
-                    remaining_column_height -= child_extra_height;
-                    remaining_children_weight -= child_weight;
-
-                    child_measurements.margin_size.y += child_extra_height;
-                    child_measurements.children_boundary_size = child_measurements.content_size();
-                }
 
                 let child_margin_size = child_measurements.margin_size;
                 vertical_offset += child_margin_size.y;
@@ -431,7 +401,7 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
                 };
 
                 let child_layout = child_measurements.to_layout(child_margin_position);
-                self.compute_layout_rec(c, child_layout)
+                self.compute_layout_rec(child, child_layout)
             })
             .collect()
     }
