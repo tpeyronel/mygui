@@ -22,6 +22,11 @@ use crate::{
     vertex::Color,
 };
 
+enum Axis {
+    X,
+    Y,
+}
+
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Modifiers {
     width: Extent,
@@ -672,33 +677,75 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         content_width: Option<f32>,
         content_height: Option<f32>,
     ) -> (Vec2, Vec2) {
-        let preliminar_children_boundary_size = Vec2::new(content_width.unwrap_or(0.0), content_height.unwrap_or(0.0));
+        match (content_width, content_height) {
+            (Some(content_width), Some(content_height)) => {
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, content_size)
+            }
+            (Some(content_width), None) => {
+                let preliminar_children_boundary_size = Vec2::new(content_width, 0.0);
 
-        let min_intrinsic_children_sizes: Vec<Measurements> =
-            self.measure_children(preliminar_children_boundary_size, &props.children);
+                let min_intrinsic_children_measurements: Vec<Measurements> =
+                    self.measure_children(preliminar_children_boundary_size, &props.children);
 
-        let content_width = content_width.unwrap_or_else(|| {
-            min_intrinsic_children_sizes
-                .iter()
-                .map(|cs| cs.margin_size.x)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap_or(0.0)
-        });
+                let min_intrinsic_height = min_intrinsic_children_measurements
+                    .iter()
+                    .map(|cm| cm.margin_size.y)
+                    .sum();
+                let final_children_boundary_size = Vec2::new(content_width, min_intrinsic_height);
 
-        let mut final_children_boundary_size = Vec2::new(content_width, preliminar_children_boundary_size.y);
+                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
 
-        let content_height = content_height.unwrap_or_else(|| {
-            let min_intrinsic_height = min_intrinsic_children_sizes.iter().map(|cs| cs.margin_size.y).sum();
-            final_children_boundary_size.y = min_intrinsic_height;
+                let content_height = children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>();
 
-            let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, final_children_boundary_size)
+            }
+            (None, Some(content_height)) => {
+                let preliminar_children_boundary_size = Vec2::new(0.0, content_height);
 
-            children_sizes.iter().map(|cs| cs.margin_size.y).sum::<f32>()
-        });
+                let min_intrinsic_children_measurements: Vec<Measurements> =
+                    self.measure_children(preliminar_children_boundary_size, &props.children);
 
-        let content_size = Vec2::new(content_width, content_height);
+                let children_measurements =
+                    self.apply_vertical_weights(content_height, &props.children, min_intrinsic_children_measurements);
 
-        (content_size, final_children_boundary_size)
+                let content_width = children_measurements
+                    .iter()
+                    .map(|cm: &Measurements| cm.margin_size.x)
+                    .max_by(|a, b| a.partial_cmp(b).unwrap())
+                    .unwrap_or(0.0);
+
+                let content_size = Vec2::new(content_width, content_height);
+                // TODO: should pass preliminar_children_boundry_size ?
+                (content_size, content_size)
+            }
+            (None, None) => {
+                let preliminar_children_boundary_size = Vec2::new(0.0, 0.0);
+
+                let min_intrinsic_children_measurements: Vec<Measurements> =
+                    self.measure_children(preliminar_children_boundary_size, &props.children);
+
+                let content_width = min_intrinsic_children_measurements
+                    .iter()
+                    .map(|cs| cs.margin_size.x)
+                    .max_by(|a, b| a.partial_cmp(b).unwrap())
+                    .unwrap_or(0.0);
+
+                let min_intrinsic_height = min_intrinsic_children_measurements
+                    .iter()
+                    .map(|cs| cs.margin_size.y)
+                    .sum();
+                let final_children_boundary_size = Vec2::new(content_width, min_intrinsic_height);
+
+                let children_sizes = self.measure_children(final_children_boundary_size, &props.children);
+
+                let content_height = children_sizes.iter().map(|cm| cm.margin_size.y).sum::<f32>();
+
+                let content_size = Vec2::new(content_width, content_height);
+                (content_size, final_children_boundary_size)
+            }
+        }
     }
 
     fn measure_fit_row(
@@ -728,6 +775,7 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
                     .unwrap_or(0.0);
 
                 let content_size = Vec2::new(content_width, content_height);
+                // TODO: should pass preliminar_children_boundry_size ?
                 (content_size, content_size)
             }
             (None, Some(content_height)) => {
@@ -778,6 +826,25 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         children: &[UiNode],
         children_measurements: Vec<Measurements>,
     ) -> Vec<Measurements> {
+        self.apply_weights(content_width, Axis::X, children, children_measurements)
+    }
+
+    fn apply_vertical_weights(
+        &mut self,
+        content_height: f32,
+        children: &[UiNode],
+        children_measurements: Vec<Measurements>,
+    ) -> Vec<Measurements> {
+        self.apply_weights(content_height, Axis::Y, children, children_measurements)
+    }
+
+    fn apply_weights(
+        &mut self,
+        content_extent: f32,
+        extent_axis: Axis,
+        children: &[UiNode],
+        children_measurements: Vec<Measurements>,
+    ) -> Vec<Measurements> {
         assert_eq!(children.len(), children_measurements.len());
 
         let total_children_weight: f32 = children
@@ -794,11 +861,17 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             return children_measurements;
         }
 
-        let total_children_width: f32 = children_measurements.iter().map(|m| m.margin_size.x).sum();
+        let total_children_extent: f32 = match extent_axis {
+            Axis::X => children_measurements.iter().map(|m| m.margin_size.x).sum(),
+            Axis::Y => children_measurements.iter().map(|m| m.margin_size.y).sum(),
+        };
 
-        let extra_column_width = (content_width - total_children_width).max(0.0);
+        let extra_extent = (content_extent - total_children_extent).max(0.0);
+        if extra_extent == 0.0 {
+            return children_measurements;
+        }
 
-        let mut remaining_column_width = extra_column_width;
+        let mut remaining_extent = extra_extent;
         let mut remaining_children_weight = total_children_weight;
 
         std::iter::zip(children.iter(), children_measurements.into_iter())
@@ -810,26 +883,43 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
                     UiNode::Text(props) => &props.modifiers,
                 };
 
-                if remaining_children_weight > 0.0 {
-                    let child_weight = child_modifiers.weight;
-                    let child_extra_width = remaining_column_width * (child_weight / remaining_children_weight);
-                    let child_extra_width = child_extra_width.ceil().min(remaining_column_width);
-                    remaining_column_width -= child_extra_width;
-                    remaining_children_weight -= child_weight;
+                if remaining_children_weight <= 0.0 {
+                    return child_measurements;
+                }
 
-                    if child_modifiers.height == Extent::FitContent {
-                        (
-                            child_measurements.margin_size,
-                            child_measurements.children_boundary_size,
-                        ) = self.measure_fit_content(
+                let child_weight = child_modifiers.weight;
+                let child_extra_extent = remaining_extent * (child_weight / remaining_children_weight);
+                let child_extra_extent = child_extra_extent.ceil().min(remaining_extent);
+                remaining_extent -= child_extra_extent;
+                remaining_children_weight -= child_weight;
+
+                let child_cross_extent = match extent_axis {
+                    Axis::X => child_modifiers.height,
+                    Axis::Y => child_modifiers.width,
+                };
+
+                if child_cross_extent == Extent::FitContent {
+                    let (margin_size, children_boundary_size) = match extent_axis {
+                        Axis::X => self.measure_fit_content(
                             child,
-                            Some(child_measurements.margin_size.x + child_extra_width),
+                            Some(child_measurements.margin_size.x + child_extra_extent),
                             None,
-                        );
-                    } else {
-                        child_measurements.margin_size.x += child_extra_width;
-                        child_measurements.children_boundary_size = child_measurements.content_size();
-                    }
+                        ),
+                        Axis::Y => self.measure_fit_content(
+                            child,
+                            None,
+                            Some(child_measurements.margin_size.y + child_extra_extent),
+                        ),
+                    };
+
+                    child_measurements.margin_size = margin_size;
+                    child_measurements.children_boundary_size = children_boundary_size;
+                } else {
+                    match extent_axis {
+                        Axis::X => child_measurements.margin_size.x += child_extra_extent,
+                        Axis::Y => child_measurements.margin_size.y += child_extra_extent,
+                    };
+                    child_measurements.children_boundary_size = child_measurements.content_size();
                 }
 
                 child_measurements
