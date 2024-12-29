@@ -45,6 +45,10 @@ impl UiNodeData {
     pub fn on_press(&self) -> bool {
         self.flags.contains(UiNodeDataFlags::ON_PRESS)
     }
+
+    pub fn on_release(&self) -> bool {
+        self.flags.contains(UiNodeDataFlags::ON_RELEASE)
+    }
 }
 
 bitflags! {
@@ -52,27 +56,35 @@ bitflags! {
     pub struct UiNodeDataFlags: u32 {
         const ON_HOVER = 1 << 0;
         const HOVERED = 1 << 1;
-        const ON_PRESS = 1 << 2;
-        const PRESSED = 1 << 3;
+        const PRESSED = 1 << 2;
+        const ON_PRESS = 1 << 3;
+        const ON_RELEASE = 1 << 4;
     }
 }
 
 pub struct UiContext {
+    previous_nodes_data: HashMap<u64, UiNodeData>,
     nodes_data: HashMap<u64, UiNodeData>,
+    bounding_boxes: Vec<(u64, Rectangle)>,
     cursor_position: Vec2,
 }
 
 impl UiContext {
     pub fn new() -> Self {
         Self {
+            previous_nodes_data: HashMap::new(),
             nodes_data: HashMap::new(),
+            bounding_boxes: Vec::new(),
             cursor_position: Vec2::ZERO,
         }
     }
 
     pub fn process_input_event(&mut self, event: InputEvent) {
         match event {
-            InputEvent::CursorMoved { position } => self.cursor_position = position,
+            InputEvent::CursorMoved { position } => {
+                self.cursor_position = position;
+                self.on_cursor_moved();
+            }
             InputEvent::MouseInput { button, state } => {}
         }
     }
@@ -95,7 +107,7 @@ impl UiContext {
         f(&mut root_ui);
 
         let mut draw_data = vec![];
-        let mut bounding_boxes = vec![];
+        self.bounding_boxes.clear();
         to_draw_data(
             root_ui.children,
             root_ui.children_path_hash_nodes,
@@ -103,25 +115,31 @@ impl UiContext {
             window_size,
             font_engine,
             &mut draw_data,
-            &mut bounding_boxes,
+            &mut self.bounding_boxes,
         );
 
-        self.update_nodes_data(&bounding_boxes);
+        self.previous_nodes_data = self.nodes_data.clone();
+        self.on_cursor_moved();
 
         draw_data
     }
 
-    fn update_nodes_data(&mut self, bounding_boxes: &[(u64, Rectangle)]) {
-        self.nodes_data.clear();
+    fn on_cursor_moved(&mut self) {
+        self.nodes_data
+            .iter_mut()
+            .for_each(|(_, d)| d.flags = UiNodeDataFlags::empty());
 
-        for (hash, bbox) in bounding_boxes {
+        for (hash, bbox) in &self.bounding_boxes {
             if bbox.contains(self.cursor_position) {
-                self.nodes_data.insert(
-                    *hash,
-                    UiNodeData {
-                        flags: UiNodeDataFlags::HOVERED,
-                    },
-                );
+                let node_data = self.nodes_data.entry(*hash).or_default();
+
+                node_data.flags.insert(UiNodeDataFlags::HOVERED);
+
+                if let Some(old_node_data) = self.previous_nodes_data.get(hash) {
+                    if !old_node_data.flags.contains(UiNodeDataFlags::HOVERED) {
+                        node_data.flags.insert(UiNodeDataFlags::ON_HOVER);
+                    }
+                }
             }
         }
     }
