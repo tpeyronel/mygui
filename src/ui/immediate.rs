@@ -18,7 +18,7 @@ const DEFAULT_LINE_HEIGHT: f32 = DEFAULT_FONT_SIZE;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UiNodeData {
-    pub flags: UiNodeDataFlags,
+    flags: UiNodeDataFlags,
 }
 
 impl Default for UiNodeData {
@@ -26,6 +26,24 @@ impl Default for UiNodeData {
         Self {
             flags: UiNodeDataFlags::empty(),
         }
+    }
+}
+
+impl UiNodeData {
+    pub fn hovered(&self) -> bool {
+        self.flags.contains(UiNodeDataFlags::HOVERED)
+    }
+
+    pub fn on_hover(&self) -> bool {
+        self.flags.contains(UiNodeDataFlags::ON_HOVER)
+    }
+
+    pub fn pressed(&self) -> bool {
+        self.flags.contains(UiNodeDataFlags::PRESSED)
+    }
+
+    pub fn on_press(&self) -> bool {
+        self.flags.contains(UiNodeDataFlags::ON_PRESS)
     }
 }
 

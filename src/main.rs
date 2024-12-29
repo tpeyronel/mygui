@@ -194,7 +194,7 @@ fn simple_ui(ui: &mut Ui<'_>) {
                     attr.width(Extent::Px(0.0))
                         .height(Extent::Px(48.0))
                         .weight(1.0)
-                        .fill_color(if data.flags.contains(UiNodeDataFlags::HOVERED) {
+                        .fill_color(if data.hovered() {
                             Color::new(1.0, 1.0, 0.0, 1.0)
                         } else {
                             Color::new(1.0, 0.0, 0.0, 1.0)
@@ -215,7 +215,7 @@ fn simple_ui(ui: &mut Ui<'_>) {
                         .width(Extent::Px(0.0))
                         .weight(1.0)
                         .height(Extent::FitContent)
-                        .fill_color(if data.flags.contains(UiNodeDataFlags::HOVERED) {
+                        .fill_color(if data.hovered() {
                             Color::new(1.0, 0.0, 0.5, 0.5)
                         } else {
                             Color::new(0.5, 0.5, 0.5, 0.5)
@@ -582,14 +582,18 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .weight(3.0)
                             .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
 
-                        ui.text("HellÓowjdoqi129312893u!\nYegh", |props, _| {
+                        ui.text("HellÓowjdoqi129312893u!\nYegh", |props, data| {
                             props.text_color = Color::ONE;
                             props.font_family = "times new roman".to_string();
                             props.font_size = 17.0;
                             props.line_height = 17.0;
                             props
                                 .modifiers
-                                .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
+                                .fill_color(if data.hovered() {
+                                    Color::new(1.0, 1.0, 1.0, 0.5)
+                                } else {
+                                    Color::new(0.0, 0.0, 0.0, 0.5)
+                                })
                                 .border_radius(BorderRadius::all(8.0))
                                 .padding(Padding::all(8.0));
                         });
@@ -615,7 +619,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .height(Extent::FitContent)
                             .no_max_width()
                             .self_alignment(Alignment::Left)
-                            .fill_color(if data.flags.contains(UiNodeDataFlags::HOVERED) {
+                            .fill_color(if data.hovered() {
                                 Color::new(1.0, 1.0, 1.0, 1.0)
                             } else if i % 2 == 0 {
                                 Color::new(1.0, 0.0, 0.0, 0.5)
