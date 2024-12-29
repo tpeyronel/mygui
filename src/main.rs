@@ -619,8 +619,10 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .height(Extent::FitContent)
                             .no_max_width()
                             .self_alignment(Alignment::Left)
-                            .fill_color(if data.hovered() {
-                                Color::new(1.0, 1.0, 1.0, 1.0)
+                            .fill_color(if data.on_hover() {
+                                Color::new(0.0, 0.0, 1.0, 1.0)
+                            // } else if data.hovered() {
+                            //     Color::new(1.0, 1.0, 1.0, 1.0)
                             } else if i % 2 == 0 {
                                 Color::new(1.0, 0.0, 0.0, 0.5)
                             } else {
