@@ -6,7 +6,7 @@ pub mod margin;
 pub mod padding;
 
 use core::f32;
-use std::collections::HashMap;
+use std::{collections::HashMap, u64};
 
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
@@ -195,6 +195,12 @@ impl Default for Alignment {
     }
 }
 
+#[derive(Debug)]
+pub struct HashNode {
+    pub hash: u64,
+    pub children: Vec<HashNode>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum UiNode {
     Block(BlockProps),
@@ -203,35 +209,50 @@ pub enum UiNode {
     Text(TextProps),
 }
 
-impl UiNode {
-    pub fn to_draw_data<F: FontEngine>(
-        self,
-        boundary_pos: Vec2,
-        boundary_size: Vec2,
-        font_engine: &mut F,
-        out: &mut Vec<DrawElement>,
-    ) {
-        let mut processor = UiNodeProcessor::new(font_engine, out);
-        processor.to_draw_data(self, boundary_pos, boundary_size);
-    }
+pub fn to_draw_data<F: FontEngine>(
+    ui_nodes: Vec<UiNode>,
+    hash_nodes: Vec<HashNode>,
+    boundary_pos: Vec2,
+    boundary_size: Vec2,
+    font_engine: &mut F,
+    draw_elements: &mut Vec<DrawElement>,
+    bounding_boxes: &mut Vec<(u64, Rectangle)>,
+) {
+    let mut processor = UiNodeProcessor::new(font_engine, draw_elements, bounding_boxes);
+    processor.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
 }
 
 struct UiNodeProcessor<'a, F: FontEngine> {
     measurements_cache: MeasurementsCache,
     font_engine: &'a mut F,
     draw_data: &'a mut Vec<DrawElement>,
+    bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
 }
 
 impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
-    fn new(font_engine: &'a mut F, draw_data: &'a mut Vec<DrawElement>) -> Self {
+    fn new(
+        font_engine: &'a mut F,
+        draw_data: &'a mut Vec<DrawElement>,
+        bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
+    ) -> Self {
         Self {
             measurements_cache: MeasurementsCache::new(),
             font_engine,
             draw_data,
+            bounding_boxes,
         }
     }
 
-    fn to_draw_data(&mut self, ui_node: UiNode, boundary_pos: Vec2, boundary_size: Vec2) {
+    fn to_draw_data(
+        &mut self,
+        ui_nodes: Vec<UiNode>,
+        hash_nodes: Vec<HashNode>,
+        boundary_pos: Vec2,
+        boundary_size: Vec2,
+    ) {
+        assert_eq!(self.draw_data.len(), 0);
+        assert_eq!(self.bounding_boxes.len(), 0);
+
         let boundary_pos = boundary_pos.round();
         let boundary_size = boundary_size.round();
 
@@ -240,8 +261,13 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
                 .width(Extent::Px(boundary_size.x))
                 .height(Extent::Px(boundary_size.y))
                 .clone(),
-            children: vec![ui_node],
+            children: ui_nodes,
         });
+
+        let root_hash_node = HashNode {
+            hash: u64::MAX,
+            children: hash_nodes,
+        };
 
         let root_layout = Layout {
             margin_position: boundary_pos,
@@ -253,11 +279,11 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
         };
 
         let root_layout_node = self.compute_layout_rec(&root_node, root_layout);
-        self.to_draw_data_rec(&root_node, &root_layout_node);
+        self.to_draw_data_rec(&root_node, &root_hash_node, &root_layout_node);
         self.draw_data.remove(0); // TODO: remove. This is mainly done to simplify testing (the first rectangle is completely transparent).
     }
 
-    fn to_draw_data_rec(&mut self, ui_node: &UiNode, layout_node: &UiNodeLayout) {
+    fn to_draw_data_rec(&mut self, ui_node: &UiNode, hash_node: &HashNode, layout_node: &UiNodeLayout) {
         let (modifiers, children) = match ui_node {
             UiNode::Block(props) => (&props.modifiers, Some(&props.children)),
             UiNode::Column(props) => (&props.modifiers, Some(&props.children)),
@@ -276,13 +302,21 @@ impl<'a, F: FontEngine> UiNodeProcessor<'a, F> {
             modifiers.border_radius,
         );
 
+        self.bounding_boxes.push((
+            hash_node.hash,
+            Rectangle::from_position_size(layout.border_position(), layout.border_size()),
+        ));
+
         if let UiNode::Text(props) = ui_node {
             self.emit_text_draw_data(props, layout);
         }
 
         if let Some(children) = children {
+            debug_assert_eq!(children.len(), hash_node.children.len());
+            debug_assert_eq!(children.len(), layout_node.children.len());
+
             for (i, c) in children.iter().enumerate() {
-                self.to_draw_data_rec(c, &layout_node.children[i]);
+                self.to_draw_data_rec(c, &hash_node.children[i], &layout_node.children[i]);
             }
         }
     }
@@ -1606,10 +1640,37 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
+        let root_ui_nodes = vec![ui];
+        let root_hash_nodes = create_mock_hash_tree_rec(&root_ui_nodes);
+
         let mut font_engine = MockFontEngine::new();
         let mut draw_data = vec![];
-        ui.to_draw_data(position, size, &mut font_engine, &mut draw_data);
+        let mut bounding_boxes = vec![];
+
+        to_draw_data(
+            root_ui_nodes,
+            root_hash_nodes,
+            position,
+            size,
+            &mut font_engine,
+            &mut draw_data,
+            &mut bounding_boxes,
+        );
         draw_data
+    }
+
+    fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
+        ui_nodes.iter().map(|n| {
+            HashNode {
+                hash: 0,
+                children: create_mock_hash_tree_rec(match n {
+                    UiNode::Block(props) => &props.children,
+                    UiNode::Column(props) => &props.children,
+                    UiNode::Row(props) => &props.children,
+                    UiNode::Text(_) => &[],
+                })
+            }
+        }).collect()
     }
 
     fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[DrawElement]) {

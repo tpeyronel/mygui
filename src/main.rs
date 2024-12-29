@@ -4,7 +4,12 @@ use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use renderer::renderer::Renderer;
-use ui::{draw_element::DrawElement, example_ui, immediate::ui, margin::Margin, Extent, UiNode};
+use ui::{
+    draw_element::DrawElement,
+    immediate::{Ui, UiContext, UiNodeDataFlags},
+    margin::Margin,
+    Extent,
+};
 use vertex::Color;
 use winit::{
     application::ApplicationHandler,
@@ -33,6 +38,7 @@ struct AppState {
     draw_data: Vec<DrawElement>,
     image_manager: ImageManager,
     font_engine: FreetypeFontEngine,
+    ui_context: UiContext,
     renderer: Renderer,
 }
 
@@ -69,6 +75,7 @@ impl ApplicationHandler for App {
 
         let mut image_manager = ImageManager::new();
         let font_engine = FreetypeFontEngine::new("./assets/fonts/", "./cache/fonts/", &mut image_manager);
+        let ui_context = UiContext::new();
         let renderer = Renderer::new(Arc::clone(&window));
 
         self.state = Some(AppState {
@@ -76,6 +83,7 @@ impl ApplicationHandler for App {
             draw_data: vec![],
             image_manager,
             font_engine,
+            ui_context,
             renderer,
         })
     }
@@ -86,16 +94,6 @@ impl ApplicationHandler for App {
                 let state = self.state.as_mut().unwrap();
                 state.font_engine.update(&mut state.image_manager);
                 state.renderer.on_resize(new_size.width, new_size.height);
-
-                state.draw_data.clear();
-                simple_ui().to_draw_data(
-                    Vec2::ZERO,
-                    Vec2::new(new_size.width as f32, new_size.height as f32),
-                    &mut state.font_engine,
-                    &mut state.draw_data,
-                );
-
-                state.renderer.update_draw_data(&state.draw_data);
             }
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
@@ -123,6 +121,12 @@ impl ApplicationHandler for App {
 
                 Self::process_image_manager_events(state);
 
+                let window_size = state.window.inner_size();
+                let window_size = Vec2::new(window_size.width as f32, window_size.height as f32);
+                state.draw_data = state.ui_context.build_ui(window_size, &mut state.font_engine, |ui| {
+                    simple_ui(ui);
+                });
+                state.renderer.update_draw_data(&state.draw_data);
                 state.renderer.render();
             }
             WindowEvent::KeyboardInput {
@@ -135,6 +139,17 @@ impl ApplicationHandler for App {
                 }
                 _ => {}
             },
+            WindowEvent::CursorMoved { position, .. } => {
+                let state = self.state.as_mut().unwrap();
+
+                let window_height = state.window.inner_size().height as f32;
+
+                state.draw_data.clear();
+                state
+                    .ui_context
+                    .set_cursor_position(Vec2::new(position.x as f32, window_height - position.y as f32));
+                state.window.request_redraw();
+            }
             _ => (),
         }
     }
@@ -146,17 +161,21 @@ impl ApplicationHandler for App {
     }
 }
 
-fn simple_ui() -> UiNode {
-    ui(|ui| {
-        ui.column(|ui, _, _| {
+fn simple_ui(ui: &mut Ui<'_>) {
+    ui.column(|ui, _, _| {
+        (0..3).for_each(|_| {
             ui.row(|ui, attr, _| {
                 attr.height(Extent::FitContent);
 
-                ui.block(|ui, attr, _| {
+                ui.block(|ui, attr, data| {
                     attr.width(Extent::Px(0.0))
                         .height(Extent::Px(48.0))
                         .weight(1.0)
-                        .fill_color(Color::new(1.0, 0.0, 0.0, 1.0));
+                        .fill_color(if data.flags.contains(UiNodeDataFlags::HOVERED) {
+                            Color::new(1.0, 1.0, 0.0, 1.0)
+                        } else {
+                            Color::new(1.0, 0.0, 0.0, 1.0)
+                        });
 
                     ui.block(|_, attr, _| {
                         attr.margin(Margin::all(16.0))
@@ -164,14 +183,20 @@ fn simple_ui() -> UiNode {
                     });
                 });
 
-                ui.text("Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw", |props, _| {
+                ui.text("Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw", |props, data| {
                     props.font_family = "Jetbrains Mono".into();
+                    props.font_size = 64.0;
+                    props.line_height = 64.0;
                     props
                         .modifiers
                         .width(Extent::Px(0.0))
                         .weight(1.0)
                         .height(Extent::FitContent)
-                        .fill_color(Color::new(0.5, 0.5, 0.5, 0.5))
+                        .fill_color(if data.flags.contains(UiNodeDataFlags::HOVERED) {
+                            Color::new(1.0, 0.0, 0.5, 0.5)
+                        } else {
+                            Color::new(0.5, 0.5, 0.5, 0.5)
+                        })
                         .self_alignment(ui::Alignment::Bottom);
                 });
 
@@ -182,7 +207,7 @@ fn simple_ui() -> UiNode {
                 });
             });
         });
-    })
+    });
 }
 
 fn main() {
