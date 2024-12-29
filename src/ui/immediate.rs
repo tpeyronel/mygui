@@ -6,7 +6,12 @@ use std::{
 use bitflags::bitflags;
 use glam::Vec2;
 
-use crate::{font::font_engine::FontEngine, input::InputEvent, rectangle::Rectangle, vertex::Color};
+use crate::{
+    font::font_engine::FontEngine,
+    input::{InputEvent, InputState, MouseButton},
+    rectangle::Rectangle,
+    vertex::Color,
+};
 
 use super::{
     draw_element::DrawElement, to_draw_data, BlockProps, ColumnProps, Extent, HashNode, Modifiers, RowProps, TextProps,
@@ -63,7 +68,6 @@ bitflags! {
 }
 
 pub struct UiContext {
-    previous_nodes_data: HashMap<u64, UiNodeData>,
     nodes_data: HashMap<u64, UiNodeData>,
     bounding_boxes: Vec<(u64, Rectangle)>,
     cursor_position: Vec2,
@@ -72,7 +76,6 @@ pub struct UiContext {
 impl UiContext {
     pub fn new() -> Self {
         Self {
-            previous_nodes_data: HashMap::new(),
             nodes_data: HashMap::new(),
             bounding_boxes: Vec::new(),
             cursor_position: Vec2::ZERO,
@@ -85,7 +88,13 @@ impl UiContext {
                 self.cursor_position = position;
                 self.on_cursor_moved();
             }
-            InputEvent::MouseInput { button, state } => {}
+            InputEvent::MouseInput { button, state } => match button {
+                MouseButton::Left => self.on_lmb_state_changed(state),
+                MouseButton::Right => {}
+                MouseButton::Middle => {}
+                MouseButton::Back => {}
+                MouseButton::Forward => {}
+            },
         }
     }
 
@@ -118,28 +127,76 @@ impl UiContext {
             &mut self.bounding_boxes,
         );
 
-        self.previous_nodes_data = self.nodes_data.clone();
+        self.nodes_data.iter_mut().for_each(|(_, d)| {
+            d.flags
+                .remove(UiNodeDataFlags::ON_PRESS | UiNodeDataFlags::ON_HOVER | UiNodeDataFlags::ON_RELEASE)
+        });
         self.on_cursor_moved();
 
         draw_data
     }
 
     fn on_cursor_moved(&mut self) {
+        let old_nodes_data = self.nodes_data.clone();
         self.nodes_data
             .iter_mut()
-            .for_each(|(_, d)| d.flags = UiNodeDataFlags::empty());
+            .for_each(|(_, d)| d.flags.remove(UiNodeDataFlags::HOVERED | UiNodeDataFlags::PRESSED));
 
         for (hash, bbox) in &self.bounding_boxes {
-            if bbox.contains(self.cursor_position) {
-                let node_data = self.nodes_data.entry(*hash).or_default();
+            if !bbox.contains(self.cursor_position) {
+                continue;
+            }
 
-                node_data.flags.insert(UiNodeDataFlags::HOVERED);
+            let node_data = self.nodes_data.entry(*hash).or_default();
+            node_data.flags.insert(UiNodeDataFlags::HOVERED);
 
-                if let Some(old_node_data) = self.previous_nodes_data.get(hash) {
-                    if !old_node_data.flags.contains(UiNodeDataFlags::HOVERED) {
-                        node_data.flags.insert(UiNodeDataFlags::ON_HOVER);
+            let old_node_data = old_nodes_data.get(hash);
+            if old_node_data.is_none_or(|d| !d.flags.contains(UiNodeDataFlags::HOVERED)) {
+                node_data.flags.insert(UiNodeDataFlags::ON_HOVER);
+            }
+
+            if old_node_data.is_some_and(|d| d.flags.contains(UiNodeDataFlags::PRESSED)) {
+                // Maintain PRESSED state when moving cursor inside element.
+                node_data.flags.insert(UiNodeDataFlags::PRESSED);
+            }
+        }
+
+        for (hash, old_node_data) in &old_nodes_data {
+            let Some(node_data) = self.nodes_data.get_mut(hash) else {
+                continue;
+            };
+
+            if old_node_data.flags.contains(UiNodeDataFlags::PRESSED)
+                && !node_data.flags.contains(UiNodeDataFlags::PRESSED)
+            {
+                node_data.flags.insert(UiNodeDataFlags::ON_RELEASE);
+            }
+        }
+    }
+
+    fn on_lmb_state_changed(&mut self, state: InputState) {
+        match state {
+            InputState::Pressed => {
+                for (hash, bbox) in &self.bounding_boxes {
+                    if !bbox.contains(self.cursor_position) {
+                        continue;
+                    }
+
+                    let node_data = self.nodes_data.entry(*hash).or_default();
+
+                    if !node_data.flags.contains(UiNodeDataFlags::PRESSED) {
+                        node_data.flags.insert(UiNodeDataFlags::PRESSED);
+                        node_data.flags.insert(UiNodeDataFlags::ON_PRESS);
                     }
                 }
+            }
+            InputState::Released => {
+                self.nodes_data.iter_mut().for_each(|(_, node_data)| {
+                    if node_data.flags.contains(UiNodeDataFlags::PRESSED) {
+                        node_data.flags.remove(UiNodeDataFlags::PRESSED);
+                        node_data.flags.insert(UiNodeDataFlags::ON_RELEASE);
+                    }
+                });
             }
         }
     }

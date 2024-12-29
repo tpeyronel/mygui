@@ -22,6 +22,7 @@ impl MouseButton {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InputState {
     Pressed,
     Released,

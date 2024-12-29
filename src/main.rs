@@ -172,6 +172,8 @@ impl ApplicationHandler for App {
                     button,
                     state: button_state,
                 });
+
+                state.window.request_redraw();
             }
             _ => (),
         }
