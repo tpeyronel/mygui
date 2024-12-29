@@ -241,6 +241,35 @@ pub fn to_draw_data<F: FontEngine>(
     processor.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
 }
 
+#[allow(unused)]
+pub fn to_draw_data_no_hashes<F: FontEngine>(
+    ui_nodes: Vec<UiNode>,
+    boundary_pos: Vec2,
+    boundary_size: Vec2,
+    font_engine: &mut F,
+    draw_elements: &mut Vec<DrawElement>,
+) {
+    let hash_nodes = create_mock_hash_tree_rec(&ui_nodes);
+    let mut bounding_boxes = vec![];
+    let mut processor = UiNodeProcessor::new(font_engine, draw_elements, &mut bounding_boxes);
+    processor.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
+}
+
+fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
+    ui_nodes
+        .iter()
+        .map(|n| HashNode {
+            hash: 0,
+            children: create_mock_hash_tree_rec(match n {
+                UiNode::Block(props) => &props.children,
+                UiNode::Column(props) => &props.children,
+                UiNode::Row(props) => &props.children,
+                UiNode::Text(_) => &[],
+            }),
+        })
+        .collect()
+}
+
 struct UiNodeLayout {
     layout: Layout,
     children: Vec<UiNodeLayout>,
@@ -819,21 +848,6 @@ mod tests {
             &mut bounding_boxes,
         );
         draw_data
-    }
-
-    fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
-        ui_nodes
-            .iter()
-            .map(|n| HashNode {
-                hash: 0,
-                children: create_mock_hash_tree_rec(match n {
-                    UiNode::Block(props) => &props.children,
-                    UiNode::Column(props) => &props.children,
-                    UiNode::Row(props) => &props.children,
-                    UiNode::Text(_) => &[],
-                }),
-            })
-            .collect()
     }
 
     fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[DrawElement]) {
