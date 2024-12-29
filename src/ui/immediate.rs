@@ -6,7 +6,7 @@ use std::{
 use bitflags::bitflags;
 use glam::Vec2;
 
-use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
+use crate::{font::font_engine::FontEngine, input::InputEvent, rectangle::Rectangle, vertex::Color};
 
 use super::{
     draw_element::DrawElement, to_draw_data, BlockProps, ColumnProps, Extent, HashNode, Modifiers, RowProps, TextProps,
@@ -52,6 +52,13 @@ impl UiContext {
         }
     }
 
+    pub fn process_input_event(&mut self, event: InputEvent) {
+        match event {
+            InputEvent::CursorMoved { position } => self.cursor_position = position,
+            InputEvent::MouseInput { button, state } => {}
+        }
+    }
+
     pub fn build_ui<F: FontEngine>(
         &mut self,
         window_size: Vec2,
@@ -84,10 +91,6 @@ impl UiContext {
         self.update_nodes_data(&bounding_boxes);
 
         draw_data
-    }
-
-    pub fn set_cursor_position(&mut self, cursor_position: Vec2) {
-        self.cursor_position = cursor_position;
     }
 
     fn update_nodes_data(&mut self, bounding_boxes: &[(u64, Rectangle)]) {

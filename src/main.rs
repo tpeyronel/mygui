@@ -3,6 +3,7 @@ use std::sync::Arc;
 use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
+use input::{InputEvent, InputState, MouseButton};
 use renderer::renderer::Renderer;
 use ui::{
     border_radius::BorderRadius,
@@ -25,6 +26,7 @@ use winit::{
 mod config;
 mod font;
 mod image;
+mod input;
 mod is_integer;
 mod rectangle;
 mod renderer;
@@ -148,8 +150,28 @@ impl ApplicationHandler for App {
                 let cursor_position = Vec2::new(position.x as f32, window_height - position.y as f32);
 
                 state.draw_data.clear();
-                state.ui_context.set_cursor_position(cursor_position);
+                state.ui_context.process_input_event(InputEvent::CursorMoved {
+                    position: cursor_position,
+                });
                 state.window.request_redraw();
+            }
+            WindowEvent::MouseInput {
+                state: button_state,
+                button,
+                ..
+            } => {
+                let state = self.state.as_mut().unwrap();
+
+                let Some(button) = MouseButton::from_winit(button) else {
+                    return;
+                };
+
+                let button_state = InputState::from_winit(button_state);
+
+                state.ui_context.process_input_event(InputEvent::MouseInput {
+                    button,
+                    state: button_state,
+                });
             }
             _ => (),
         }
