@@ -47,4 +47,8 @@ impl Rectangle {
     pub fn size(&self) -> Vec2 {
         Vec2::new(self.width(), self.height())
     }
+
+    pub fn contains(&self, point: Vec2) -> bool {
+        (self.left <= point.x && point.x <= self.right) && (self.bottom <= point.y && point.y <= self.top)
+    }
 }
