@@ -5,10 +5,13 @@ use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use renderer::renderer::Renderer;
 use ui::{
+    border_radius::BorderRadius,
+    border_thickness::BorderThickness,
     draw_element::DrawElement,
     immediate::{Ui, UiContext, UiNodeDataFlags},
     margin::Margin,
-    Extent,
+    padding::Padding,
+    Alignment, Extent, Modifiers,
 };
 use vertex::Color;
 use winit::{
@@ -92,7 +95,6 @@ impl ApplicationHandler for App {
         match event {
             WindowEvent::Resized(new_size) => {
                 let state = self.state.as_mut().unwrap();
-                state.font_engine.update(&mut state.image_manager);
                 state.renderer.on_resize(new_size.width, new_size.height);
             }
             WindowEvent::CloseRequested => {
@@ -124,7 +126,7 @@ impl ApplicationHandler for App {
                 let window_size = state.window.inner_size();
                 let window_size = Vec2::new(window_size.width as f32, window_size.height as f32);
                 state.draw_data = state.ui_context.build_ui(window_size, &mut state.font_engine, |ui| {
-                    simple_ui(ui);
+                    example_ui(ui);
                 });
                 state.renderer.update_draw_data(&state.draw_data);
                 state.renderer.render();
@@ -143,11 +145,10 @@ impl ApplicationHandler for App {
                 let state = self.state.as_mut().unwrap();
 
                 let window_height = state.window.inner_size().height as f32;
+                let cursor_position = Vec2::new(position.x as f32, window_height - position.y as f32);
 
                 state.draw_data.clear();
-                state
-                    .ui_context
-                    .set_cursor_position(Vec2::new(position.x as f32, window_height - position.y as f32));
+                state.ui_context.set_cursor_position(cursor_position);
                 state.window.request_redraw();
             }
             _ => (),
@@ -205,6 +206,402 @@ fn simple_ui(ui: &mut Ui<'_>) {
                         .weight(1.0)
                         .fill_color(Color::new(0.0, 0.0, 1.0, 1.0));
                 });
+            });
+        });
+    });
+}
+
+fn example_ui(ui: &mut Ui<'_>) {
+    ui.block(|ui, modifiers, _| {
+        modifiers
+            .width(Extent::FillParent)
+            .height(Extent::FillParent)
+            .margin(Margin::all(8.0))
+            .padding(Padding::all(16.0))
+            .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
+            .border_radius(BorderRadius::all(16.0));
+
+        ui.block(|ui, modifiers, _| {
+            modifiers
+                .width(Extent::FillParent)
+                .height(Extent::FillParent)
+                .padding(Padding::all(0.0))
+                .fill_color(Color::new(1.0, 0.1, 0.1, 0.25))
+                .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
+                .border_thickness(BorderThickness::all(4.0))
+                .border_radius(BorderRadius::all(8.0));
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::Center)
+                    .fill_color(Color::new(1.0, 1.0, 1.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::all(4.0));
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .margin(Margin::all(4.0))
+                    .self_alignment(Alignment::Right)
+                    .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::all(4.0));
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::TopRight)
+                    .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0));
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::Top)
+                    .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0));
+            });
+
+            ui.block(|ui, modifiers, _| {
+                modifiers
+                    .width(Extent::FitContent)
+                    .height(Extent::FitContent)
+                    .self_alignment(Alignment::TopLeft)
+                    .border_color(Color::new(1.0, 1.0, 1.0, 0.4))
+                    .border_thickness(BorderThickness::all(2.0));
+
+                ui.block(|ui, modifiers, _| {
+                    modifiers
+                        .width(Extent::FillParent)
+                        .height(Extent::FillParent)
+                        .padding(Padding::all(8.0))
+                        .border_color(Color::new(1.0, 0.0, 0.0, 0.4))
+                        .border_thickness(BorderThickness::all(2.0));
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers.fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
+                    });
+                });
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .width(Extent::Px(8.0))
+                        .height(Extent::Px(64.0))
+                        .border_color(Color::new(0.0, 1.0, 0.0, 0.4))
+                        .border_thickness(BorderThickness::all(2.0))
+                        .self_alignment(Alignment::BottomLeft);
+                });
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .width(Extent::Px(96.0))
+                        .height(Extent::Px(8.0))
+                        .border_color(Color::new(0.0, 0.0, 1.0, 0.4))
+                        .border_thickness(BorderThickness::all(2.0))
+                        .self_alignment(Alignment::TopRight);
+                });
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::Left)
+                    .fill_color(Color::new(0.0, 0.0, 0.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::all(4.0));
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::BottomLeft)
+                    .fill_color(Color::new(0.0, 0.0, 1.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::all(4.0));
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::Bottom)
+                    .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::all(4.0));
+            });
+
+            ui.block(|_, modifiers, _| {
+                modifiers
+                    .width(Extent::Px(80.0))
+                    .height(Extent::Px(80.0))
+                    .self_alignment(Alignment::BottomRight)
+                    .fill_color(Color::new(1.0, 0.0, 1.0, 0.25))
+                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .border_thickness(BorderThickness::all(1.0))
+                    .border_radius(BorderRadius::all(4.0));
+            });
+
+            ui.row(|ui, modifiers, _| {
+                modifiers
+                    .width(Extent::FitContent)
+                    .height(Extent::FitContent)
+                    .padding(Padding::all(8.0))
+                    .border_thickness(BorderThickness::all(4.0))
+                    .border_color(Color::new(1.0, 1.0, 1.0, 1.0));
+
+                ui.column(|ui, modifiers, _| {
+                    modifiers
+                        .width(Extent::Px(256.0))
+                        .height(Extent::FitContent)
+                        .padding(Padding::all(16.0))
+                        .border_thickness(BorderThickness::all(4.0))
+                        .border_color(Color::new(1.0, 1.0, 1.0, 1.0));
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .height(Extent::Px(24.0))
+                            .fill_color(Color::new(0.0, 1.0, 1.0, 0.5))
+                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .border_thickness(BorderThickness::all(1.0))
+                            .border_radius(BorderRadius::all(8.0));
+                    });
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .height(Extent::FillParent)
+                            .fill_color(Color::new(1.0, 0.0, 1.0, 0.5))
+                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .border_thickness(BorderThickness::all(1.0))
+                            .border_radius(BorderRadius::all(8.0));
+                    });
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .height(Extent::Px(32.0))
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 0.5))
+                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .border_thickness(BorderThickness::all(1.0))
+                            .border_radius(BorderRadius::all(8.0));
+                    });
+
+                    ui.block(|ui, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(96.0))
+                            .height(Extent::Px(64.0))
+                            .margin(Margin::all(8.0))
+                            .padding(Padding::all(8.0))
+                            .self_alignment(Alignment::Center)
+                            .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
+                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .border_thickness(BorderThickness::all(4.0))
+                            .border_radius(BorderRadius::all(8.0));
+
+                        ui.block(|_, modifiers, _| {
+                            modifiers
+                                .width(Extent::FillParent)
+                                .height(Extent::FillParent)
+                                .fill_color(Color::new(1.0, 1.0, 1.0, 0.5))
+                                .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                                .border_thickness(BorderThickness::all(1.0))
+                                .border_radius(BorderRadius::all(8.0));
+                        });
+                    });
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .height(Extent::Px(32.0))
+                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
+                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .border_thickness(BorderThickness::all(1.0))
+                            .border_radius(BorderRadius::all(8.0));
+                    });
+                });
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .width(Extent::Px(64.0))
+                        .height(Extent::FillParent)
+                        .fill_color(Color::new(0.25, 0.25, 1.0, 0.5));
+                });
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .width(Extent::Px(64.0))
+                        .height(Extent::Px(32.0))
+                        .fill_color(Color::new(0.25, 0.25, 1.0, 0.25));
+                });
+
+                ui.block(|ui, modifiers, _| {
+                    modifiers
+                        .width(Extent::FillParent)
+                        .height(Extent::FillParent)
+                        .fill_color(Color::new(0.25, 1.0, 0.25, 0.5));
+
+                    ui.text(
+                        "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee.",
+                        |props, _| {
+                            props.text_color = Color::ONE;
+                            props.font_family = "jetbrains mono".to_string();
+                            props.font_size = 24.0;
+                            props.line_height = 24.0 * 1.5;
+                            props.modifiers = Modifiers::new().self_alignment(Alignment::TopLeft).clone();
+                        },
+                    );
+                });
+            });
+
+            ui.column(|ui, modifiers, _| {
+                modifiers.width(Extent::Px(256.0)).self_alignment(Alignment::Left);
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .height(Extent::Px(0.0))
+                        .weight(1.0)
+                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.4));
+                });
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .height(Extent::Px(0.0))
+                        .weight(2.0)
+                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
+                });
+
+                ui.block(|_, modifiers, _| {
+                    modifiers
+                        .height(Extent::Px(0.0))
+                        .weight(1.0)
+                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.4));
+                });
+            });
+
+            ui.column(|ui, modifiers, _| {
+                modifiers.height(Extent::FitContent);
+
+                ui.row(|ui, modifiers, _| {
+                    modifiers.height(Extent::Px(128.0)).self_alignment(Alignment::Top);
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(1.0)
+                            .fill_color(Color::new(1.0, 0.0, 0.0, 0.4));
+                    });
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(2.0)
+                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
+                    });
+
+                    ui.block(|ui, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(1.0)
+                            .fill_color(Color::new(0.0, 0.0, 1.0, 0.4));
+
+                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |props, _| {
+                            props.text_color = Color::ONE;
+                            props.font_family = "Segoe UI Emoji".to_string();
+                            props.font_size = 24.0;
+                            props.line_height = 24.0;
+                            props
+                                .modifiers
+                                .width(Extent::FillParent)
+                                .max_width(Extent::Px(512.0))
+                                .min_width(Extent::Px(256.0))
+                                .height(Extent::FitContent)
+                                .max_height(Extent::Px(512.0))
+                                .padding(Padding::all(64.0))
+                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.5));
+                        });
+                    });
+                });
+
+                ui.row(|ui, modifiers, _| {
+                    modifiers.height(Extent::Px(128.0)).self_alignment(Alignment::Top);
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(2.0)
+                            .fill_color(Color::new(1.0, 1.0, 0.0, 0.4));
+                    });
+
+                    ui.block(|_, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(1.0)
+                            .fill_color(Color::new(0.0, 1.0, 1.0, 0.4));
+                    });
+
+                    ui.block(|ui, modifiers, _| {
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(3.0)
+                            .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
+
+                        ui.text("HellÓowjdoqi129312893u!\nYegh", |props, _| {
+                            props.text_color = Color::ONE;
+                            props.font_family = "times new roman".to_string();
+                            props.font_size = 17.0;
+                            props.line_height = 17.0;
+                            props
+                                .modifiers
+                                .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
+                                .border_radius(BorderRadius::all(8.0))
+                                .padding(Padding::all(8.0));
+                        });
+                    });
+                });
+            });
+
+            ui.column(|ui, modifiers, _| {
+                modifiers
+                    .width(Extent::FitContent)
+                    .height(Extent::FitContent)
+                    .self_alignment(Alignment::BottomRight);
+
+                for i in 5..32 {
+                    ui.text("aAbBcCdDoOÓgfjpq", |props, data| {
+                        props.text_color = Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
+                        props.font_family = "tangerine".to_string();
+                        props.font_size = i as f32;
+                        props.line_height = i as f32;
+                        props
+                            .modifiers
+                            .width(Extent::FitContent)
+                            .height(Extent::FitContent)
+                            .no_max_width()
+                            .self_alignment(Alignment::Left)
+                            .fill_color(if data.flags.contains(UiNodeDataFlags::HOVERED) {
+                                Color::new(1.0, 1.0, 1.0, 1.0)
+                            } else if i % 2 == 0 {
+                                Color::new(1.0, 0.0, 0.0, 0.5)
+                            } else {
+                                Color::new(0.0, 1.0, 0.0, 0.5)
+                            });
+                    });
+                }
             });
         });
     });
