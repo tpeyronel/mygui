@@ -114,31 +114,21 @@ pub struct Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    fn node_with_children(
+    fn node(
         &mut self,
         node_type: UiNodeType,
-        f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData),
-        make_node: impl FnOnce(Vec<UiNode>, Modifiers) -> UiNode,
+        make_node: impl FnOnce(DefaultHasher, UiNodeData) -> (UiNode, Vec<HashNode>),
     ) {
         let child_path_hasher = self.compute_child_path_hasher(node_type);
         let child_path_hash = child_path_hasher.finish();
 
-        let mut ui = Ui {
-            node_data_map: self.node_data_map,
-            path_hasher: child_path_hasher,
-            children: vec![],
-            children_path_hash_nodes: vec![],
-        };
-        let mut modifiers = Modifiers::new();
         let node_data = self.get_node_data_for_path_or_default(child_path_hash);
 
-        f(&mut ui, &mut modifiers, node_data);
-
-        let ui_node = make_node(ui.children, modifiers);
+        let (ui_node, children_path_hash_nodes) = make_node(child_path_hasher, node_data);
 
         let path_hash_node = HashNode {
             hash: child_path_hash,
-            children: ui.children_path_hash_nodes,
+            children: children_path_hash_nodes,
         };
 
         assert_eq!(ui_node.node_type(), node_type);
@@ -147,48 +137,95 @@ impl<'a> Ui<'a> {
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
+    fn node_with_children(
+        &mut self,
+        node_type: UiNodeType,
+        make_node: impl FnOnce(Ui, UiNodeData) -> (UiNode, Vec<HashNode>),
+    ) {
+        self.node(node_type, |child_path_hasher, node_data| {
+            let ui = Ui {
+                node_data_map: self.node_data_map,
+                path_hasher: child_path_hasher,
+                children: vec![],
+                children_path_hash_nodes: vec![],
+            };
+
+            let (ui_node, children_path_hash_nodes) = make_node(ui, node_data);
+
+            (ui_node, children_path_hash_nodes)
+        });
+    }
+
+    fn node_without_children(
+        &mut self,
+        node_type: UiNodeType,
+        make_node: impl FnOnce(DefaultHasher, UiNodeData) -> UiNode,
+    ) {
+        self.node(node_type, |child_path_hasher, node_data| {
+            (make_node(child_path_hasher, node_data), vec![])
+        });
+    }
+
     pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node_with_children(UiNodeType::Block, f, |children, modifiers| {
-            UiNode::Block(BlockProps { modifiers, children })
+        self.node_with_children(UiNodeType::Block, |mut ui, node_data| {
+            let mut modifiers = Modifiers::new();
+            f(&mut ui, &mut modifiers, node_data);
+
+            let ui_node = UiNode::Block(BlockProps {
+                modifiers,
+                children: ui.children,
+            });
+
+            (ui_node, ui.children_path_hash_nodes)
         });
     }
 
     pub fn column(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node_with_children(UiNodeType::Column, f, |children, modifiers| {
-            UiNode::Column(ColumnProps { modifiers, children })
+        self.node_with_children(UiNodeType::Column, |mut ui, node_data| {
+            let mut modifiers = Modifiers::new();
+            f(&mut ui, &mut modifiers, node_data);
+
+            let ui_node = UiNode::Column(ColumnProps {
+                modifiers,
+                children: ui.children,
+            });
+
+            (ui_node, ui.children_path_hash_nodes)
         });
     }
 
     pub fn row(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node_with_children(UiNodeType::Row, f, |children, modifiers| {
-            UiNode::Row(RowProps { modifiers, children })
+        self.node_with_children(UiNodeType::Row, |mut ui, node_data| {
+            let mut modifiers = Modifiers::new();
+            f(&mut ui, &mut modifiers, node_data);
+
+            let ui_node = UiNode::Row(RowProps {
+                modifiers,
+                children: ui.children,
+            });
+
+            (ui_node, ui.children_path_hash_nodes)
         });
     }
 
     pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, UiNodeData)) {
-        let child_path_hasher = self.compute_child_path_hasher(UiNodeType::Text);
-        let child_path_hash = child_path_hasher.finish();
+        self.node_without_children(UiNodeType::Text, |_, node_data| {
+            let mut props = TextProps {
+                text: text.into(),
+                text_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                font_family: String::new(),
+                font_size: DEFAULT_FONT_SIZE,
+                line_height: DEFAULT_LINE_HEIGHT,
+                modifiers: Modifiers::new()
+                    .width(Extent::FitContent)
+                    .max_width(Extent::FillParent)
+                    .height(Extent::FitContent)
+                    .clone(),
+            };
 
-        let mut props = TextProps {
-            text: text.into(),
-            text_color: Color::new(1.0, 1.0, 1.0, 1.0),
-            font_family: String::new(),
-            font_size: DEFAULT_FONT_SIZE,
-            line_height: DEFAULT_LINE_HEIGHT,
-            modifiers: Modifiers::new()
-                .width(Extent::FitContent)
-                .max_width(Extent::FillParent)
-                .height(Extent::FitContent)
-                .clone(),
-        };
-        let node_data = self.get_node_data_for_path_or_default(child_path_hash);
+            f(&mut props, node_data);
 
-        f(&mut props, node_data);
-
-        self.children.push(UiNode::Text(props));
-        self.children_path_hash_nodes.push(HashNode {
-            hash: child_path_hash,
-            children: vec![],
+            UiNode::Text(props)
         });
     }
 
