@@ -7,13 +7,21 @@ use super::{BlockProps, ColumnProps, Extent, Modifiers, RowProps, TextProps, UiN
 const DEFAULT_FONT_SIZE: f32 = 14.0;
 const DEFAULT_LINE_HEIGHT: f32 = DEFAULT_FONT_SIZE;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UiNodeData {
-    flags: UiNodeDataFlags,
+    pub flags: UiNodeDataFlags,
+}
+
+impl Default for UiNodeData {
+    fn default() -> Self {
+        Self {
+            flags: UiNodeDataFlags::empty(),
+        }
+    }
 }
 
 bitflags! {
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct UiNodeDataFlags: u32 {
         const ON_HOVER = 1 << 0;
         const HOVERED = 1 << 1;
