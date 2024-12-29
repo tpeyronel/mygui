@@ -221,44 +221,6 @@ pub fn to_draw_data<F: FontEngine>(
     processor.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
 }
 
-struct ChildrenMeasurements(Vec<Measurements>);
-
-impl ChildrenMeasurements {
-    fn max_width(&self) -> f32 {
-        self.0
-            .iter()
-            .map(|cs| cs.margin_size.x)
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap_or(0.0)
-    }
-
-    fn width_sum(&self) -> f32 {
-        self.0.iter().map(|cm| cm.margin_size.x).sum()
-    }
-
-    fn max_height(&self) -> f32 {
-        self.0
-            .iter()
-            .map(|cs| cs.margin_size.y)
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap_or(0.0)
-    }
-
-    fn height_sum(&self) -> f32 {
-        self.0.iter().map(|cm| cm.margin_size.y).sum()
-    }
-}
-
-impl IntoIterator for ChildrenMeasurements {
-    type Item = Measurements;
-
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
 struct UiNodeLayout {
     layout: Layout,
     children: Vec<UiNodeLayout>,
