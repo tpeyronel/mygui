@@ -68,6 +68,16 @@ impl Modifiers {
         self
     }
 
+    pub fn no_max_width(&mut self) -> &mut Self {
+        self.max_width = None;
+        self
+    }
+
+    pub fn no_max_height(&mut self) -> &mut Self {
+        self.max_height = None;
+        self
+    }
+
     pub fn min_width(&mut self, min_width: Extent) -> &mut Self {
         self.min_width = Some(min_width);
         self
@@ -75,6 +85,16 @@ impl Modifiers {
 
     pub fn min_height(&mut self, min_height: Extent) -> &mut Self {
         self.min_height = Some(min_height);
+        self
+    }
+
+    pub fn no_min_width(&mut self) -> &mut Self {
+        self.min_width = None;
+        self
+    }
+
+    pub fn no_min_height(&mut self) -> &mut Self {
+        self.min_height = None;
         self
     }
 
