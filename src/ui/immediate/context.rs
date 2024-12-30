@@ -112,18 +112,6 @@ impl UiContext {
                 node_data.flags.insert(UiNodeDataFlags::PRESSED);
             }
         }
-
-        for (hash, old_node_data) in &old_nodes_data {
-            let Some(node_data) = self.nodes_data.get_mut(hash) else {
-                continue;
-            };
-
-            if old_node_data.flags.contains(UiNodeDataFlags::PRESSED)
-                && !node_data.flags.contains(UiNodeDataFlags::PRESSED)
-            {
-                node_data.flags.insert(UiNodeDataFlags::ON_RELEASE);
-            }
-        }
     }
 
     fn on_lmb_state_changed(&mut self, state: InputState) {
