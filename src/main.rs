@@ -132,6 +132,10 @@ impl ApplicationHandler for App {
                 });
                 state.renderer.update_draw_data(&state.draw_data);
                 state.renderer.render();
+
+                if state.ui_context.redraw_required() {
+                    state.window.request_redraw();
+                }
             }
             WindowEvent::KeyboardInput {
                 device_id: _device_id,

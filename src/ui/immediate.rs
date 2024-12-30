@@ -75,6 +75,7 @@ pub struct UiContext {
     states: HashMap<u64, Vec<u8>>,
     bounding_boxes: Vec<(u64, Rectangle)>,
     cursor_position: Vec2,
+    redraw_required: bool,
 }
 
 impl UiContext {
@@ -84,6 +85,7 @@ impl UiContext {
             states: HashMap::new(),
             bounding_boxes: Vec::new(),
             cursor_position: Vec2::ZERO,
+            redraw_required: false,
         }
     }
 
@@ -138,7 +140,7 @@ impl UiContext {
 
         set_state_rx.drain(|hash, bytes| {
             self.states.insert(hash, bytes);
-            // TODO: requires_redraw = true
+            self.redraw_required = true;
         });
 
         self.nodes_data.iter_mut().for_each(|(_, d)| {
@@ -148,6 +150,10 @@ impl UiContext {
         self.on_cursor_moved();
 
         draw_data
+    }
+
+    pub fn redraw_required(&self) -> bool {
+        self.redraw_required
     }
 
     fn on_cursor_moved(&mut self) {
