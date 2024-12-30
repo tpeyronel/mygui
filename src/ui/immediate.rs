@@ -473,6 +473,13 @@ fn mock_ui<'a>(
     }
 }
 
+#[macro_export]
+macro_rules! use_state {
+    ($ui:expr, $init:expr) => {
+        $ui.use_state(concat!(std::file!(), std::line!(), std::column!()), $init)
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
