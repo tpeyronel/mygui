@@ -1,10 +1,13 @@
 use std::{
+    cell::RefCell,
     collections::HashMap,
     hash::{DefaultHasher, Hash, Hasher},
+    rc::Rc,
 };
 
 use bitflags::bitflags;
 use glam::Vec2;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     font::font_engine::FontEngine,
@@ -69,6 +72,7 @@ bitflags! {
 
 pub struct UiContext {
     nodes_data: HashMap<u64, UiNodeData>,
+    states: HashMap<u64, Vec<u8>>,
     bounding_boxes: Vec<(u64, Rectangle)>,
     cursor_position: Vec2,
 }
@@ -77,6 +81,7 @@ impl UiContext {
     pub fn new() -> Self {
         Self {
             nodes_data: HashMap::new(),
+            states: HashMap::new(),
             bounding_boxes: Vec::new(),
             cursor_position: Vec2::ZERO,
         }
@@ -106,8 +111,12 @@ impl UiContext {
     ) -> Vec<DrawElement> {
         let root_hasher = DefaultHasher::new();
 
+        let (set_state_tx, set_state_rx) = set_state_channel();
+
         let mut root_ui = Ui {
             node_data_map: &self.nodes_data,
+            state_map: &self.states,
+            set_state_tx: &set_state_tx,
             path_hasher: root_hasher,
             children: vec![],
             children_path_hash_nodes: vec![],
@@ -126,6 +135,11 @@ impl UiContext {
             &mut draw_data,
             &mut self.bounding_boxes,
         );
+
+        set_state_rx.drain(|hash, bytes| {
+            self.states.insert(hash, bytes);
+            // TODO: requires_redraw = true
+        });
 
         self.nodes_data.iter_mut().for_each(|(_, d)| {
             d.flags
@@ -204,6 +218,8 @@ impl UiContext {
 
 pub struct Ui<'a> {
     node_data_map: &'a HashMap<u64, UiNodeData>,
+    state_map: &'a HashMap<u64, Vec<u8>>,
+    set_state_tx: &'a SetStateSender,
     path_hasher: DefaultHasher,
     children: Vec<UiNode>,
     children_path_hash_nodes: Vec<HashNode>,
@@ -241,6 +257,8 @@ impl<'a> Ui<'a> {
         self.node(node_type, |child_path_hasher, node_data| {
             let ui = Ui {
                 node_data_map: self.node_data_map,
+                state_map: self.state_map,
+                set_state_tx: self.set_state_tx,
                 path_hasher: child_path_hasher,
                 children: vec![],
                 children_path_hash_nodes: vec![],
@@ -325,6 +343,53 @@ impl<'a> Ui<'a> {
         });
     }
 
+    pub fn use_state<T>(&mut self, key: &str, initial_value: impl FnOnce() -> T) -> (T, Box<dyn Fn(&T)>)
+    where
+        T: Serialize + Deserialize<'a>,
+    {
+        let mut state_path_hasher = self.path_hasher.clone();
+        key.hash(&mut state_path_hasher);
+        let state_path_hash = state_path_hasher.finish();
+
+        let set_state_tx = self.set_state_tx.clone();
+        let set_state = Box::new(move |s: &T| {
+            let bytes = match bincode::serialize(s) {
+                Ok(bytes) => bytes,
+                Err(err) => {
+                    log::error!(
+                        "set_state: failed to serialize value of type {}",
+                        std::any::type_name::<T>()
+                    );
+                    log::error!("{}", err);
+                    return;
+                }
+            };
+
+            set_state_tx.send(state_path_hash, bytes);
+        });
+
+        let state = match self.state_map.get(&state_path_hash) {
+            Some(state_bytes) => match bincode::deserialize(state_bytes) {
+                Ok(state) => state,
+                Err(err) => {
+                    log::error!(
+                        "set_state: failed to deserialize value of type {}. Returning initial value.",
+                        std::any::type_name::<T>()
+                    );
+                    log::error!("{}", err);
+                    initial_value()
+                }
+            },
+            None => {
+                let state = initial_value();
+                set_state(&state);
+                state
+            }
+        };
+
+        (state, set_state)
+    }
+
     fn compute_child_path_hasher(&self, child_node_type: UiNodeType) -> DefaultHasher {
         let mut child_path_hasher = self.path_hasher.clone();
         // TODO: this os O(n^2). Should keep track of counts.
@@ -362,10 +427,46 @@ impl UiNode {
     }
 }
 
+#[derive(Debug, Clone)]
+struct SetStatePacket {
+    hash: u64,
+    bytes: Vec<u8>,
+}
+
+#[derive(Clone)]
+struct SetStateSender(Rc<RefCell<Vec<SetStatePacket>>>);
+
+impl SetStateSender {
+    fn send(&self, hash: u64, bytes: Vec<u8>) {
+        self.0.borrow_mut().push(SetStatePacket { hash, bytes });
+    }
+}
+
+struct SetStateReceiver(Rc<RefCell<Vec<SetStatePacket>>>);
+
+impl SetStateReceiver {
+    fn drain(&self, mut f: impl FnMut(u64, Vec<u8>)) {
+        for SetStatePacket { hash, bytes } in self.0.borrow_mut().drain(..) {
+            f(hash, bytes);
+        }
+    }
+}
+
+fn set_state_channel() -> (SetStateSender, SetStateReceiver) {
+    let channel = Rc::new(RefCell::new(Vec::new()));
+    (SetStateSender(Rc::clone(&channel)), SetStateReceiver(channel))
+}
+
 #[allow(unused)]
-fn mock_ui(node_data_map: &HashMap<u64, UiNodeData>) -> Ui<'_> {
+fn mock_ui<'a>(
+    node_data_map: &'a HashMap<u64, UiNodeData>,
+    state_map: &'a HashMap<u64, Vec<u8>>,
+    set_state_tx: &'a SetStateSender,
+) -> Ui<'a> {
     Ui {
         node_data_map,
+        state_map,
+        set_state_tx,
         path_hasher: DefaultHasher::new(),
         children: vec![],
         children_path_hash_nodes: vec![],
@@ -379,7 +480,10 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::{
-        ui::{immediate::mock_ui, BlockProps, ColumnProps, Extent, Modifiers, RowProps, TextProps, UiNode},
+        ui::{
+            immediate::{mock_ui, set_state_channel},
+            BlockProps, ColumnProps, Extent, Modifiers, RowProps, TextProps, UiNode,
+        },
         vertex::Color,
     };
 
@@ -387,7 +491,9 @@ mod tests {
 
     fn immediate_test(f: impl FnOnce(&mut Ui), expected: &[UiNode]) {
         let node_data_map = HashMap::new();
-        let mut ui = mock_ui(&node_data_map);
+        let state_map = HashMap::new();
+        let (set_state_tx, _) = set_state_channel();
+        let mut ui = mock_ui(&node_data_map, &state_map, &set_state_tx);
         f(&mut ui);
         let ui_node = UiNode::Block(BlockProps {
             modifiers: Modifiers::new()
