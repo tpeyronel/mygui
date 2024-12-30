@@ -584,20 +584,28 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .weight(3.0)
                             .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
 
-                        ui.text("HellÓowjdoqi129312893u!\nYegh", |props, data| {
+                        let (count, set_count) = ui.use_state("qowdhqwd", || 0);
+
+                        ui.text(format!("{} HellÓowjdoqi129312893u!\nYegh", count), |props, data| {
                             props.text_color = Color::ONE;
                             props.font_family = "times new roman".to_string();
                             props.font_size = 17.0;
                             props.line_height = 17.0;
                             props
                                 .modifiers
-                                .fill_color(if data.hovered() {
+                                .fill_color(if data.pressed() {
                                     Color::new(1.0, 1.0, 1.0, 0.5)
+                                } else if data.hovered() {
+                                    Color::new(1.0, 1.0, 1.0, 0.25)
                                 } else {
                                     Color::new(0.0, 0.0, 0.0, 0.5)
                                 })
                                 .border_radius(BorderRadius::all(8.0))
                                 .padding(Padding::all(8.0));
+
+                            if data.on_release() {
+                                set_count(&(count + 1));
+                            }
                         });
                     });
                 });
@@ -609,8 +617,10 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .height(Extent::FitContent)
                     .self_alignment(Alignment::BottomRight);
 
+                let (count, set_count) = ui.use_state("qowdhqwd", || 0);
+
                 for i in 5..32 {
-                    ui.text("aAbBcCdDoOÓgfjpq", |props, data| {
+                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |props, data| {
                         props.text_color = Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
                         props.font_family = "tangerine".to_string();
                         props.font_size = i as f32;
@@ -621,7 +631,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .height(Extent::FitContent)
                             .no_max_width()
                             .self_alignment(Alignment::Left)
-                            .fill_color(if data.on_hover() {
+                            .fill_color(if data.pressed() {
                                 Color::new(0.0, 0.0, 1.0, 1.0)
                             // } else if data.hovered() {
                             //     Color::new(1.0, 1.0, 1.0, 1.0)
@@ -630,6 +640,10 @@ fn example_ui(ui: &mut Ui<'_>) {
                             } else {
                                 Color::new(0.0, 1.0, 0.0, 0.5)
                             });
+
+                        if data.on_press() {
+                            set_count(&(count + 1));
+                        }
                     });
                 }
             });
