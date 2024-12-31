@@ -46,10 +46,10 @@ impl UiContext {
         }
     }
 
-    pub fn build_ui<F: FontEngine>(
+    pub fn build_ui(
         &mut self,
         window_size: Vec2,
-        font_engine: &mut F,
+        font_engine: &mut Box<dyn FontEngine>,
         f: impl FnOnce(&mut Ui),
     ) -> Vec<DrawElement> {
         let (set_state_tx, set_state_rx) = set_state_channel();

@@ -53,7 +53,7 @@ impl FontEngine for FreetypeFontEngine {
         self.load_requests.clear();
     }
 
-    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions, mut f: impl FnMut(&LaidOutGlyph)) -> Vec2 {
+    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>) {
         let font_size = options.font_size as u32;
 
         let font_face_id = self.get_or_create_font_face(options.font_family);
@@ -78,6 +78,7 @@ impl FontEngine for FreetypeFontEngine {
         let mut pen = Vec2::ZERO;
         let mut max_computed_line_width: f32 = 0.0;
 
+        let mut glyphs = vec![];
         for c in text.chars() {
             if c == '\n' {
                 max_computed_line_width = max_computed_line_width.max(pen.x);
@@ -120,7 +121,7 @@ impl FontEngine for FreetypeFontEngine {
                     pixel_mode: glyph_uv_data.pixel_mode,
                 };
 
-                f(&laid_out_glyph);
+                glyphs.push(laid_out_glyph);
             }
 
             pen.x += advance as f32;
@@ -133,7 +134,7 @@ impl FontEngine for FreetypeFontEngine {
             pen.y.abs() + options.line_height - face.scaled_descender(options.font_size),
         );
 
-        dimensions
+        (dimensions, glyphs)
     }
 }
 

@@ -9,7 +9,7 @@ use super::font_face::GlyphPixelMode;
 
 pub trait FontEngine {
     fn update(&mut self, image_manager: &mut ImageManager);
-    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions, f: impl FnMut(&LaidOutGlyph)) -> Vec2;
+    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>);
 }
 
 pub struct TextLayoutOptions<'a> {

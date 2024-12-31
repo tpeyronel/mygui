@@ -42,7 +42,7 @@ struct AppState {
     window: Arc<Window>,
     draw_data: Vec<DrawElement>,
     image_manager: ImageManager,
-    font_engine: FreetypeFontEngine,
+    font_engine: Box<dyn FontEngine>,
     ui_context: UiContext,
     renderer: Renderer,
 }
@@ -79,7 +79,11 @@ impl ApplicationHandler for App {
         );
 
         let mut image_manager = ImageManager::new();
-        let font_engine = FreetypeFontEngine::new("./assets/fonts/", "./cache/fonts/", &mut image_manager);
+        let font_engine = Box::new(FreetypeFontEngine::new(
+            "./assets/fonts/",
+            "./cache/fonts/",
+            &mut image_manager,
+        ));
         let ui_context = UiContext::new();
         let renderer = Renderer::new(Arc::clone(&window));
 
@@ -186,7 +190,8 @@ impl ApplicationHandler for App {
     fn exiting(&mut self, _: &ActiveEventLoop) {
         println!("exiting...");
         let state = self.state.as_mut().unwrap();
-        state.font_engine.save_to_disk(&state.image_manager);
+        // TODO: restore
+        // state.font_engine.save_to_disk(&state.image_manager);
     }
 }
 
@@ -212,22 +217,24 @@ fn simple_ui(ui: &mut Ui<'_>) {
                     });
                 });
 
-                ui.text("Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw", |props, data| {
-                    props.font_family = "Jetbrains Mono".into();
-                    props.font_size = 64.0;
-                    props.line_height = 64.0;
-                    props
-                        .modifiers
-                        .width(Extent::Px(0.0))
-                        .weight(1.0)
-                        .height(Extent::FitContent)
-                        .fill_color(if data.hovered() {
-                            Color::new(1.0, 0.0, 0.5, 0.5)
-                        } else {
-                            Color::new(0.5, 0.5, 0.5, 0.5)
-                        })
-                        .self_alignment(ui::Alignment::Bottom);
-                });
+                ui.text(
+                    "Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw",
+                    |props, modifiers, data| {
+                        props.font_family = "Jetbrains Mono".into();
+                        props.font_size = 64.0;
+                        props.line_height = 64.0;
+                        modifiers
+                            .width(Extent::Px(0.0))
+                            .weight(1.0)
+                            .height(Extent::FitContent)
+                            .fill_color(if data.hovered() {
+                                Color::new(1.0, 0.0, 0.5, 0.5)
+                            } else {
+                                Color::new(0.5, 0.5, 0.5, 0.5)
+                            })
+                            .self_alignment(ui::Alignment::Bottom);
+                    },
+                );
 
                 ui.block(|_, attr, _| {
                     attr.width(Extent::Px(0.0))
@@ -485,12 +492,12 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                     ui.text(
                         "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee.",
-                        |props, _| {
+                        |props, modifiers, _| {
                             props.text_color = Color::ONE;
                             props.font_family = "jetbrains mono".to_string();
                             props.font_size = 24.0;
                             props.line_height = 24.0 * 1.5;
-                            props.modifiers = Modifiers::new().self_alignment(Alignment::TopLeft).clone();
+                            modifiers.self_alignment(Alignment::TopLeft);
                         },
                     );
                 });
@@ -547,13 +554,12 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .weight(1.0)
                             .fill_color(Color::new(0.0, 0.0, 1.0, 0.4));
 
-                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |props, _| {
+                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |props, modifiers, _| {
                             props.text_color = Color::ONE;
                             props.font_family = "Segoe UI Emoji".to_string();
                             props.font_size = 24.0;
                             props.line_height = 24.0;
-                            props
-                                .modifiers
+                            modifiers
                                 .width(Extent::FillParent)
                                 .max_width(Extent::Px(512.0))
                                 .min_width(Extent::Px(256.0))
@@ -590,27 +596,29 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                         let (count, set_count) = ui.use_state("qowdhqwd", || 0);
 
-                        ui.text(format!("{} HellÓowjdoqi129312893u!\nYegh", count), |props, data| {
-                            props.text_color = Color::ONE;
-                            props.font_family = "times new roman".to_string();
-                            props.font_size = 17.0;
-                            props.line_height = 17.0;
-                            props
-                                .modifiers
-                                .fill_color(if data.pressed() {
-                                    Color::new(1.0, 1.0, 1.0, 0.5)
-                                } else if data.hovered() {
-                                    Color::new(1.0, 1.0, 1.0, 0.25)
-                                } else {
-                                    Color::new(0.0, 0.0, 0.0, 0.5)
-                                })
-                                .border_radius(BorderRadius::all(8.0))
-                                .padding(Padding::all(8.0));
+                        ui.text(
+                            format!("{} HellÓowjdoqi129312893u!\nYegh", count),
+                            |props, modifiers, data| {
+                                props.text_color = Color::ONE;
+                                props.font_family = "times new roman".to_string();
+                                props.font_size = 17.0;
+                                props.line_height = 17.0;
+                                modifiers
+                                    .fill_color(if data.pressed() {
+                                        Color::new(1.0, 1.0, 1.0, 0.5)
+                                    } else if data.hovered() {
+                                        Color::new(1.0, 1.0, 1.0, 0.25)
+                                    } else {
+                                        Color::new(0.0, 0.0, 0.0, 0.5)
+                                    })
+                                    .border_radius(BorderRadius::all(8.0))
+                                    .padding(Padding::all(8.0));
 
-                            if data.on_release() {
-                                set_count(&(count + 1));
-                            }
-                        });
+                                if data.on_release() {
+                                    set_count(&(count + 1));
+                                }
+                            },
+                        );
                     });
                 });
             });
@@ -624,13 +632,12 @@ fn example_ui(ui: &mut Ui<'_>) {
                 let (count, set_count) = use_state!(ui, || 0);
 
                 for i in 5..32 {
-                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |props, data| {
+                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |props, modifiers, data| {
                         props.text_color = Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
                         props.font_family = "tangerine".to_string();
                         props.font_size = i as f32;
                         props.line_height = i as f32;
-                        props
-                            .modifiers
+                        modifiers
                             .width(Extent::FitContent)
                             .height(Extent::FitContent)
                             .no_max_width()

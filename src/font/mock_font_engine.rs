@@ -22,10 +22,11 @@ impl MockFontEngine {
 impl FontEngine for MockFontEngine {
     fn update(&mut self, _image_manager: &mut ImageManager) {}
 
-    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions, mut f: impl FnMut(&LaidOutGlyph)) -> Vec2 {
+    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>) {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
 
+        let mut glyphs = vec![];
         for line in text.split("\n") {
             let mut x = 0.0;
 
@@ -36,7 +37,7 @@ impl FontEngine for MockFontEngine {
                 }
 
                 let y = -(height + 1.0) * options.line_height;
-                f(&LaidOutGlyph {
+                glyphs.push(LaidOutGlyph {
                     position: Vec2::new(x, y),
                     size: Vec2::splat(options.font_size),
                     atlas_uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
@@ -54,6 +55,6 @@ impl FontEngine for MockFontEngine {
         width *= options.font_size;
         height *= options.line_height;
 
-        Vec2::new(width, height)
+        (Vec2::new(width, height), glyphs)
     }
 }

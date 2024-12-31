@@ -1,4 +1,5 @@
 use std::{
+    any::TypeId,
     collections::HashMap,
     hash::{DefaultHasher, Hash, Hasher},
 };
@@ -6,14 +7,26 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ui::{BlockProps, ColumnProps, Extent, HashNode, Modifiers, RowProps, TextProps, UiNode},
+    ui::{
+        node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiElement},
+        Extent, HashNode, Modifiers, UiNode,
+    },
     vertex::Color,
 };
 
 use super::{
     set_state::{set_state_channel, SetStateSender},
-    UiNodeData, UiNodeType, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
+    UiNodeData, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct UiNodeType(TypeId);
+
+impl UiNode {
+    fn node_type(&self) -> UiNodeType {
+        UiNodeType((*self.props).type_id())
+    }
+}
 
 pub struct Ui<'a> {
     node_data_map: &'a HashMap<u64, UiNodeData>,
@@ -44,11 +57,8 @@ impl<'a> Ui<'a> {
         (self.children, self.children_path_hash_nodes)
     }
 
-    fn node(
-        &mut self,
-        node_type: UiNodeType,
-        make_node: impl FnOnce(DefaultHasher, UiNodeData) -> (UiNode, Vec<HashNode>),
-    ) {
+    fn node<T: UiElement>(&mut self, make_node: impl FnOnce(DefaultHasher, UiNodeData) -> (UiNode, Vec<HashNode>)) {
+        let node_type = UiNodeType(TypeId::of::<T>());
         let child_path_hasher = self.compute_child_path_hasher(node_type);
         let child_path_hash = child_path_hasher.finish();
 
@@ -67,12 +77,8 @@ impl<'a> Ui<'a> {
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
-    fn node_with_children(
-        &mut self,
-        node_type: UiNodeType,
-        make_node: impl FnOnce(Ui, UiNodeData) -> (UiNode, Vec<HashNode>),
-    ) {
-        self.node(node_type, |child_path_hasher, node_data| {
+    fn node_with_children<T: UiElement>(&mut self, make_node: impl FnOnce(Ui, UiNodeData) -> (UiNode, Vec<HashNode>)) {
+        self.node::<T>(|child_path_hasher, node_data| {
             let ui = Ui {
                 node_data_map: self.node_data_map,
                 state_map: self.state_map,
@@ -88,76 +94,78 @@ impl<'a> Ui<'a> {
         });
     }
 
-    fn node_without_children(
-        &mut self,
-        node_type: UiNodeType,
-        make_node: impl FnOnce(DefaultHasher, UiNodeData) -> UiNode,
-    ) {
-        self.node(node_type, |child_path_hasher, node_data| {
-            (make_node(child_path_hasher, node_data), vec![])
-        });
+    fn node_without_children<T: UiElement>(&mut self, make_node: impl FnOnce(DefaultHasher, UiNodeData) -> UiNode) {
+        self.node::<T>(|child_path_hasher, node_data| (make_node(child_path_hasher, node_data), vec![]));
     }
 
     pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node_with_children(UiNodeType::Block, |mut ui, node_data| {
+        self.node_with_children::<BlockProps>(|mut ui, node_data| {
             let mut modifiers = Modifiers::new();
             f(&mut ui, &mut modifiers, node_data);
 
-            let ui_node = UiNode::Block(BlockProps {
+            let ui_node = UiNode {
+                props: Box::new(BlockProps),
                 modifiers,
                 children: ui.children,
-            });
+            };
 
             (ui_node, ui.children_path_hash_nodes)
         });
     }
 
     pub fn column(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node_with_children(UiNodeType::Column, |mut ui, node_data| {
+        self.node_with_children::<ColumnProps>(|mut ui, node_data| {
             let mut modifiers = Modifiers::new();
             f(&mut ui, &mut modifiers, node_data);
 
-            let ui_node = UiNode::Column(ColumnProps {
+            let ui_node = UiNode {
+                props: Box::new(ColumnProps),
                 modifiers,
                 children: ui.children,
-            });
+            };
 
             (ui_node, ui.children_path_hash_nodes)
         });
     }
 
     pub fn row(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node_with_children(UiNodeType::Row, |mut ui, node_data| {
+        self.node_with_children::<RowProps>(|mut ui, node_data| {
             let mut modifiers = Modifiers::new();
             f(&mut ui, &mut modifiers, node_data);
 
-            let ui_node = UiNode::Row(RowProps {
+            let ui_node = UiNode {
+                props: Box::new(RowProps),
                 modifiers,
                 children: ui.children,
-            });
+            };
 
             (ui_node, ui.children_path_hash_nodes)
         });
     }
 
-    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, UiNodeData)) {
-        self.node_without_children(UiNodeType::Text, |_, node_data| {
+    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, &mut Modifiers, UiNodeData)) {
+        self.node_without_children::<TextProps>(|_, node_data| {
+            let mut modifiers = Modifiers::new()
+                .width(Extent::FitContent)
+                .max_width(Extent::FillParent)
+                .height(Extent::FitContent)
+                .clone();
+
             let mut props = TextProps {
                 text: text.into(),
                 text_color: Color::new(1.0, 1.0, 1.0, 1.0),
                 font_family: String::new(),
                 font_size: DEFAULT_FONT_SIZE,
                 line_height: DEFAULT_LINE_HEIGHT,
-                modifiers: Modifiers::new()
-                    .width(Extent::FitContent)
-                    .max_width(Extent::FillParent)
-                    .height(Extent::FitContent)
-                    .clone(),
             };
 
-            f(&mut props, node_data);
+            f(&mut props, &mut modifiers, node_data);
 
-            UiNode::Text(props)
+            UiNode {
+                props: Box::new(props),
+                modifiers,
+                children: vec![],
+            }
         });
     }
 
@@ -236,13 +244,14 @@ pub fn mock_ui(f: impl FnOnce(&mut Ui<'_>)) -> UiNode {
     f(&mut ui);
     let (children, _) = ui.finish();
 
-    let ui_node = UiNode::Block(BlockProps {
+    let ui_node = UiNode {
+        props: Box::new(BlockProps),
         modifiers: Modifiers::new()
             .width(Extent::FillParent)
             .height(Extent::FillParent)
             .clone(),
         children,
-    });
+    };
 
     ui_node
 }

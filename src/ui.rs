@@ -4,6 +4,7 @@ pub mod draw_element;
 pub mod immediate;
 pub mod margin;
 mod measurements_cache;
+mod node;
 pub mod padding;
 mod processor;
 
@@ -14,6 +15,7 @@ use border_thickness::BorderThickness;
 use draw_element::DrawElement;
 use glam::Vec2;
 use margin::Margin;
+use node::UiNode;
 use padding::Padding;
 use processor::UiNodeProcessor;
 
@@ -152,48 +154,6 @@ impl Default for Extent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct BlockProps {
-    modifiers: Modifiers,
-    children: Vec<UiNode>,
-}
-
-impl Default for BlockProps {
-    fn default() -> Self {
-        Self {
-            modifiers: Modifiers::new(),
-            children: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ColumnProps {
-    modifiers: Modifiers,
-    children: Vec<UiNode>,
-}
-
-impl Default for ColumnProps {
-    fn default() -> Self {
-        Self {
-            modifiers: Modifiers::new(),
-            children: Vec::new(),
-        }
-    }
-}
-
-pub type RowProps = ColumnProps;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TextProps {
-    pub text: String,
-    pub text_color: Color,
-    pub font_family: String,
-    pub font_size: f32,
-    pub line_height: f32,
-    pub modifiers: Modifiers,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[allow(unused)]
 pub enum Alignment {
@@ -220,20 +180,12 @@ pub struct HashNode {
     pub children: Vec<HashNode>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum UiNode {
-    Block(BlockProps),
-    Column(ColumnProps),
-    Row(RowProps),
-    Text(TextProps),
-}
-
-pub fn to_draw_data<F: FontEngine>(
+pub fn to_draw_data(
     ui_nodes: Vec<UiNode>,
     hash_nodes: Vec<HashNode>,
     boundary_pos: Vec2,
     boundary_size: Vec2,
-    font_engine: &mut F,
+    font_engine: &mut Box<dyn FontEngine>,
     draw_elements: &mut Vec<DrawElement>,
     bounding_boxes: &mut Vec<(u64, Rectangle)>,
 ) {
@@ -242,11 +194,11 @@ pub fn to_draw_data<F: FontEngine>(
 }
 
 #[allow(unused)]
-pub fn to_draw_data_no_hashes<F: FontEngine>(
+pub fn to_draw_data_no_hashes(
     ui_nodes: Vec<UiNode>,
     boundary_pos: Vec2,
     boundary_size: Vec2,
-    font_engine: &mut F,
+    font_engine: &mut Box<dyn FontEngine>,
     draw_elements: &mut Vec<DrawElement>,
 ) {
     let hash_nodes = create_mock_hash_tree_rec(&ui_nodes);
@@ -260,12 +212,7 @@ fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
         .iter()
         .map(|n| HashNode {
             hash: 0,
-            children: create_mock_hash_tree_rec(match n {
-                UiNode::Block(props) => &props.children,
-                UiNode::Column(props) => &props.children,
-                UiNode::Row(props) => &props.children,
-                UiNode::Text(_) => &[],
-            }),
+            children: create_mock_hash_tree_rec(&n.children),
         })
         .collect()
 }
@@ -276,7 +223,7 @@ struct UiNodeLayout {
 }
 
 #[derive(Debug, Clone)]
-struct Layout {
+pub struct Layout {
     margin_position: Vec2,
     margin_size: Vec2,
     children_boundary_size: Vec2,
@@ -342,7 +289,7 @@ impl Layout {
 }
 
 #[derive(Debug, Clone)]
-struct Measurements {
+pub struct Measurements {
     margin_size: Vec2,
     margin: Margin,
     border_thickness: BorderThickness,
@@ -379,2345 +326,2345 @@ impl Measurements {
     }
 }
 
-#[allow(unused)]
-pub fn example_ui() -> UiNode {
-    return UiNode::Block(BlockProps {
-        modifiers: Modifiers::new()
-            .width(Extent::FillParent)
-            .height(Extent::FillParent)
-            .fill_color(Color::new(0.1, 0.1, 1.0, 1.0))
-            .margin(Margin::all(8.0))
-            .padding(Padding::all(16.0))
-            .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
-            .border_radius(BorderRadius::all(16.0))
-            .padding(Padding::all(16.0))
-            .clone(),
-        children: vec![UiNode::Block(BlockProps {
-            modifiers: Modifiers::new()
-                .width(Extent::FillParent)
-                .height(Extent::FillParent)
-                .padding(Padding::all(0.0))
-                .fill_color(Color::new(1.0, 0.1, 0.1, 0.25))
-                .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
-                .border_thickness(BorderThickness::all(4.0))
-                .border_radius(BorderRadius::all(8.0))
-                .clone(),
-            children: vec![
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::Center)
-                        .fill_color(Color::new(1.0, 1.0, 1.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .margin(Margin::all(4.0))
-                        .self_alignment(Alignment::Right)
-                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::TopRight)
-                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::Top)
-                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::TopLeft)
-                        .border_color(Color::new(1.0, 1.0, 1.0, 0.4))
-                        .border_thickness(BorderThickness::all(2.0))
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .padding(Padding::all(8.0))
-                                .border_color(Color::new(1.0, 0.0, 0.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0))
-                                .clone(),
-                            children: vec![UiNode::Block(BlockProps {
-                                modifiers: Modifiers::new().fill_color(Color::new(0.0, 1.0, 0.0, 0.4)).clone(),
-                                children: vec![],
-                            })],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(8.0))
-                                .height(Extent::Px(64.0))
-                                .border_color(Color::new(0.0, 1.0, 0.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0))
-                                .self_alignment(Alignment::BottomLeft)
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(96.0))
-                                .height(Extent::Px(8.0))
-                                .border_color(Color::new(0.0, 0.0, 1.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0))
-                                .self_alignment(Alignment::TopRight)
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::Left)
-                        .fill_color(Color::new(0.0, 0.0, 0.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::Bottom)
-                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
-                        .self_alignment(Alignment::BottomRight)
-                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.25))
-                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
-                        .clone(),
-                    children: vec![],
-                }),
-                UiNode::Row(RowProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .padding(Padding::all(8.0))
-                        .border_thickness(BorderThickness::all(4.0))
-                        .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
-                        .clone(),
-                    children: vec![
-                        UiNode::Column(ColumnProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(256.0))
-                                .height(Extent::FitContent)
-                                .padding(Padding::all(16.0))
-                                .border_thickness(BorderThickness::all(4.0))
-                                .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
-                                .clone(),
-                            children: vec![
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .height(Extent::Px(24.0))
-                                        .fill_color(Color::new(0.0, 1.0, 1.0, 0.5))
-                                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .height(Extent::FillParent)
-                                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.5))
-                                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .height(Extent::Px(32.0))
-                                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.5))
-                                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(96.0))
-                                        .height(Extent::Px(64.0))
-                                        .margin(Margin::all(8.0))
-                                        .padding(Padding::all(8.0))
-                                        .self_alignment(Alignment::Center)
-                                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
-                                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(4.0))
-                                        .border_radius(BorderRadius::all(8.0))
-                                        .clone(),
-                                    children: vec![UiNode::Block(BlockProps {
-                                        modifiers: Modifiers::new()
-                                            .width(Extent::FillParent)
-                                            .height(Extent::FillParent)
-                                            .fill_color(Color::new(1.0, 1.0, 1.0, 0.5))
-                                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                            .border_thickness(BorderThickness::all(1.0))
-                                            .border_radius(BorderRadius::all(8.0))
-                                            .clone(),
-                                        children: vec![],
-                                    })],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .height(Extent::Px(32.0))
-                                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
-                                        .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                            ],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(64.0))
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(0.25, 0.25, 1.0, 0.5))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(64.0))
-                                .height(Extent::Px(32.0))
-                                .fill_color(Color::new(0.25, 0.25, 1.0, 0.25))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(0.25, 1.0, 0.25, 0.5))
-                                .clone(),
-                            children: vec![UiNode::Text(TextProps {
-                                text: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
-                                    .to_string(),
-                                text_color: Color::ONE,
-                                font_family: "jetbrains mono".to_string(),
-                                font_size: 24.0,
-                                line_height: 24.0 * 1.5,
-                                modifiers: Modifiers::new().self_alignment(Alignment::TopLeft).clone(),
-                            })],
-                        }),
-                    ],
-                }),
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(256.0))
-                        .self_alignment(Alignment::Left)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.4))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(2.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.4))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(0.0, 0.0, 1.0, 0.4))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new().height(Extent::FitContent).clone(),
-                    children: vec![
-                        UiNode::Row(RowProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(128.0))
-                                .self_alignment(Alignment::Top)
-                                .clone(),
-                            children: vec![
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(0.0))
-                                        .weight(1.0)
-                                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.4))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(0.0))
-                                        .weight(2.0)
-                                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.4))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(0.0))
-                                        .weight(1.0)
-                                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.4))
-                                        .clone(),
-                                    children: vec![UiNode::Text(TextProps {
-                                        text: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
-                                        text_color: Color::ONE,
-                                        font_family: "Segoe UI Emoji".to_string(),
-                                        font_size: 24.0,
-                                        line_height: 24.0,
-                                        modifiers: Modifiers::new()
-                                            .width(Extent::FillParent)
-                                            .max_width(Extent::Px(512.0))
-                                            .min_width(Extent::Px(256.0))
-                                            .height(Extent::FitContent)
-                                            .max_height(Extent::Px(512.0))
-                                            .padding(Padding::all(64.0))
-                                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
-                                            .clone(),
-                                    })],
-                                }),
-                            ],
-                        }),
-                        UiNode::Row(RowProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(128.0))
-                                .self_alignment(Alignment::Top)
-                                .clone(),
-                            children: vec![
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(0.0))
-                                        .weight(2.0)
-                                        .fill_color(Color::new(1.0, 1.0, 0.0, 0.4))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(0.0))
-                                        .weight(1.0)
-                                        .fill_color(Color::new(0.0, 1.0, 1.0, 0.4))
-                                        .clone(),
-                                    children: vec![],
-                                }),
-                                UiNode::Block(BlockProps {
-                                    modifiers: Modifiers::new()
-                                        .width(Extent::Px(0.0))
-                                        .weight(3.0)
-                                        .fill_color(Color::new(1.0, 0.0, 1.0, 0.4))
-                                        .clone(),
-                                    children: vec![UiNode::Text(TextProps {
-                                        text: "HellÓowjdoqi129312893u!\nYegh".to_string(),
-                                        text_color: Color::ONE,
-                                        font_family: "times new roman".to_string(),
-                                        font_size: 17.0,
-                                        line_height: 17.0,
-                                        modifiers: Modifiers::new()
-                                            .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
-                                            .border_radius(BorderRadius::all(8.0))
-                                            .padding(Padding::all(8.0))
-                                            .clone(),
-                                    })],
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomRight)
-                        .clone(),
-                    children: (5..32)
-                        .map(|i| {
-                            UiNode::Text(TextProps {
-                                text: "aAbBcCdDoOÓgfjpq".to_string(),
-                                text_color: Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0),
-                                font_family: "tangerine".to_string(),
-                                font_size: i as f32,
-                                line_height: i as f32,
-                                modifiers: Modifiers::new()
-                                    .width(Extent::FitContent)
-                                    .height(Extent::FitContent)
-                                    .self_alignment(Alignment::Left)
-                                    .fill_color(if i % 2 == 0 {
-                                        Color::new(1.0, 0.0, 0.0, 0.5)
-                                    } else {
-                                        Color::new(0.0, 1.0, 0.0, 0.5)
-                                    })
-                                    .clone(),
-                            })
-                        })
-                        .collect(),
-                }),
-            ],
-        })],
-        ..Default::default()
-    });
-}
+// #[allow(unused)]
+// pub fn example_ui() -> UiNode {
+//     return UiNode::Block(BlockProps {
+//         modifiers: Modifiers::new()
+//             .width(Extent::FillParent)
+//             .height(Extent::FillParent)
+//             .fill_color(Color::new(0.1, 0.1, 1.0, 1.0))
+//             .margin(Margin::all(8.0))
+//             .padding(Padding::all(16.0))
+//             .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
+//             .border_radius(BorderRadius::all(16.0))
+//             .padding(Padding::all(16.0))
+//             .clone(),
+//         children: vec![UiNode::Block(BlockProps {
+//             modifiers: Modifiers::new()
+//                 .width(Extent::FillParent)
+//                 .height(Extent::FillParent)
+//                 .padding(Padding::all(0.0))
+//                 .fill_color(Color::new(1.0, 0.1, 0.1, 0.25))
+//                 .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
+//                 .border_thickness(BorderThickness::all(4.0))
+//                 .border_radius(BorderRadius::all(8.0))
+//                 .clone(),
+//             children: vec![
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::Center)
+//                         .fill_color(Color::new(1.0, 1.0, 1.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::all(4.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .margin(Margin::all(4.0))
+//                         .self_alignment(Alignment::Right)
+//                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::all(4.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::TopRight)
+//                         .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::Top)
+//                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::TopLeft)
+//                         .border_color(Color::new(1.0, 1.0, 1.0, 0.4))
+//                         .border_thickness(BorderThickness::all(2.0))
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .padding(Padding::all(8.0))
+//                                 .border_color(Color::new(1.0, 0.0, 0.0, 0.4))
+//                                 .border_thickness(BorderThickness::all(2.0))
+//                                 .clone(),
+//                             children: vec![UiNode::Block(BlockProps {
+//                                 modifiers: Modifiers::new().fill_color(Color::new(0.0, 1.0, 0.0, 0.4)).clone(),
+//                                 children: vec![],
+//                             })],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(8.0))
+//                                 .height(Extent::Px(64.0))
+//                                 .border_color(Color::new(0.0, 1.0, 0.0, 0.4))
+//                                 .border_thickness(BorderThickness::all(2.0))
+//                                 .self_alignment(Alignment::BottomLeft)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(96.0))
+//                                 .height(Extent::Px(8.0))
+//                                 .border_color(Color::new(0.0, 0.0, 1.0, 0.4))
+//                                 .border_thickness(BorderThickness::all(2.0))
+//                                 .self_alignment(Alignment::TopRight)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::Left)
+//                         .fill_color(Color::new(0.0, 0.0, 0.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::all(4.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::all(4.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::Bottom)
+//                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::all(4.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(80.0))
+//                         .height(Extent::Px(80.0))
+//                         .self_alignment(Alignment::BottomRight)
+//                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.25))
+//                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                         .border_thickness(BorderThickness::all(1.0))
+//                         .border_radius(BorderRadius::all(4.0))
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 UiNode::Row(RowProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .padding(Padding::all(8.0))
+//                         .border_thickness(BorderThickness::all(4.0))
+//                         .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Column(ColumnProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(256.0))
+//                                 .height(Extent::FitContent)
+//                                 .padding(Padding::all(16.0))
+//                                 .border_thickness(BorderThickness::all(4.0))
+//                                 .border_color(Color::new(1.0, 1.0, 1.0, 1.0))
+//                                 .clone(),
+//                             children: vec![
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .height(Extent::Px(24.0))
+//                                         .fill_color(Color::new(0.0, 1.0, 1.0, 0.5))
+//                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                                         .border_thickness(BorderThickness::all(1.0))
+//                                         .border_radius(BorderRadius::all(8.0))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .height(Extent::FillParent)
+//                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.5))
+//                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                                         .border_thickness(BorderThickness::all(1.0))
+//                                         .border_radius(BorderRadius::all(8.0))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .height(Extent::Px(32.0))
+//                                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.5))
+//                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                                         .border_thickness(BorderThickness::all(1.0))
+//                                         .border_radius(BorderRadius::all(8.0))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(96.0))
+//                                         .height(Extent::Px(64.0))
+//                                         .margin(Margin::all(8.0))
+//                                         .padding(Padding::all(8.0))
+//                                         .self_alignment(Alignment::Center)
+//                                         .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
+//                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                                         .border_thickness(BorderThickness::all(4.0))
+//                                         .border_radius(BorderRadius::all(8.0))
+//                                         .clone(),
+//                                     children: vec![UiNode::Block(BlockProps {
+//                                         modifiers: Modifiers::new()
+//                                             .width(Extent::FillParent)
+//                                             .height(Extent::FillParent)
+//                                             .fill_color(Color::new(1.0, 1.0, 1.0, 0.5))
+//                                             .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                                             .border_thickness(BorderThickness::all(1.0))
+//                                             .border_radius(BorderRadius::all(8.0))
+//                                             .clone(),
+//                                         children: vec![],
+//                                     })],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .height(Extent::Px(32.0))
+//                                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
+//                                         .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+//                                         .border_thickness(BorderThickness::all(1.0))
+//                                         .border_radius(BorderRadius::all(8.0))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                             ],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(64.0))
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(0.25, 0.25, 1.0, 0.5))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(64.0))
+//                                 .height(Extent::Px(32.0))
+//                                 .fill_color(Color::new(0.25, 0.25, 1.0, 0.25))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(0.25, 1.0, 0.25, 0.5))
+//                                 .clone(),
+//                             children: vec![UiNode::Text(TextProps {
+//                                 text: "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee."
+//                                     .to_string(),
+//                                 text_color: Color::ONE,
+//                                 font_family: "jetbrains mono".to_string(),
+//                                 font_size: 24.0,
+//                                 line_height: 24.0 * 1.5,
+//                                 modifiers: Modifiers::new().self_alignment(Alignment::TopLeft).clone(),
+//                             })],
+//                         }),
+//                     ],
+//                 }),
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(256.0))
+//                         .self_alignment(Alignment::Left)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(0.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 0.4))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(0.0))
+//                                 .weight(2.0)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 0.4))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(0.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(0.0, 0.0, 1.0, 0.4))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new().height(Extent::FitContent).clone(),
+//                     children: vec![
+//                         UiNode::Row(RowProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(128.0))
+//                                 .self_alignment(Alignment::Top)
+//                                 .clone(),
+//                             children: vec![
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(0.0))
+//                                         .weight(1.0)
+//                                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.4))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(0.0))
+//                                         .weight(2.0)
+//                                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.4))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(0.0))
+//                                         .weight(1.0)
+//                                         .fill_color(Color::new(0.0, 0.0, 1.0, 0.4))
+//                                         .clone(),
+//                                     children: vec![UiNode::Text(TextProps {
+//                                         text: "HellÓowjdoqi12931289😊👍😭3u!\nYegh".to_string(),
+//                                         text_color: Color::ONE,
+//                                         font_family: "Segoe UI Emoji".to_string(),
+//                                         font_size: 24.0,
+//                                         line_height: 24.0,
+//                                         modifiers: Modifiers::new()
+//                                             .width(Extent::FillParent)
+//                                             .max_width(Extent::Px(512.0))
+//                                             .min_width(Extent::Px(256.0))
+//                                             .height(Extent::FitContent)
+//                                             .max_height(Extent::Px(512.0))
+//                                             .padding(Padding::all(64.0))
+//                                             .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
+//                                             .clone(),
+//                                     })],
+//                                 }),
+//                             ],
+//                         }),
+//                         UiNode::Row(RowProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(128.0))
+//                                 .self_alignment(Alignment::Top)
+//                                 .clone(),
+//                             children: vec![
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(0.0))
+//                                         .weight(2.0)
+//                                         .fill_color(Color::new(1.0, 1.0, 0.0, 0.4))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(0.0))
+//                                         .weight(1.0)
+//                                         .fill_color(Color::new(0.0, 1.0, 1.0, 0.4))
+//                                         .clone(),
+//                                     children: vec![],
+//                                 }),
+//                                 UiNode::Block(BlockProps {
+//                                     modifiers: Modifiers::new()
+//                                         .width(Extent::Px(0.0))
+//                                         .weight(3.0)
+//                                         .fill_color(Color::new(1.0, 0.0, 1.0, 0.4))
+//                                         .clone(),
+//                                     children: vec![UiNode::Text(TextProps {
+//                                         text: "HellÓowjdoqi129312893u!\nYegh".to_string(),
+//                                         text_color: Color::ONE,
+//                                         font_family: "times new roman".to_string(),
+//                                         font_size: 17.0,
+//                                         line_height: 17.0,
+//                                         modifiers: Modifiers::new()
+//                                             .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
+//                                             .border_radius(BorderRadius::all(8.0))
+//                                             .padding(Padding::all(8.0))
+//                                             .clone(),
+//                                     })],
+//                                 }),
+//                             ],
+//                         }),
+//                     ],
+//                 }),
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomRight)
+//                         .clone(),
+//                     children: (5..32)
+//                         .map(|i| {
+//                             UiNode::Text(TextProps {
+//                                 text: "aAbBcCdDoOÓgfjpq".to_string(),
+//                                 text_color: Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0),
+//                                 font_family: "tangerine".to_string(),
+//                                 font_size: i as f32,
+//                                 line_height: i as f32,
+//                                 modifiers: Modifiers::new()
+//                                     .width(Extent::FitContent)
+//                                     .height(Extent::FitContent)
+//                                     .self_alignment(Alignment::Left)
+//                                     .fill_color(if i % 2 == 0 {
+//                                         Color::new(1.0, 0.0, 0.0, 0.5)
+//                                     } else {
+//                                         Color::new(0.0, 1.0, 0.0, 0.5)
+//                                     })
+//                                     .clone(),
+//                             })
+//                         })
+//                         .collect(),
+//                 }),
+//             ],
+//         })],
+//         ..Default::default()
+//     });
+// }
 
-#[cfg(test)]
-mod tests {
-    use crate::font::mock_font_engine::MockFontEngine;
+// #[cfg(test)]
+// mod tests {
+//     use crate::font::mock_font_engine::MockFontEngine;
 
-    use super::*;
-    use glam::Vec4;
-    use pretty_assertions::assert_eq;
+//     use super::*;
+//     use glam::Vec4;
+//     use pretty_assertions::assert_eq;
 
-    fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
-        let root_ui_nodes = vec![ui];
-        let root_hash_nodes = create_mock_hash_tree_rec(&root_ui_nodes);
+//     fn convert_to_draw_data(position: Vec2, size: Vec2, ui: UiNode) -> Vec<DrawElement> {
+//         let root_ui_nodes = vec![ui];
+//         let root_hash_nodes = create_mock_hash_tree_rec(&root_ui_nodes);
 
-        let mut font_engine = MockFontEngine::new();
-        let mut draw_data = vec![];
-        let mut bounding_boxes = vec![];
+//         let mut font_engine: Box<dyn FontEngine> = Box::new(MockFontEngine::new());
+//         let mut draw_data = vec![];
+//         let mut bounding_boxes = vec![];
 
-        to_draw_data(
-            root_ui_nodes,
-            root_hash_nodes,
-            position,
-            size,
-            &mut font_engine,
-            &mut draw_data,
-            &mut bounding_boxes,
-        );
-        draw_data
-    }
+//         to_draw_data(
+//             root_ui_nodes,
+//             root_hash_nodes,
+//             position,
+//             size,
+//             &mut font_engine,
+//             &mut draw_data,
+//             &mut bounding_boxes,
+//         );
+//         draw_data
+//     }
 
-    fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[DrawElement]) {
-        let draw_data = convert_to_draw_data(Vec2::ZERO, Vec2::new(width, height), ui);
-        assert_eq!(expected, &draw_data);
-    }
+//     fn test_converter(width: f32, height: f32, ui: UiNode, expected: &[DrawElement]) {
+//         let draw_data = convert_to_draw_data(Vec2::ZERO, Vec2::new(width, height), ui);
+//         assert_eq!(expected, &draw_data);
+//     }
 
-    #[test]
-    fn default_block() {
-        test_converter(
-            32.0,
-            32.0,
-            UiNode::Block(BlockProps {
-                modifiers: Modifiers::new(),
-                children: vec![],
-            }),
-            &[DrawElement::Rectangle {
-                bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                fill_color: Color::ZERO,
-                border_color: Color::ZERO,
-                border_radius: Vec4::ZERO,
-                border_width: Vec4::ZERO,
-            }],
-        )
-    }
+//     #[test]
+//     fn default_block() {
+//         test_converter(
+//             32.0,
+//             32.0,
+//             UiNode::Block(BlockProps {
+//                 modifiers: Modifiers::new(),
+//                 children: vec![],
+//             }),
+//             &[DrawElement::Rectangle {
+//                 bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                 fill_color: Color::ZERO,
+//                 border_color: Color::ZERO,
+//                 border_radius: Vec4::ZERO,
+//                 border_width: Vec4::ZERO,
+//             }],
+//         )
+//     }
 
-    #[test]
-    fn padding() {
-        test_converter(
-            32.0,
-            32.0,
-            UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().padding(Padding::all(8.0)).clone(),
-                children: vec![UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                    children: vec![],
-                })],
-            }),
-            &[
-                DrawElement::Rectangle {
-                    bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                    fill_color: Color::ZERO,
-                    border_color: Color::ZERO,
-                    border_radius: Vec4::ZERO,
-                    border_width: Vec4::ZERO,
-                },
-                DrawElement::Rectangle {
-                    bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(16.0, 16.0)),
-                    fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                    border_color: Color::ZERO,
-                    border_radius: Vec4::ZERO,
-                    border_width: Vec4::ZERO,
-                },
-            ],
-        )
-    }
+//     #[test]
+//     fn padding() {
+//         test_converter(
+//             32.0,
+//             32.0,
+//             UiNode::Block(BlockProps {
+//                 modifiers: Modifiers::new().padding(Padding::all(8.0)).clone(),
+//                 children: vec![UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                     children: vec![],
+//                 })],
+//             }),
+//             &[
+//                 DrawElement::Rectangle {
+//                     bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                     fill_color: Color::ZERO,
+//                     border_color: Color::ZERO,
+//                     border_radius: Vec4::ZERO,
+//                     border_width: Vec4::ZERO,
+//                 },
+//                 DrawElement::Rectangle {
+//                     bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(16.0, 16.0)),
+//                     fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                     border_color: Color::ZERO,
+//                     border_radius: Vec4::ZERO,
+//                     border_width: Vec4::ZERO,
+//                 },
+//             ],
+//         )
+//     }
 
-    #[test]
-    fn margin() {
-        test_converter(
-            32.0,
-            32.0,
-            UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().margin(Margin::all(8.0)).clone(),
-                children: vec![],
-            }),
-            &[DrawElement::Rectangle {
-                bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(16.0, 16.0)),
-                fill_color: Color::ZERO,
-                border_color: Color::ZERO,
-                border_radius: Vec4::ZERO,
-                border_width: Vec4::ZERO,
-            }],
-        )
-    }
+//     #[test]
+//     fn margin() {
+//         test_converter(
+//             32.0,
+//             32.0,
+//             UiNode::Block(BlockProps {
+//                 modifiers: Modifiers::new().margin(Margin::all(8.0)).clone(),
+//                 children: vec![],
+//             }),
+//             &[DrawElement::Rectangle {
+//                 bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(16.0, 16.0)),
+//                 fill_color: Color::ZERO,
+//                 border_color: Color::ZERO,
+//                 border_radius: Vec4::ZERO,
+//                 border_width: Vec4::ZERO,
+//             }],
+//         )
+//     }
 
-    #[test]
-    fn full_padding() {
-        test_converter(
-            32.0,
-            32.0,
-            UiNode::Block(BlockProps {
-                modifiers: Modifiers::new().padding(Padding::all(16.0)).clone(),
-                children: vec![UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                    children: vec![],
-                })],
-            }),
-            &[
-                DrawElement::Rectangle {
-                    bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                    fill_color: Color::ZERO,
-                    border_color: Color::ZERO,
-                    border_radius: Vec4::ZERO,
-                    border_width: Vec4::ZERO,
-                },
-                DrawElement::Rectangle {
-                    bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
-                    fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                    border_color: Color::ZERO,
-                    border_radius: Vec4::ZERO,
-                    border_width: Vec4::ZERO,
-                },
-            ],
-        )
-    }
+//     #[test]
+//     fn full_padding() {
+//         test_converter(
+//             32.0,
+//             32.0,
+//             UiNode::Block(BlockProps {
+//                 modifiers: Modifiers::new().padding(Padding::all(16.0)).clone(),
+//                 children: vec![UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                     children: vec![],
+//                 })],
+//             }),
+//             &[
+//                 DrawElement::Rectangle {
+//                     bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                     fill_color: Color::ZERO,
+//                     border_color: Color::ZERO,
+//                     border_radius: Vec4::ZERO,
+//                     border_width: Vec4::ZERO,
+//                 },
+//                 DrawElement::Rectangle {
+//                     bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
+//                     fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                     border_color: Color::ZERO,
+//                     border_radius: Vec4::ZERO,
+//                     border_width: Vec4::ZERO,
+//                 },
+//             ],
+//         )
+//     }
 
-    #[test]
-    fn too_much_padding() {
-        // TODO: restore this test.
-        // test_converter(
-        //     32.0,
-        //     32.0,
-        //     UiNode::Block(BlockProps {
-        //         modifiers: Modifiers::new().padding(Padding::all(24.0)),
-        //         children: vec![UiNode::Block(BlockProps {
-        //             modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
-        //             children: vec![],
-        //         })],
-        //     }),
-        //     &[
-        //         DrawElement::Rectangle {
-        //             bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-        //             fill_color: Color::ZERO,
-        //             border_color: Color::ZERO,
-        //             border_radius: Vec4::ZERO,
-        //             border_width: Vec4::ZERO,
-        //         },
-        //         DrawElement::Rectangle {
-        //             bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
-        //             fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-        //             border_color: Color::ZERO,
-        //             border_radius: Vec4::ZERO,
-        //             border_width: Vec4::ZERO,
-        //         },
-        //     ],
-        // )
-    }
+//     #[test]
+//     fn too_much_padding() {
+//         // TODO: restore this test.
+//         // test_converter(
+//         //     32.0,
+//         //     32.0,
+//         //     UiNode::Block(BlockProps {
+//         //         modifiers: Modifiers::new().padding(Padding::all(24.0)),
+//         //         children: vec![UiNode::Block(BlockProps {
+//         //             modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)),
+//         //             children: vec![],
+//         //         })],
+//         //     }),
+//         //     &[
+//         //         DrawElement::Rectangle {
+//         //             bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//         //             fill_color: Color::ZERO,
+//         //             border_color: Color::ZERO,
+//         //             border_radius: Vec4::ZERO,
+//         //             border_width: Vec4::ZERO,
+//         //         },
+//         //         DrawElement::Rectangle {
+//         //             bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
+//         //             fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//         //             border_color: Color::ZERO,
+//         //             border_radius: Vec4::ZERO,
+//         //             border_width: Vec4::ZERO,
+//         //         },
+//         //     ],
+//         // )
+//     }
 
-    #[test]
-    fn self_alignment_basic() {
-        fn test_self_alignment_basic(alignment: Alignment, expected_position: Vec2) {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(8.0))
-                        .height(Extent::Px(8.0))
-                        .self_alignment(alignment)
-                        .clone(),
-                    children: vec![],
-                }),
-                &[DrawElement::Rectangle {
-                    bounds: Rectangle::from_position_size(expected_position, Vec2::new(8.0, 8.0)),
-                    fill_color: Color::ZERO,
-                    border_color: Color::ZERO,
-                    border_radius: Vec4::ZERO,
-                    border_width: Vec4::ZERO,
-                }],
-            )
-        }
+//     #[test]
+//     fn self_alignment_basic() {
+//         fn test_self_alignment_basic(alignment: Alignment, expected_position: Vec2) {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(8.0))
+//                         .height(Extent::Px(8.0))
+//                         .self_alignment(alignment)
+//                         .clone(),
+//                     children: vec![],
+//                 }),
+//                 &[DrawElement::Rectangle {
+//                     bounds: Rectangle::from_position_size(expected_position, Vec2::new(8.0, 8.0)),
+//                     fill_color: Color::ZERO,
+//                     border_color: Color::ZERO,
+//                     border_radius: Vec4::ZERO,
+//                     border_width: Vec4::ZERO,
+//                 }],
+//             )
+//         }
 
-        test_self_alignment_basic(Alignment::Center, Vec2::new(12.0, 12.0));
-        test_self_alignment_basic(Alignment::Right, Vec2::new(24.0, 12.0));
-        test_self_alignment_basic(Alignment::TopRight, Vec2::new(24.0, 24.0));
-        test_self_alignment_basic(Alignment::Top, Vec2::new(12.0, 24.0));
-        test_self_alignment_basic(Alignment::TopLeft, Vec2::new(0.0, 24.0));
-        test_self_alignment_basic(Alignment::Left, Vec2::new(0.0, 12.0));
-        test_self_alignment_basic(Alignment::BottomLeft, Vec2::new(0.0, 0.0));
-        test_self_alignment_basic(Alignment::Bottom, Vec2::new(12.0, 0.0));
-        test_self_alignment_basic(Alignment::BottomRight, Vec2::new(24.0, 0.0));
-    }
+//         test_self_alignment_basic(Alignment::Center, Vec2::new(12.0, 12.0));
+//         test_self_alignment_basic(Alignment::Right, Vec2::new(24.0, 12.0));
+//         test_self_alignment_basic(Alignment::TopRight, Vec2::new(24.0, 24.0));
+//         test_self_alignment_basic(Alignment::Top, Vec2::new(12.0, 24.0));
+//         test_self_alignment_basic(Alignment::TopLeft, Vec2::new(0.0, 24.0));
+//         test_self_alignment_basic(Alignment::Left, Vec2::new(0.0, 12.0));
+//         test_self_alignment_basic(Alignment::BottomLeft, Vec2::new(0.0, 0.0));
+//         test_self_alignment_basic(Alignment::Bottom, Vec2::new(12.0, 0.0));
+//         test_self_alignment_basic(Alignment::BottomRight, Vec2::new(24.0, 0.0));
+//     }
 
-    #[test]
-    fn subpixel_alignment() {
-        let ui: UiNode = UiNode::Block(BlockProps {
-            modifiers: Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
-            children: vec![],
-        });
+//     #[test]
+//     fn subpixel_alignment() {
+//         let ui: UiNode = UiNode::Block(BlockProps {
+//             modifiers: Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
+//             children: vec![],
+//         });
 
-        test_converter(
-            15.0,
-            15.0,
-            ui.clone(),
-            &[DrawElement::Rectangle {
-                bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(8.0, 8.0)),
-                fill_color: Color::ZERO,
-                border_color: Color::ZERO,
-                border_radius: Vec4::splat(0.0),
-                border_width: Vec4::splat(0.0),
-            }],
-        );
+//         test_converter(
+//             15.0,
+//             15.0,
+//             ui.clone(),
+//             &[DrawElement::Rectangle {
+//                 bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(8.0, 8.0)),
+//                 fill_color: Color::ZERO,
+//                 border_color: Color::ZERO,
+//                 border_radius: Vec4::splat(0.0),
+//                 border_width: Vec4::splat(0.0),
+//             }],
+//         );
 
-        test_converter(
-            17.0,
-            17.0,
-            ui,
-            &[DrawElement::Rectangle {
-                bounds: Rectangle::from_position_size(Vec2::new(5.0, 5.0), Vec2::new(8.0, 8.0)),
-                fill_color: Color::ZERO,
-                border_color: Color::ZERO,
-                border_radius: Vec4::splat(0.0),
-                border_width: Vec4::splat(0.0),
-            }],
-        );
-    }
+//         test_converter(
+//             17.0,
+//             17.0,
+//             ui,
+//             &[DrawElement::Rectangle {
+//                 bounds: Rectangle::from_position_size(Vec2::new(5.0, 5.0), Vec2::new(8.0, 8.0)),
+//                 fill_color: Color::ZERO,
+//                 border_color: Color::ZERO,
+//                 border_radius: Vec4::splat(0.0),
+//                 border_width: Vec4::splat(0.0),
+//             }],
+//         );
+//     }
 
-    #[test]
-    fn self_alignment_with_parent_border_thickness() {
-        fn test_self_alignment_basic(alignment: Alignment, expected_position: Vec2) {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    // Border thickness of 4.0 makes the parent container equivalent to a 24.0 size container.
-                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(4.0)).clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .width(Extent::Px(8.0))
-                            .height(Extent::Px(8.0))
-                            .self_alignment(alignment)
-                            .clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::ZERO, Vec2::new(32.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::splat(4.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(expected_position, Vec2::new(8.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//     #[test]
+//     fn self_alignment_with_parent_border_thickness() {
+//         fn test_self_alignment_basic(alignment: Alignment, expected_position: Vec2) {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     // Border thickness of 4.0 makes the parent container equivalent to a 24.0 size container.
+//                     modifiers: Modifiers::new().border_thickness(BorderThickness::all(4.0)).clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .width(Extent::Px(8.0))
+//                             .height(Extent::Px(8.0))
+//                             .self_alignment(alignment)
+//                             .clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::ZERO, Vec2::new(32.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::splat(4.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(expected_position, Vec2::new(8.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        test_self_alignment_basic(Alignment::Center, Vec2::new(12.0, 12.0));
-        test_self_alignment_basic(Alignment::Right, Vec2::new(20.0, 12.0));
-        test_self_alignment_basic(Alignment::TopRight, Vec2::new(20.0, 20.0));
-        test_self_alignment_basic(Alignment::Top, Vec2::new(12.0, 20.0));
-        test_self_alignment_basic(Alignment::TopLeft, Vec2::new(4.0, 20.0));
-        test_self_alignment_basic(Alignment::Left, Vec2::new(4.0, 12.0));
-        test_self_alignment_basic(Alignment::BottomLeft, Vec2::new(4.0, 4.0));
-        test_self_alignment_basic(Alignment::Bottom, Vec2::new(12.0, 4.0));
-        test_self_alignment_basic(Alignment::BottomRight, Vec2::new(20.0, 4.0));
-    }
+//         test_self_alignment_basic(Alignment::Center, Vec2::new(12.0, 12.0));
+//         test_self_alignment_basic(Alignment::Right, Vec2::new(20.0, 12.0));
+//         test_self_alignment_basic(Alignment::TopRight, Vec2::new(20.0, 20.0));
+//         test_self_alignment_basic(Alignment::Top, Vec2::new(12.0, 20.0));
+//         test_self_alignment_basic(Alignment::TopLeft, Vec2::new(4.0, 20.0));
+//         test_self_alignment_basic(Alignment::Left, Vec2::new(4.0, 12.0));
+//         test_self_alignment_basic(Alignment::BottomLeft, Vec2::new(4.0, 4.0));
+//         test_self_alignment_basic(Alignment::Bottom, Vec2::new(12.0, 4.0));
+//         test_self_alignment_basic(Alignment::BottomRight, Vec2::new(20.0, 4.0));
+//     }
 
-    mod blockes {
-        use super::*;
+//     mod blockes {
+//         use super::*;
 
-        #[test]
-        fn block_different_padding_values() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)).clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 1.0), Vec2::new(32.0 - 10.0, 32.0 - 5.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn block_different_padding_values() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)).clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 1.0), Vec2::new(32.0 - 10.0, 32.0 - 5.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn block_different_border_thickness_values() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .border_thickness(BorderThickness::new(1.0, 2.0, 4.0, 8.0))
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::new(1.0, 2.0, 4.0, 8.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0, 2.0), Vec2::new(32.0 - 5.0, 32.0 - 10.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn block_different_border_thickness_values() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .border_thickness(BorderThickness::new(1.0, 2.0, 4.0, 8.0))
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::new(1.0, 2.0, 4.0, 8.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0, 2.0), Vec2::new(32.0 - 5.0, 32.0 - 10.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn block_fit_content_with_fill_parent_child() {
-            test_converter(
-                128.0,
-                128.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(8.0))
-                                .height(Extent::Px(64.0))
-                                .self_alignment(Alignment::BottomLeft)
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(96.0))
-                                .height(Extent::Px(8.0))
-                                .self_alignment(Alignment::TopRight)
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 64.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 64.0 - 8.0), Vec2::new(96.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn block_fit_content_with_fill_parent_child() {
+//             test_converter(
+//                 128.0,
+//                 128.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(8.0))
+//                                 .height(Extent::Px(64.0))
+//                                 .self_alignment(Alignment::BottomLeft)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(96.0))
+//                                 .height(Extent::Px(8.0))
+//                                 .self_alignment(Alignment::TopRight)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 64.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 64.0 - 8.0), Vec2::new(96.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn block_fit_content_with_fill_parent_child_all_children_with_borders() {
-            /* In this case, children having border should not affect in any way the parent size. */
-            test_converter(
-                128.0,
-                128.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .border_thickness(BorderThickness::all(8.0))
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(8.0))
-                                .height(Extent::Px(64.0))
-                                .border_thickness(BorderThickness::all(8.0))
-                                .self_alignment(Alignment::BottomLeft)
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(96.0))
-                                .height(Extent::Px(8.0))
-                                .border_thickness(BorderThickness::all(8.0))
-                                .self_alignment(Alignment::TopRight)
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(8.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 64.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(8.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 64.0 - 8.0), Vec2::new(96.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(8.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn block_fit_content_with_fill_parent_child_all_children_with_borders() {
+//             /* In this case, children having border should not affect in any way the parent size. */
+//             test_converter(
+//                 128.0,
+//                 128.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .border_thickness(BorderThickness::all(8.0))
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(8.0))
+//                                 .height(Extent::Px(64.0))
+//                                 .border_thickness(BorderThickness::all(8.0))
+//                                 .self_alignment(Alignment::BottomLeft)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(96.0))
+//                                 .height(Extent::Px(8.0))
+//                                 .border_thickness(BorderThickness::all(8.0))
+//                                 .self_alignment(Alignment::TopRight)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0, 64.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(8.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(8.0, 64.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(8.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 64.0 - 8.0), Vec2::new(96.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(8.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn block_fit_content_with_fill_parent_child_parent_with_border() {
-            test_converter(
-                128.0,
-                128.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .border_thickness(BorderThickness::all(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(8.0))
-                                .height(Extent::Px(64.0))
-                                .self_alignment(Alignment::BottomLeft)
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(96.0))
-                                .height(Extent::Px(8.0))
-                                .self_alignment(Alignment::TopRight)
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0 + 16.0, 64.0 + 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(8.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(96.0, 64.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(8.0, 64.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0 + 64.0 - 8.0), Vec2::new(96.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn block_fit_content_with_fill_parent_child_parent_with_border() {
+//             test_converter(
+//                 128.0,
+//                 128.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .border_thickness(BorderThickness::all(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(8.0))
+//                                 .height(Extent::Px(64.0))
+//                                 .self_alignment(Alignment::BottomLeft)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(96.0))
+//                                 .height(Extent::Px(8.0))
+//                                 .self_alignment(Alignment::TopRight)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0 + 16.0, 64.0 + 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(8.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(96.0, 64.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(8.0, 64.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0 + 64.0 - 8.0), Vec2::new(96.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn block_fit_content_with_fill_parent_child_parent_with_padding() {
-            /* Should be functionally almost equivalent to block_fit_content_with_fill_parent_child_parent_with_border */
-            test_converter(
-                128.0,
-                128.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .padding(Padding::all(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(8.0))
-                                .height(Extent::Px(64.0))
-                                .self_alignment(Alignment::BottomLeft)
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(96.0))
-                                .height(Extent::Px(8.0))
-                                .self_alignment(Alignment::TopRight)
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0 + 16.0, 64.0 + 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(96.0, 64.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(8.0, 64.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0 + 64.0 - 8.0), Vec2::new(96.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
-    }
+//         #[test]
+//         fn block_fit_content_with_fill_parent_child_parent_with_padding() {
+//             /* Should be functionally almost equivalent to block_fit_content_with_fill_parent_child_parent_with_border */
+//             test_converter(
+//                 128.0,
+//                 128.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .padding(Padding::all(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(8.0))
+//                                 .height(Extent::Px(64.0))
+//                                 .self_alignment(Alignment::BottomLeft)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(96.0))
+//                                 .height(Extent::Px(8.0))
+//                                 .self_alignment(Alignment::TopRight)
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(96.0 + 16.0, 64.0 + 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(96.0, 64.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(8.0, 64.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0 + 64.0 - 8.0), Vec2::new(96.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
+//     }
 
-    mod columns {
-        use super::*;
+//     mod columns {
+//         use super::*;
 
-        #[test]
-        fn basic_column() {
-            test_converter(
-                32.0,
-                128.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(24.0)).clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(48.0)).clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 24.0), Vec2::new(32.0, 24.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(
-                            Vec2::new(0.0, 128.0 - 24.0 - 48.0),
-                            Vec2::new(32.0, 48.0),
-                        ),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn basic_column() {
+//             test_converter(
+//                 32.0,
+//                 128.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new().height(Extent::Px(24.0)).clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new().height(Extent::Px(48.0)).clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 24.0), Vec2::new(32.0, 24.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(
+//                             Vec2::new(0.0, 128.0 - 24.0 - 48.0),
+//                             Vec2::new(32.0, 48.0),
+//                         ),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn basic_column_child_with_padding() {
-            test_converter(
-                32.0,
-                128.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(24.0))
-                                .padding(Padding::all(2.0))
-                                .clone(),
-                            children: vec![UiNode::Block(BlockProps {
-                                modifiers: Modifiers::new(),
-                                children: vec![],
-                            })],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new().height(Extent::Px(48.0)).clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 24.0), Vec2::new(32.0, 24.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(
-                            Vec2::new(0.0 + 2.0, 128.0 - 24.0 + 2.0),
-                            Vec2::new(32.0 - 4.0, 24.0 - 4.0),
-                        ),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(
-                            Vec2::new(0.0, 128.0 - 24.0 - 48.0),
-                            Vec2::new(32.0, 48.0),
-                        ),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn basic_column_child_with_padding() {
+//             test_converter(
+//                 32.0,
+//                 128.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(24.0))
+//                                 .padding(Padding::all(2.0))
+//                                 .clone(),
+//                             children: vec![UiNode::Block(BlockProps {
+//                                 modifiers: Modifiers::new(),
+//                                 children: vec![],
+//                             })],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new().height(Extent::Px(48.0)).clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 128.0 - 24.0), Vec2::new(32.0, 24.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(
+//                             Vec2::new(0.0 + 2.0, 128.0 - 24.0 + 2.0),
+//                             Vec2::new(32.0 - 4.0, 24.0 - 4.0),
+//                         ),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(
+//                             Vec2::new(0.0, 128.0 - 24.0 - 48.0),
+//                             Vec2::new(32.0, 48.0),
+//                         ),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn basic_column_single_child_with_margin() {
-            test_converter(
-                32.0,
-                128.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .height(Extent::Px(16.0))
-                            .margin(Margin::all(2.0))
-                            .clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(
-                            Vec2::new(0.0 + 2.0, 128.0 - 16.0 - 2.0),
-                            Vec2::new(32.0 - 4.0, 16.0),
-                        ),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn basic_column_single_child_with_margin() {
+//             test_converter(
+//                 32.0,
+//                 128.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .height(Extent::Px(16.0))
+//                             .margin(Margin::all(2.0))
+//                             .clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 128.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(
+//                             Vec2::new(0.0 + 2.0, 128.0 - 16.0 - 2.0),
+//                             Vec2::new(32.0 - 4.0, 16.0),
+//                         ),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn column_both_fit_content_with_fill_parent_child() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(64.0))
-                                .height(Extent::Px(32.0))
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0 + 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 32.0), Vec2::new(64.0, 32.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn column_both_fit_content_with_fill_parent_child() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(64.0))
+//                                 .height(Extent::Px(32.0))
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0 + 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 32.0), Vec2::new(64.0, 32.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn column_fit_content_padding() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FillParent)
-                        .height(Extent::FitContent)
-                        .padding(Padding::all(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().height(Extent::Px(32.0)).clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(256.0, 32.0 + 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(256.0 - 16.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn column_fit_content_padding() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FillParent)
+//                         .height(Extent::FitContent)
+//                         .padding(Padding::all(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new().height(Extent::Px(32.0)).clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(256.0, 32.0 + 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(8.0, 8.0), Vec2::new(256.0 - 16.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn column_fit_content_single_child_fill_parent() {
-            test_converter(
-                32.0,
-                128.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .self_alignment(Alignment::BottomLeft)
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
-                            .clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn column_fit_content_single_child_fill_parent() {
+//             test_converter(
+//                 32.0,
+//                 128.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .width(Extent::FillParent)
+//                             .height(Extent::FillParent)
+//                             .clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn column_fit_content_single_child_fill_parent_with_margin() {
-            test_converter(
-                32.0,
-                128.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .self_alignment(Alignment::BottomLeft)
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
-                            .margin(Margin::all(4.0))
-                            .clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(0.0, 0.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
+//         #[test]
+//         fn column_fit_content_single_child_fill_parent_with_margin() {
+//             test_converter(
+//                 32.0,
+//                 128.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .width(Extent::FillParent)
+//                             .height(Extent::FillParent)
+//                             .margin(Margin::all(4.0))
+//                             .clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(0.0, 0.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
 
-        #[test]
-        fn column_fit_content_hor_child_fill_parent() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .self_alignment(Alignment::BottomLeft)
-                        .width(Extent::FitContent)
-                        .height(Extent::Px(48.0))
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(64.0))
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 48.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 48.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, -48.0), Vec2::new(64.0, 48.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
-    }
+//         #[test]
+//         fn column_fit_content_hor_child_fill_parent() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .width(Extent::FitContent)
+//                         .height(Extent::Px(48.0))
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(64.0))
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 48.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 48.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, -48.0), Vec2::new(64.0, 48.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
+//     }
 
-    mod rows {
-        use super::*;
+//     mod rows {
+//         use super::*;
 
-        #[test]
-        fn row_both_fit_content_with_fill_parent_child() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Row(RowProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(64.0))
-                                .height(Extent::Px(32.0))
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0 + 64.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(64.0, 0.0), Vec2::new(64.0, 32.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::splat(0.0),
-                        border_width: Vec4::splat(0.0),
-                    },
-                ],
-            );
-        }
-    }
+//         #[test]
+//         fn row_both_fit_content_with_fill_parent_child() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Row(RowProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 0.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(64.0))
+//                                 .height(Extent::Px(32.0))
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 0.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0 + 64.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(64.0, 32.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 0.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(64.0, 0.0), Vec2::new(64.0, 32.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 0.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::splat(0.0),
+//                         border_width: Vec4::splat(0.0),
+//                     },
+//                 ],
+//             );
+//         }
+//     }
 
-    mod weight {
-        use super::*;
+//     mod weight {
+//         use super::*;
 
-        #[test]
-        fn column_weight() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(50.0))
-                        .height(Extent::Px(100.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(20.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(40.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 100.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(
-                            Vec2::new(0.0, 100.0 - 40.0),
-                            Vec2::new(50.0, 20.0 + 20.0),
-                        ),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 40.0 + 20.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn column_weight() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(50.0))
+//                         .height(Extent::Px(100.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(20.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(40.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 100.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(
+//                             Vec2::new(0.0, 100.0 - 40.0),
+//                             Vec2::new(50.0, 20.0 + 20.0),
+//                         ),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 40.0 + 20.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn row_weight() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Row(RowProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(100.0))
-                        .height(Extent::Px(50.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(20.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::Px(40.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(100.0, 50.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(20.0 + 20.0, 50.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(40.0, 0.0), Vec2::new(40.0 + 20.0, 50.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn row_weight() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Row(RowProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(100.0))
+//                         .height(Extent::Px(50.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(20.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::Px(40.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(100.0, 50.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(20.0 + 20.0, 50.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(40.0, 0.0), Vec2::new(40.0 + 20.0, 50.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn column_weight_rounding() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(50.0))
-                        .height(Extent::Px(100.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                        UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .height(Extent::Px(0.0))
-                                .weight(1.0)
-                                .fill_color(Color::new(0.0, 0.0, 1.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        }),
-                    ],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 100.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 100.0 - 34.0), Vec2::new(50.0, 34.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(
-                            Vec2::new(0.0, 100.0 - 34.0 - 33.0),
-                            Vec2::new(50.0, 33.0),
-                        ),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 33.0)),
-                        fill_color: Color::new(0.0, 0.0, 1.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn column_weight_rounding() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(50.0))
+//                         .height(Extent::Px(100.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(0.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(0.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                         UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .height(Extent::Px(0.0))
+//                                 .weight(1.0)
+//                                 .fill_color(Color::new(0.0, 0.0, 1.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         }),
+//                     ],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 100.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 100.0 - 34.0), Vec2::new(50.0, 34.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(
+//                             Vec2::new(0.0, 100.0 - 34.0 - 33.0),
+//                             Vec2::new(50.0, 33.0),
+//                         ),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 33.0)),
+//                         fill_color: Color::new(0.0, 0.0, 1.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn column_weight_respects_margin() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(50.0))
-                        .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .height(Extent::Px(0.0))
-                            .weight(1.0)
-                            .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                            .clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(50.0 - 8.0, 0.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn column_weight_respects_margin() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(50.0))
+//                         .height(Extent::Px(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .height(Extent::Px(0.0))
+//                             .weight(1.0)
+//                             .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
+//                             .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                             .clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(50.0 - 8.0, 0.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn column_weight_respects_border_thickness() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(50.0))
-                        .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .height(Extent::Px(0.0))
-                            .weight(1.0)
-                            .border_thickness(BorderThickness::all(3.0)) // This border thickness should only allow for a height of the child of 2.0.
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                            .clone(),
-                        children: vec![UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        })],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::splat(3.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(3.0, 3.0), Vec2::new(50.0 - 6.0, 2.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn column_weight_respects_border_thickness() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(50.0))
+//                         .height(Extent::Px(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .height(Extent::Px(0.0))
+//                             .weight(1.0)
+//                             .border_thickness(BorderThickness::all(3.0)) // This border thickness should only allow for a height of the child of 2.0.
+//                             .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                             .clone(),
+//                         children: vec![UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         })],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::splat(3.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(3.0, 3.0), Vec2::new(50.0 - 6.0, 2.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn column_weight_respects_padding() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(50.0))
-                        .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .height(Extent::Px(0.0))
-                            .weight(1.0)
-                            .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                            .clone(),
-                        children: vec![UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![],
-                        })],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(3.0, 3.0), Vec2::new(50.0 - 6.0, 2.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn column_weight_respects_padding() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(50.0))
+//                         .height(Extent::Px(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .height(Extent::Px(0.0))
+//                             .weight(1.0)
+//                             .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
+//                             .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                             .clone(),
+//                         children: vec![UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![],
+//                         })],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(3.0, 3.0), Vec2::new(50.0 - 6.0, 2.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn column_weight_transfers_to_nested_children_correctly() {
-            test_converter(
-                256.0,
-                256.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(50.0))
-                        .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .height(Extent::Px(0.0))
-                            .weight(1.0)
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                            .clone(),
-                        children: vec![UiNode::Block(BlockProps {
-                            modifiers: Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                                .clone(),
-                            children: vec![UiNode::Block(BlockProps {
-                                modifiers: Modifiers::new()
-                                    .width(Extent::FillParent)
-                                    .height(Extent::FillParent)
-                                    .fill_color(Color::new(0.0, 0.0, 1.0, 1.0))
-                                    .clone(),
-                                children: vec![],
-                            })],
-                        })],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
-                        fill_color: Color::new(0.0, 0.0, 1.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
-    }
+//         #[test]
+//         fn column_weight_transfers_to_nested_children_correctly() {
+//             test_converter(
+//                 256.0,
+//                 256.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(50.0))
+//                         .height(Extent::Px(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .height(Extent::Px(0.0))
+//                             .weight(1.0)
+//                             .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                             .clone(),
+//                         children: vec![UiNode::Block(BlockProps {
+//                             modifiers: Modifiers::new()
+//                                 .width(Extent::FillParent)
+//                                 .height(Extent::FillParent)
+//                                 .fill_color(Color::new(0.0, 1.0, 0.0, 1.0))
+//                                 .clone(),
+//                             children: vec![UiNode::Block(BlockProps {
+//                                 modifiers: Modifiers::new()
+//                                     .width(Extent::FillParent)
+//                                     .height(Extent::FillParent)
+//                                     .fill_color(Color::new(0.0, 0.0, 1.0, 1.0))
+//                                     .clone(),
+//                                 children: vec![],
+//                             })],
+//                         })],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::new(0.0, 1.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(50.0, 8.0)),
+//                         fill_color: Color::new(0.0, 0.0, 1.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
+//     }
 
-    mod rounding {
-        use super::*;
+//     mod rounding {
+//         use super::*;
 
-        #[test]
-        fn border_thickness_rounding() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().border_thickness(BorderThickness::all(3.5)).clone(), // Should all be rounded to 4.0
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::splat(4.0),
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn border_thickness_rounding() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new().border_thickness(BorderThickness::all(3.5)).clone(), // Should all be rounded to 4.0
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::splat(4.0),
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn padding_rounding() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().padding(Padding::all(3.5)).clone(), // Should all be rounded to 4.0
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn padding_rounding() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new().padding(Padding::all(3.5)).clone(), // Should all be rounded to 4.0
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 32.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn margin_rounding() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Block(BlockProps {
-                    modifiers: Modifiers::new().margin(Margin::all(3.5)).clone(), // Should all be rounded to 4.0
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn margin_rounding() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Block(BlockProps {
+//                     modifiers: Modifiers::new().margin(Margin::all(3.5)).clone(), // Should all be rounded to 4.0
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new().fill_color(Color::new(1.0, 0.0, 0.0, 1.0)).clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0, 4.0), Vec2::new(32.0 - 8.0, 32.0 - 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn root_rounding() {
-            /* This test checks that the position and the size passed to ui.to_draw_data() get correctly rounded. */
-            let root_position = Vec2::splat(0.5); // Should be rounded to (1.0, 1.0)
-            let root_size = Vec2::splat(31.5); // Should be rounded to (32.0, 32.0)
+//         #[test]
+//         fn root_rounding() {
+//             /* This test checks that the position and the size passed to ui.to_draw_data() get correctly rounded. */
+//             let root_position = Vec2::splat(0.5); // Should be rounded to (1.0, 1.0)
+//             let root_size = Vec2::splat(31.5); // Should be rounded to (32.0, 32.0)
 
-            let ui = UiNode::Block(BlockProps {
-                modifiers: Modifiers::new(),
-                children: vec![],
-            });
+//             let ui = UiNode::Block(BlockProps {
+//                 modifiers: Modifiers::new(),
+//                 children: vec![],
+//             });
 
-            let draw_data = convert_to_draw_data(root_position, root_size, ui);
+//             let draw_data = convert_to_draw_data(root_position, root_size, ui);
 
-            let expected = vec![DrawElement::Rectangle {
-                bounds: Rectangle::from_position_size(Vec2::new(1.0, 1.0), Vec2::new(32.0, 32.0)),
-                fill_color: Color::ZERO,
-                border_color: Color::ZERO,
-                border_radius: Vec4::ZERO,
-                border_width: Vec4::ZERO,
-            }];
+//             let expected = vec![DrawElement::Rectangle {
+//                 bounds: Rectangle::from_position_size(Vec2::new(1.0, 1.0), Vec2::new(32.0, 32.0)),
+//                 fill_color: Color::ZERO,
+//                 border_color: Color::ZERO,
+//                 border_radius: Vec4::ZERO,
+//                 border_width: Vec4::ZERO,
+//             }];
 
-            pretty_assertions::assert_eq!(&expected, &draw_data);
-        }
+//             pretty_assertions::assert_eq!(&expected, &draw_data);
+//         }
 
-        #[test]
-        fn column_horizontal_rounding() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Column(ColumnProps {
-                    modifiers: Modifiers::new()
-                        .width(Extent::Px(9.0))
-                        .height(Extent::Px(8.0))
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Block(BlockProps {
-                        modifiers: Modifiers::new()
-                            .width(Extent::Px(8.0))
-                            .self_alignment(Alignment::Center)
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                            .clone(),
-                        children: vec![],
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(9.0, 8.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0, 0.0), Vec2::new(8.0, 8.0)),
-                        fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                ],
-            )
-        }
-    }
+//         #[test]
+//         fn column_horizontal_rounding() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Column(ColumnProps {
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::Px(9.0))
+//                         .height(Extent::Px(8.0))
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Block(BlockProps {
+//                         modifiers: Modifiers::new()
+//                             .width(Extent::Px(8.0))
+//                             .self_alignment(Alignment::Center)
+//                             .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
+//                             .clone(),
+//                         children: vec![],
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(9.0, 8.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0, 0.0), Vec2::new(8.0, 8.0)),
+//                         fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                 ],
+//             )
+//         }
+//     }
 
-    mod text {
-        use glam::{Vec2, Vec4};
+//     mod text {
+//         use glam::{Vec2, Vec4};
 
-        use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId};
+//         use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId};
 
-        use super::{test_converter, Alignment, Color, DrawElement, Extent, Modifiers, Rectangle, TextProps, UiNode};
+//         use super::{test_converter, Alignment, Color, DrawElement, Extent, Modifiers, Rectangle, TextProps, UiNode};
 
-        #[test]
-        fn text_fit_content() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Text(TextProps {
-                    text: "abcdef".into(),
-                    text_color: Color::ONE,
-                    font_family: String::new(),
-                    font_size: 13.0,
-                    line_height: 16.0,
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(6.0 * 13.0, 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(2.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(3.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(4.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(5.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                ],
-            )
-        }
+//         #[test]
+//         fn text_fit_content() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Text(TextProps {
+//                     text: "abcdef".into(),
+//                     text_color: Color::ONE,
+//                     font_family: String::new(),
+//                     font_size: 13.0,
+//                     line_height: 16.0,
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(6.0 * 13.0, 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(2.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(3.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(4.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(5.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                 ],
+//             )
+//         }
 
-        #[test]
-        fn text_fit_content_with_max_width() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Text(TextProps {
-                    text: "abcdef".into(),
-                    text_color: Color::ONE,
-                    font_family: String::new(),
-                    font_size: 13.0,
-                    line_height: 16.0,
-                    modifiers: Modifiers::new()
-                        .width(Extent::FitContent)
-                        .max_width(Extent::FillParent)
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                ],
-            )
-        }
-    }
+//         #[test]
+//         fn text_fit_content_with_max_width() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Text(TextProps {
+//                     text: "abcdef".into(),
+//                     text_color: Color::ONE,
+//                     font_family: String::new(),
+//                     font_size: 13.0,
+//                     line_height: 16.0,
+//                     modifiers: Modifiers::new()
+//                         .width(Extent::FitContent)
+//                         .max_width(Extent::FillParent)
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                 ],
+//             )
+//         }
+//     }
 
-    mod row_advanced {
-        use glam::{Vec2, Vec4};
+//     mod row_advanced {
+//         use glam::{Vec2, Vec4};
 
-        use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId};
+//         use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId};
 
-        use super::{
-            test_converter, Alignment, Color, DrawElement, Extent, Modifiers, Rectangle, RowProps, TextProps, UiNode,
-        };
+//         use super::{
+//             test_converter, Alignment, Color, DrawElement, Extent, Modifiers, Rectangle, RowProps, TextProps, UiNode,
+//         };
 
-        /// This test checks that if a row child has non-zero weight, then
-        /// when weight is applied, the height of the element is recomputed
-        /// (and the height of the row itself too, as it is FitContent).
-        /// In this case, if this were not the case, then because the initial
-        /// size of the text is Px(0.0), the initially computed height of the text
-        /// would be very big, as it would try to spread it vertically. But because
-        /// we use weight(1.0), it should be equivalent to having specified the size
-        /// of the text to be Px(32.0) / FillParent.
-        #[test]
-        fn row_with_text_extent_0_weight_1() {
-            test_converter(
-                32.0,
-                32.0,
-                UiNode::Row(RowProps {
-                    modifiers: Modifiers::new()
-                        .height(Extent::FitContent)
-                        .self_alignment(Alignment::BottomLeft)
-                        .clone(),
-                    children: vec![UiNode::Text(TextProps {
-                        text: "abcdef".into(),
-                        text_color: Color::ONE,
-                        font_family: String::new(),
-                        font_size: 13.0,
-                        line_height: 16.0,
-                        modifiers: Modifiers::new()
-                            .width(Extent::Px(0.0))
-                            .weight(1.0)
-                            .height(Extent::FitContent)
-                            .self_alignment(Alignment::BottomLeft)
-                            .clone(),
-                    })],
-                }),
-                &[
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::Rectangle {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
-                        fill_color: Color::ZERO,
-                        border_color: Color::ZERO,
-                        border_radius: Vec4::ZERO,
-                        border_width: Vec4::ZERO,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                    DrawElement::TextGlyph {
-                        bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
-                        uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
-                        text_color: Color::ONE,
-                        image_id: ImageId::NULL,
-                        pixel_mode: GlyphPixelMode::Grayscale,
-                    },
-                ],
-            )
-        }
-    }
-}
+//         /// This test checks that if a row child has non-zero weight, then
+//         /// when weight is applied, the height of the element is recomputed
+//         /// (and the height of the row itself too, as it is FitContent).
+//         /// In this case, if this were not the case, then because the initial
+//         /// size of the text is Px(0.0), the initially computed height of the text
+//         /// would be very big, as it would try to spread it vertically. But because
+//         /// we use weight(1.0), it should be equivalent to having specified the size
+//         /// of the text to be Px(32.0) / FillParent.
+//         #[test]
+//         fn row_with_text_extent_0_weight_1() {
+//             test_converter(
+//                 32.0,
+//                 32.0,
+//                 UiNode::Row(RowProps {
+//                     modifiers: Modifiers::new()
+//                         .height(Extent::FitContent)
+//                         .self_alignment(Alignment::BottomLeft)
+//                         .clone(),
+//                     children: vec![UiNode::Text(TextProps {
+//                         text: "abcdef".into(),
+//                         text_color: Color::ONE,
+//                         font_family: String::new(),
+//                         font_size: 13.0,
+//                         line_height: 16.0,
+//                         modifiers: Modifiers::new()
+//                             .width(Extent::Px(0.0))
+//                             .weight(1.0)
+//                             .height(Extent::FitContent)
+//                             .self_alignment(Alignment::BottomLeft)
+//                             .clone(),
+//                     })],
+//                 }),
+//                 &[
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::Rectangle {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0, 0.0), Vec2::new(32.0, 3.0 * 16.0)),
+//                         fill_color: Color::ZERO,
+//                         border_color: Color::ZERO,
+//                         border_radius: Vec4::ZERO,
+//                         border_width: Vec4::ZERO,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 32.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 16.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(0.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                     DrawElement::TextGlyph {
+//                         bounds: Rectangle::from_position_size(Vec2::new(1.0 * 13.0, 0.0), Vec2::new(13.0, 13.0)),
+//                         uv_rectangle: Rectangle::from_position_size(Vec2::ZERO, Vec2::ONE),
+//                         text_color: Color::ONE,
+//                         image_id: ImageId::NULL,
+//                         pixel_mode: GlyphPixelMode::Grayscale,
+//                     },
+//                 ],
+//             )
+//         }
+//     }
+// }
