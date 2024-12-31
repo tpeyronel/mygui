@@ -15,6 +15,16 @@ pub struct UiNode {
     pub children: Vec<UiNode>,
 }
 
+impl UiNode {
+    pub fn new<P: UiElement>(props: P, modifiers: Modifiers, children: Vec<UiNode>) -> Self {
+        Self {
+            props: Box::new(props),
+            modifiers,
+            children,
+        }
+    }
+}
+
 pub trait UiElement: UiNodeProps + Any {}
 
 impl<T: UiNodeProps + Any> UiElement for T {}
