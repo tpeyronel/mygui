@@ -1,6 +1,12 @@
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
+use font::{
+    font_engine::{FontEngine, TextPosition},
+    freetype_font_engine::FreetypeFontEngine,
+};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use input::{InputEvent, InputState, MouseButton};
@@ -603,6 +609,10 @@ fn example_ui(ui: &mut Ui<'_>) {
                                 props.font_family = "times new roman".to_string();
                                 props.font_size = 17.0;
                                 props.line_height = 17.0;
+                                if SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() % 1000 < 500 {
+                                    props.cursor_position = Some(TextPosition { line: 0, column: count });
+                                }
+
                                 modifiers
                                     .fill_color(if data.pressed() {
                                         Color::new(1.0, 1.0, 1.0, 0.5)
