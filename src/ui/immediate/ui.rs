@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ui::{
-        node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiElement},
+        node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNodeProps},
         Extent, HashNode, Modifiers, UiNode,
     },
     vertex::Color,
@@ -57,7 +57,7 @@ impl<'a> Ui<'a> {
         (self.children, self.children_path_hash_nodes)
     }
 
-    fn node<T: UiElement>(&mut self, make_node: impl FnOnce(DefaultHasher, UiNodeData) -> (UiNode, Vec<HashNode>)) {
+    fn node<T: UiNodeProps>(&mut self, make_node: impl FnOnce(DefaultHasher, UiNodeData) -> (UiNode, Vec<HashNode>)) {
         let node_type = UiNodeType(TypeId::of::<T>());
         let child_path_hasher = self.compute_child_path_hasher(node_type);
         let child_path_hash = child_path_hasher.finish();
@@ -77,7 +77,10 @@ impl<'a> Ui<'a> {
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
-    fn node_with_children<T: UiElement>(&mut self, make_node: impl FnOnce(Ui, UiNodeData) -> (UiNode, Vec<HashNode>)) {
+    fn node_with_children<T: UiNodeProps>(
+        &mut self,
+        make_node: impl FnOnce(Ui, UiNodeData) -> (UiNode, Vec<HashNode>),
+    ) {
         self.node::<T>(|child_path_hasher, node_data| {
             let ui = Ui {
                 node_data_map: self.node_data_map,
@@ -94,7 +97,7 @@ impl<'a> Ui<'a> {
         });
     }
 
-    fn node_without_children<T: UiElement>(&mut self, make_node: impl FnOnce(DefaultHasher, UiNodeData) -> UiNode) {
+    fn node_without_children<T: UiNodeProps>(&mut self, make_node: impl FnOnce(DefaultHasher, UiNodeData) -> UiNode) {
         self.node::<T>(|child_path_hasher, node_data| (make_node(child_path_hasher, node_data), vec![]));
     }
 

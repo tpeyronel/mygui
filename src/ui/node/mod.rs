@@ -1,6 +1,5 @@
 use std::{any::Any, fmt::Debug};
 
-use dyn_partial_eq::DynPartialEq;
 use dyn_partial_eq_derive::*;
 use glam::Vec2;
 
@@ -13,13 +12,13 @@ pub mod text;
 
 #[derive(Debug, PartialEq)]
 pub struct UiNode {
-    pub props: Box<dyn UiElement>,
+    pub props: Box<dyn UiNodeProps>,
     pub modifiers: Modifiers,
     pub children: Vec<UiNode>,
 }
 
 impl UiNode {
-    pub fn new<P: UiElement>(props: P, modifiers: Modifiers, children: Vec<UiNode>) -> Self {
+    pub fn new<P: UiNodeProps>(props: P, modifiers: Modifiers, children: Vec<UiNode>) -> Self {
         Self {
             props: Box::new(props),
             modifiers,
@@ -29,11 +28,7 @@ impl UiNode {
 }
 
 #[dyn_partial_eq]
-pub trait UiElement: UiNodeProps + Any + Debug {}
-
-impl<T: UiNodeProps + Any + Debug + DynPartialEq> UiElement for T {}
-
-pub trait UiNodeProps {
+pub trait UiNodeProps: Any + Debug {
     fn measure_fit_content(
         &self,
         modifiers: &Modifiers,
