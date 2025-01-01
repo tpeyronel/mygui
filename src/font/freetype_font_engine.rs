@@ -10,7 +10,7 @@ use walkdir::WalkDir;
 use crate::{config::ENABLE_SUBPIXEL_RENDERING, image::image_manager::ImageManager};
 
 use super::{
-    font_engine::{FontEngine, LaidOutGlyph, TextLayoutOptions},
+    font_engine::{FontEngine, LaidOutGlyph, TextLayoutOptions, TextMap, TextPosition},
     font_face::FontFace,
     font_style::FontStyle,
     font_weight::FontWeight,
@@ -53,7 +53,7 @@ impl FontEngine for FreetypeFontEngine {
         self.load_requests.clear();
     }
 
-    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>) {
+    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>, TextMap) {
         let font_size = options.font_size as u32;
 
         let font_face_id = self.get_or_create_font_face(options.font_family);
@@ -75,15 +75,15 @@ impl FontEngine for FreetypeFontEngine {
             });
         }
 
-        let mut pen = Vec2::ZERO;
-        let mut max_computed_line_width: f32 = 0.0;
+        let mut pen_state = PenState::new();
+        let mut text_map = TextMap::new();
+        text_map.insert(pen_state.text_position, pen_state.screen_position);
 
         let mut glyphs = vec![];
         for c in text.chars() {
             if c == '\n' {
-                max_computed_line_width = max_computed_line_width.max(pen.x);
-                pen.x = 0.0;
-                pen.y -= options.line_height;
+                pen_state.break_line(options.line_height);
+                text_map.insert(pen_state.text_position, pen_state.screen_position);
                 continue;
             }
 
@@ -93,16 +93,15 @@ impl FontEngine for FreetypeFontEngine {
 
             let advance = size_data.get_glyph_advance(g);
 
-            if pen.x + advance as f32 > options.max_line_width {
-                max_computed_line_width = max_computed_line_width.max(pen.x);
-                pen.x = 0.0;
-                pen.y -= options.line_height;
+            if pen_state.screen_position.x + advance as f32 > options.max_line_width {
+                pen_state.break_line(options.line_height);
+                text_map.insert(pen_state.text_position, pen_state.screen_position);
             }
 
             if let Ok(glyph_uv_data) = size_data.get_glyph_uv_data(g, ENABLE_SUBPIXEL_RENDERING) {
                 let metadata = glyph_uv_data.metadata;
 
-                let position = pen
+                let position = pen_state.screen_position
                     + Vec2::new(
                         metadata.bearing_left as f32,
                         metadata.bearing_bottom as f32 - options.line_height,
@@ -124,17 +123,16 @@ impl FontEngine for FreetypeFontEngine {
                 glyphs.push(laid_out_glyph);
             }
 
-            pen.x += advance as f32;
+            pen_state.advance(advance as f32);
+            text_map.insert(pen_state.text_position, pen_state.screen_position);
         }
 
-        max_computed_line_width = max_computed_line_width.max(pen.x);
-
         let dimensions = Vec2::new(
-            max_computed_line_width,
-            pen.y.abs() + options.line_height - face.scaled_descender(options.font_size),
+            pen_state.max_computed_line_width,
+            pen_state.screen_position.y.abs() + options.line_height - face.scaled_descender(options.font_size),
         );
 
-        (dimensions, glyphs)
+        (dimensions, glyphs, text_map)
     }
 
     fn on_exit(&mut self, image_manager: &ImageManager) {
@@ -318,5 +316,36 @@ impl FreetypeFontEngine {
             });
 
         font_face_id
+    }
+}
+
+struct PenState {
+    screen_position: Vec2, // Screen-space position relative to the top left of the text bounds.
+    text_position: TextPosition,
+    max_computed_line_width: f32,
+}
+
+impl PenState {
+    fn new() -> Self {
+        Self {
+            screen_position: Vec2::ZERO,
+            text_position: TextPosition { line: 0, column: 0 },
+            max_computed_line_width: 0.0,
+        }
+    }
+
+    fn advance(&mut self, advance: f32) {
+        self.screen_position.x += advance;
+        self.text_position.column += 1;
+
+        self.max_computed_line_width = self.max_computed_line_width.max(self.screen_position.x);
+    }
+
+    fn break_line(&mut self, line_height: f32) {
+        self.screen_position.x = 0.0;
+        self.text_position.column = 0;
+
+        self.screen_position.y -= line_height;
+        self.text_position.line += 1;
     }
 }

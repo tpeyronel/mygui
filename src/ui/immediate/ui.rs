@@ -135,6 +135,7 @@ impl<'a> Ui<'a> {
                 font_family: String::new(),
                 font_size: DEFAULT_FONT_SIZE,
                 line_height: DEFAULT_LINE_HEIGHT,
+                cursor_position: None,
             };
 
             f(&mut props, modifiers, node_data);

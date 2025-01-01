@@ -195,6 +195,7 @@ mod tests {
                     font_family: String::new(),
                     font_size: DEFAULT_FONT_SIZE,
                     line_height: DEFAULT_LINE_HEIGHT,
+                    cursor_position: None,
                 },
                 Modifiers::new()
                     .width(Extent::FitContent)

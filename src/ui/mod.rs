@@ -630,6 +630,7 @@ pub fn example_ui() -> UiNode {
                                     font_family: "jetbrains mono".to_string(),
                                     font_size: 24.0,
                                     line_height: 24.0 * 1.5,
+                                    cursor_position: None,
                                 },
                                 Modifiers::new().self_alignment(Alignment::TopLeft).clone(),
                                 vec![],
@@ -716,6 +717,7 @@ pub fn example_ui() -> UiNode {
                                             font_family: "Segoe UI Emoji".to_string(),
                                             font_size: 24.0,
                                             line_height: 24.0,
+                                            cursor_position: None,
                                         },
                                         Modifiers::new()
                                             .width(Extent::FillParent)
@@ -770,6 +772,7 @@ pub fn example_ui() -> UiNode {
                                             font_family: "times new roman".to_string(),
                                             font_size: 17.0,
                                             line_height: 17.0,
+                                            cursor_position: None,
                                         },
                                         Modifiers::new()
                                             .fill_color(Color::new(0.0, 0.0, 0.0, 0.5))
@@ -804,6 +807,7 @@ pub fn example_ui() -> UiNode {
                                     font_family: "tangerine".to_string(),
                                     font_size: i as f32,
                                     line_height: i as f32,
+                                    cursor_position: None,
                                 },
                                 Modifiers::new()
                                     .width(Extent::FitContent)
@@ -2555,6 +2559,7 @@ mod tests {
                         font_family: String::new(),
                         font_size: 13.0,
                         line_height: 16.0,
+                        cursor_position: None,
                     },
                     Modifiers::new()
                         .width(Extent::FitContent)
@@ -2629,6 +2634,7 @@ mod tests {
                         font_family: String::new(),
                         font_size: 13.0,
                         line_height: 16.0,
+                        cursor_position: None,
                     },
                     Modifiers::new()
                         .width(Extent::FitContent)
@@ -2728,6 +2734,7 @@ mod tests {
                             font_family: String::new(),
                             font_size: 13.0,
                             line_height: 16.0,
+                            cursor_position: None,
                         },
                         Modifiers::new()
                             .width(Extent::Px(0.0))

@@ -1,8 +1,8 @@
 use dyn_partial_eq::DynPartialEq;
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 
 use crate::{
-    font::font_engine::TextLayoutOptions,
+    font::font_engine::{TextLayoutOptions, TextPosition},
     rectangle::Rectangle,
     ui::{draw_element::DrawElement, processor::UiNodeProcessor, Layout, Modifiers},
     vertex::Color,
@@ -17,6 +17,7 @@ pub struct TextProps {
     pub font_family: String,
     pub font_size: f32,
     pub line_height: f32,
+    pub cursor_position: Option<TextPosition>,
 }
 
 impl UiNodeProps for TextProps {
@@ -45,13 +46,13 @@ impl UiNodeProps for TextProps {
             max_line_width,
         };
 
-        let (mut dimensions, _) = processor.font_engine.lay_out_text(text, &text_options);
+        let (mut dimensions, _, _) = processor.font_engine.lay_out_text(text, &text_options);
 
         // If width is FitContent and max_line_width is not enough for some characters,
         // then take advantage of the extra line length for all lines.
         if dimensions.x > max_line_width && content_width.is_none() {
             text_options.max_line_width = dimensions.x;
-            (dimensions, _) = processor.font_engine.lay_out_text(text, &text_options);
+            (dimensions, _, _) = processor.font_engine.lay_out_text(text, &text_options);
         }
 
         let content_width = content_width.unwrap_or_else(|| dimensions.x);
@@ -79,6 +80,7 @@ impl UiNodeProps for TextProps {
             font_family,
             font_size,
             line_height,
+            cursor_position,
             ..
         } = self;
 
@@ -90,7 +92,7 @@ impl UiNodeProps for TextProps {
             max_line_width: layout.content_size().x,
         };
 
-        let (_, glyphs) = processor.font_engine.lay_out_text(text, &options);
+        let (_, glyphs, text_map) = processor.font_engine.lay_out_text(text, &options);
 
         for glyph in glyphs {
             let texture = DrawElement::TextGlyph {
@@ -102,6 +104,23 @@ impl UiNodeProps for TextProps {
             };
 
             processor.draw_data.push(texture);
+        }
+
+        if let Some(cursor_position) = cursor_position {
+            const CURSOR_WIDTH: f32 = 2.0;
+
+            let mut position = origin + text_map.get_clamped(*cursor_position);
+            position.x -= CURSOR_WIDTH;
+            position.y -= options.line_height;
+            let cursor_rectangle = DrawElement::Rectangle {
+                bounds: Rectangle::from_position_size(position, Vec2::new(CURSOR_WIDTH, options.line_height)),
+                fill_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                border_color: Color::ZERO,
+                border_radius: Vec4::ZERO,
+                border_width: Vec4::ZERO,
+            };
+
+            processor.draw_data.push(cursor_rectangle);
         }
     }
 }
