@@ -190,8 +190,7 @@ impl ApplicationHandler for App {
     fn exiting(&mut self, _: &ActiveEventLoop) {
         println!("exiting...");
         let state = self.state.as_mut().unwrap();
-        // TODO: restore
-        // state.font_engine.save_to_disk(&state.image_manager);
+        state.font_engine.on_exit(&state.image_manager);
     }
 }
 

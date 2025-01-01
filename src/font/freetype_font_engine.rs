@@ -136,6 +136,10 @@ impl FontEngine for FreetypeFontEngine {
 
         (dimensions, glyphs)
     }
+
+    fn on_exit(&mut self, image_manager: &ImageManager) {
+        self.save_to_disk(image_manager);
+    }
 }
 
 impl FreetypeFontEngine {

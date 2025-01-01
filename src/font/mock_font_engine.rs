@@ -57,4 +57,6 @@ impl FontEngine for MockFontEngine {
 
         (Vec2::new(width, height), glyphs)
     }
+
+    fn on_exit(&mut self, _: &ImageManager) {}
 }
