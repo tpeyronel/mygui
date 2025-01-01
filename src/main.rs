@@ -12,7 +12,7 @@ use ui::{
     immediate::{context::UiContext, ui::Ui},
     margin::Margin,
     padding::Padding,
-    Alignment, Extent, Modifiers,
+    Alignment, Extent,
 };
 use vertex::Color;
 use winit::{
