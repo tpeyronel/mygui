@@ -52,6 +52,8 @@ impl UiContext {
         font_engine: &mut Box<dyn FontEngine>,
         f: impl FnOnce(&mut Ui),
     ) -> Vec<DrawElement> {
+        self.redraw_required = false;
+
         let (set_state_tx, set_state_rx) = set_state_channel();
 
         let mut root_ui = Ui::new(&self.nodes_data, &self.states, &set_state_tx);
