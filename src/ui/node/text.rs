@@ -1,3 +1,4 @@
+use dyn_partial_eq::DynPartialEq;
 use glam::Vec2;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
 
 use super::{UiNode, UiNodeProps};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, DynPartialEq)]
 pub struct TextProps {
     pub text: String,
     pub text_color: Color,

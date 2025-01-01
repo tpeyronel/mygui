@@ -1,10 +1,11 @@
+use dyn_partial_eq::DynPartialEq;
 use glam::Vec2;
 
 use crate::ui::{processor::UiNodeProcessor, Alignment, Layout, Modifiers};
 
 use super::{UiNode, UiNodeProps};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, DynPartialEq)]
 pub struct RowProps;
 
 impl UiNodeProps for RowProps {

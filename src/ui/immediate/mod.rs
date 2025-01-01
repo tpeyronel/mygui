@@ -60,164 +60,148 @@ macro_rules! use_state {
     };
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use pretty_assertions::assert_eq;
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
 
-//     use crate::{
-//         ui::{immediate::ui::mock_ui, Extent, Modifiers, UiNode},
-//         vertex::Color,
-//     };
+    use crate::{
+        ui::{
+            immediate::ui::mock_ui,
+            node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps},
+            Extent, Modifiers, UiNode,
+        },
+        vertex::Color,
+    };
 
-//     use super::{ui::Ui, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT};
+    use super::{ui::Ui, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT};
 
-//     fn immediate_test(f: impl FnOnce(&mut Ui), expected: &[UiNode]) {
-//         let ui_node = mock_ui(f);
+    fn immediate_test(f: impl FnOnce(&mut Ui), expected: Vec<UiNode>) {
+        let ui_node = mock_ui(f);
 
-//         assert_eq!(
-//             ui_node,
-//             UiNode::Block(BlockProps {
-//                 modifiers: Modifiers::new()
-//                     .width(Extent::FillParent)
-//                     .height(Extent::FillParent)
-//                     .clone(),
-//                 children: expected.to_vec(),
-//             })
-//         )
-//     }
+        assert_eq!(
+            ui_node,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width(Extent::FillParent)
+                    .height(Extent::FillParent)
+                    .clone(),
+                expected,
+            )
+        )
+    }
 
-//     #[test]
-//     fn single_block() {
-//         immediate_test(
-//             |ui| {
-//                 ui.block(|_, _, _| {});
-//             },
-//             &[UiNode::Block(BlockProps {
-//                 modifiers: Modifiers::new(),
-//                 children: vec![],
-//             })],
-//         );
-//     }
+    #[test]
+    fn single_block() {
+        immediate_test(
+            |ui| {
+                ui.block(|_, _, _| {});
+            },
+            vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
+        );
+    }
 
-//     #[test]
-//     fn multiple_blocks() {
-//         immediate_test(
-//             |ui| {
-//                 ui.block(|_, _, _| {});
-//                 ui.block(|_, _, _| {});
-//                 ui.block(|_, _, _| {});
-//             },
-//             &[
-//                 UiNode::Block(BlockProps {
-//                     modifiers: Modifiers::new(),
-//                     children: vec![],
-//                 }),
-//                 UiNode::Block(BlockProps {
-//                     modifiers: Modifiers::new(),
-//                     children: vec![],
-//                 }),
-//                 UiNode::Block(BlockProps {
-//                     modifiers: Modifiers::new(),
-//                     children: vec![],
-//                 }),
-//             ],
-//         );
-//     }
+    #[test]
+    fn multiple_blocks() {
+        immediate_test(
+            |ui| {
+                ui.block(|_, _, _| {});
+                ui.block(|_, _, _| {});
+                ui.block(|_, _, _| {});
+            },
+            vec![
+                UiNode::new(BlockProps, Modifiers::new(), vec![]),
+                UiNode::new(BlockProps, Modifiers::new(), vec![]),
+                UiNode::new(BlockProps, Modifiers::new(), vec![]),
+            ],
+        );
+    }
 
-//     #[test]
-//     fn multiple_blocks_with_custom_attributes() {
-//         immediate_test(
-//             |ui| {
-//                 ui.block(|_, _, _| {});
-//                 ui.block(|_, attr, _| {
-//                     attr.border_color(Color::new(1.0, 0.0, 0.0, 0.0));
-//                 });
-//                 ui.block(|_, _, _| {});
-//             },
-//             &[
-//                 UiNode::Block(BlockProps {
-//                     modifiers: Modifiers::new(),
-//                     children: vec![],
-//                 }),
-//                 UiNode::Block(BlockProps {
-//                     modifiers: Modifiers::new().border_color(Color::new(1.0, 0.0, 0.0, 0.0)).clone(),
-//                     children: vec![],
-//                 }),
-//                 UiNode::Block(BlockProps {
-//                     modifiers: Modifiers::new(),
-//                     children: vec![],
-//                 }),
-//             ],
-//         );
-//     }
+    #[test]
+    fn multiple_blocks_with_custom_attributes() {
+        immediate_test(
+            |ui| {
+                ui.block(|_, _, _| {});
+                ui.block(|_, attr, _| {
+                    attr.border_color(Color::new(1.0, 0.0, 0.0, 0.0));
+                });
+                ui.block(|_, _, _| {});
+            },
+            vec![
+                UiNode::new(BlockProps, Modifiers::new(), vec![]),
+                UiNode::new(
+                    BlockProps,
+                    Modifiers::new().border_color(Color::new(1.0, 0.0, 0.0, 0.0)).clone(),
+                    vec![],
+                ),
+                UiNode::new(BlockProps, Modifiers::new(), vec![]),
+            ],
+        );
+    }
 
-//     #[test]
-//     fn single_column() {
-//         immediate_test(
-//             |ui| {
-//                 ui.column(|_, _, _| {});
-//             },
-//             &[UiNode::Column(ColumnProps {
-//                 modifiers: Modifiers::new(),
-//                 children: vec![],
-//             })],
-//         );
-//     }
+    #[test]
+    fn single_column() {
+        immediate_test(
+            |ui| {
+                ui.column(|_, _, _| {});
+            },
+            vec![UiNode::new(ColumnProps, Modifiers::new(), vec![])],
+        );
+    }
 
-//     #[test]
-//     fn single_row() {
-//         immediate_test(
-//             |ui| {
-//                 ui.row(|_, _, _| {});
-//             },
-//             &[UiNode::Row(RowProps {
-//                 modifiers: Modifiers::new(),
-//                 children: vec![],
-//             })],
-//         );
-//     }
+    #[test]
+    fn single_row() {
+        immediate_test(
+            |ui| {
+                ui.row(|_, _, _| {});
+            },
+            vec![UiNode::new(RowProps, Modifiers::new(), vec![])],
+        );
+    }
 
-//     #[test]
-//     fn nested_block_column_row() {
-//         immediate_test(
-//             |ui| {
-//                 ui.block(|ui, _, _| {
-//                     ui.column(|ui, _, _| {
-//                         ui.row(|_, _, _| {});
-//                     });
-//                 });
-//             },
-//             &[UiNode::Block(BlockProps {
-//                 modifiers: Modifiers::new(),
-//                 children: vec![UiNode::Column(ColumnProps {
-//                     modifiers: Modifiers::new(),
-//                     children: vec![UiNode::Row(RowProps {
-//                         modifiers: Modifiers::new(),
-//                         children: vec![],
-//                     })],
-//                 })],
-//             })],
-//         );
-//     }
+    #[test]
+    fn nested_block_column_row() {
+        immediate_test(
+            |ui| {
+                ui.block(|ui, _, _| {
+                    ui.column(|ui, _, _| {
+                        ui.row(|_, _, _| {});
+                    });
+                });
+            },
+            vec![UiNode::new(
+                BlockProps,
+                Modifiers::new(),
+                vec![UiNode::new(
+                    ColumnProps,
+                    Modifiers::new(),
+                    vec![UiNode::new(RowProps, Modifiers::new(), vec![])],
+                )],
+            )],
+        );
+    }
 
-//     #[test]
-//     fn single_text() {
-//         immediate_test(
-//             |ui| {
-//                 ui.text("Hello", |_, _| {});
-//             },
-//             &[UiNode::Text(TextProps {
-//                 text: "Hello".into(),
-//                 text_color: Color::new(1.0, 1.0, 1.0, 1.0),
-//                 font_family: String::new(),
-//                 font_size: DEFAULT_FONT_SIZE,
-//                 line_height: DEFAULT_LINE_HEIGHT,
-//                 modifiers: Modifiers::new()
-//                     .width(Extent::FitContent)
-//                     .height(Extent::FitContent)
-//                     .max_width(Extent::FillParent)
-//                     .clone(),
-//             })],
-//         );
-//     }
-// }
+    #[test]
+    fn single_text() {
+        immediate_test(
+            |ui| {
+                ui.text("Hello", |_, _, _| {});
+            },
+            vec![UiNode::new(
+                TextProps {
+                    text: "Hello".into(),
+                    text_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                    font_family: String::new(),
+                    font_size: DEFAULT_FONT_SIZE,
+                    line_height: DEFAULT_LINE_HEIGHT,
+                },
+                Modifiers::new()
+                    .width(Extent::FitContent)
+                    .height(Extent::FitContent)
+                    .max_width(Extent::FillParent)
+                    .clone(),
+                vec![],
+            )],
+        );
+    }
+}

@@ -1,5 +1,7 @@
-use std::any::Any;
+use std::{any::Any, fmt::Debug};
 
+use dyn_partial_eq::DynPartialEq;
+use dyn_partial_eq_derive::*;
 use glam::Vec2;
 
 use super::{processor::UiNodeProcessor, Layout, Modifiers};
@@ -9,6 +11,7 @@ pub mod column;
 pub mod row;
 pub mod text;
 
+#[derive(Debug, PartialEq)]
 pub struct UiNode {
     pub props: Box<dyn UiElement>,
     pub modifiers: Modifiers,
@@ -25,9 +28,10 @@ impl UiNode {
     }
 }
 
-pub trait UiElement: UiNodeProps + Any {}
+#[dyn_partial_eq]
+pub trait UiElement: UiNodeProps + Any + Debug {}
 
-impl<T: UiNodeProps + Any> UiElement for T {}
+impl<T: UiNodeProps + Any + Debug + DynPartialEq> UiElement for T {}
 
 pub trait UiNodeProps {
     fn measure_fit_content(
