@@ -20,6 +20,7 @@ impl Default for UiNodeData {
     }
 }
 
+#[allow(unused)]
 impl UiNodeData {
     pub fn hovered(&self) -> bool {
         self.flags.contains(UiNodeDataFlags::HOVERED)

@@ -194,6 +194,7 @@ impl ApplicationHandler for App {
     }
 }
 
+#[allow(unused)]
 fn simple_ui(ui: &mut Ui<'_>) {
     ui.column(|ui, _, _| {
         (0..3).for_each(|_| {

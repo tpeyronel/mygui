@@ -187,7 +187,7 @@ impl<'a> UiNodeProcessor<'a> {
                 self.resolve_extents(ui_node, boundary_size, width, max_height);
 
             if margin_size.y > max_height_margin_size.y {
-                height = max_height;
+                // height = max_height;
                 margin_size = max_height_margin_size;
                 children_boundary_size = max_height_children_boundary_size;
             }
