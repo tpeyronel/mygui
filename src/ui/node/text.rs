@@ -110,8 +110,7 @@ impl UiNodeProps for TextProps {
             const CURSOR_WIDTH: f32 = 2.0;
 
             let mut position = origin + text_layout.text_map.get_clamped(*cursor_position);
-            position.x -= CURSOR_WIDTH;
-            position.y -= options.line_height;
+            position.x -= (0.5 * CURSOR_WIDTH).round();
             let cursor_rectangle = DrawElement::Rectangle {
                 bounds: Rectangle::from_position_size(position, Vec2::new(CURSOR_WIDTH, options.line_height)),
                 fill_color: Color::new(1.0, 1.0, 1.0, 1.0),
