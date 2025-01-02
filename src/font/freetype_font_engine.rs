@@ -10,7 +10,7 @@ use walkdir::WalkDir;
 use crate::{config::ENABLE_SUBPIXEL_RENDERING, image::image_manager::ImageManager};
 
 use super::{
-    font_engine::{FontEngine, LaidOutGlyph, TextLayoutOptions, TextMap, TextPosition},
+    font_engine::{FontEngine, LaidOutGlyph, TextLayout, TextLayoutOptions, TextMap, TextPosition},
     font_face::FontFace,
     font_style::FontStyle,
     font_weight::FontWeight,
@@ -53,7 +53,7 @@ impl FontEngine for FreetypeFontEngine {
         self.load_requests.clear();
     }
 
-    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>, TextMap) {
+    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> TextLayout {
         let font_size = options.font_size as u32;
 
         let font_face_id = self.get_or_create_font_face(options.font_family);
@@ -127,12 +127,12 @@ impl FontEngine for FreetypeFontEngine {
             text_map.insert(pen_state.text_position, pen_state.screen_position);
         }
 
-        let dimensions = Vec2::new(
+        let size = Vec2::new(
             pen_state.max_computed_line_width,
             pen_state.screen_position.y.abs() + options.line_height - face.scaled_descender(options.font_size),
         );
 
-        (dimensions, glyphs, text_map)
+        TextLayout { size, glyphs, text_map }
     }
 
     fn on_exit(&mut self, image_manager: &ImageManager) {

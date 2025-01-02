@@ -46,17 +46,17 @@ impl UiNodeProps for TextProps {
             max_line_width,
         };
 
-        let (mut dimensions, _, _) = processor.font_engine.lay_out_text(text, &text_options);
+        let mut text_layout = processor.font_engine.lay_out_text(text, &text_options);
 
         // If width is FitContent and max_line_width is not enough for some characters,
         // then take advantage of the extra line length for all lines.
-        if dimensions.x > max_line_width && content_width.is_none() {
-            text_options.max_line_width = dimensions.x;
-            (dimensions, _, _) = processor.font_engine.lay_out_text(text, &text_options);
+        if text_layout.size.x > max_line_width && content_width.is_none() {
+            text_options.max_line_width = text_layout.size.x;
+            text_layout = processor.font_engine.lay_out_text(text, &text_options);
         }
 
-        let content_width = content_width.unwrap_or_else(|| dimensions.x);
-        let content_height = content_height.unwrap_or_else(|| dimensions.y);
+        let content_width = content_width.unwrap_or_else(|| text_layout.size.x);
+        let content_height = content_height.unwrap_or_else(|| text_layout.size.y);
         let content_size = Vec2::new(content_width, content_height);
 
         (content_size, Vec2::ZERO)
@@ -92,9 +92,9 @@ impl UiNodeProps for TextProps {
             max_line_width: layout.content_size().x,
         };
 
-        let (_, glyphs, text_map) = processor.font_engine.lay_out_text(text, &options);
+        let text_layout = processor.font_engine.lay_out_text(text, &options);
 
-        for glyph in glyphs {
+        for glyph in &text_layout.glyphs {
             let texture = DrawElement::TextGlyph {
                 bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
                 uv_rectangle: glyph.atlas_uv_rectangle,
@@ -109,7 +109,7 @@ impl UiNodeProps for TextProps {
         if let Some(cursor_position) = cursor_position {
             const CURSOR_WIDTH: f32 = 2.0;
 
-            let mut position = origin + text_map.get_clamped(*cursor_position);
+            let mut position = origin + text_layout.text_map.get_clamped(*cursor_position);
             position.x -= CURSOR_WIDTH;
             position.y -= options.line_height;
             let cursor_rectangle = DrawElement::Rectangle {

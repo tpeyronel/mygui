@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    font_engine::{FontEngine, LaidOutGlyph, TextLayoutOptions, TextMap},
+    font_engine::{FontEngine, LaidOutGlyph, TextLayout, TextLayoutOptions, TextMap},
     font_face::GlyphPixelMode,
 };
 
@@ -22,7 +22,7 @@ impl MockFontEngine {
 impl FontEngine for MockFontEngine {
     fn update(&mut self, _image_manager: &mut ImageManager) {}
 
-    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> (Vec2, Vec<LaidOutGlyph>, TextMap) {
+    fn lay_out_text(&mut self, text: &str, options: &TextLayoutOptions) -> TextLayout {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
 
@@ -55,7 +55,10 @@ impl FontEngine for MockFontEngine {
         width *= options.font_size;
         height *= options.line_height;
 
-        (Vec2::new(width, height), glyphs, TextMap::new())
+        let size = Vec2::new(width, height);
+        let text_map = TextMap::new();
+
+        TextLayout { size, glyphs, text_map }
     }
 
     fn on_exit(&mut self, _: &ImageManager) {}
