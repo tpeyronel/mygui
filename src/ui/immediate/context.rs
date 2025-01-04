@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap, rc::Rc};
 
 use glam::Vec2;
 
@@ -14,6 +14,7 @@ use super::{set_state::set_state_channel, ui::Ui, UiNodeData, UiNodeDataFlags};
 pub struct UiContext {
     nodes_data: HashMap<u64, UiNodeData>,
     states: HashMap<u64, Vec<u8>>,
+    refs: HashMap<u64, Rc<dyn Any>>,
     bounding_boxes: Vec<(u64, Rectangle)>,
     cursor_position: Vec2,
 }
@@ -23,6 +24,7 @@ impl UiContext {
         Self {
             nodes_data: HashMap::new(),
             states: HashMap::new(),
+            refs: HashMap::new(),
             bounding_boxes: Vec::new(),
             cursor_position: Vec2::ZERO,
         }
@@ -52,7 +54,7 @@ impl UiContext {
     ) -> Vec<DrawElement> {
         let (set_state_tx, set_state_rx) = set_state_channel();
 
-        let mut root_ui = Ui::new(&self.nodes_data, &self.states, &set_state_tx);
+        let mut root_ui = Ui::new(&self.nodes_data, &self.states, &set_state_tx, &mut self.refs);
         f(&mut root_ui);
         let (children, children_path_hash_nodes) = root_ui.finish();
 

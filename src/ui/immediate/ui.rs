@@ -1,7 +1,9 @@
 use std::{
-    any::TypeId,
-    collections::HashMap,
+    any::{Any, TypeId},
+    cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
     hash::{DefaultHasher, Hash, Hasher},
+    rc::Rc,
 };
 
 use serde::{Deserialize, Serialize};
@@ -32,6 +34,7 @@ pub struct Ui<'a> {
     node_data_map: &'a HashMap<u64, UiNodeData>,
     state_map: &'a HashMap<u64, Vec<u8>>,
     set_state_tx: &'a SetStateSender,
+    ref_map: &'a mut HashMap<u64, Rc<dyn Any>>,
     path_hasher: DefaultHasher,
     children: Vec<UiNode>,
     children_path_hash_nodes: Vec<HashNode>,
@@ -42,11 +45,13 @@ impl<'a> Ui<'a> {
         node_data_map: &'a HashMap<u64, UiNodeData>,
         state_map: &'a HashMap<u64, Vec<u8>>,
         set_state_tx: &'a SetStateSender,
+        ref_map: &'a mut HashMap<u64, Rc<dyn Any>>,
     ) -> Self {
         Self {
             node_data_map,
             state_map,
             set_state_tx,
+            ref_map,
             path_hasher: DefaultHasher::new(),
             children: vec![],
             children_path_hash_nodes: vec![],
@@ -68,6 +73,7 @@ impl<'a> Ui<'a> {
             node_data_map: self.node_data_map,
             state_map: self.state_map,
             set_state_tx: self.set_state_tx,
+            ref_map: self.ref_map,
             path_hasher: child_path_hasher,
             children: vec![],
             children_path_hash_nodes: vec![],
@@ -144,9 +150,10 @@ impl<'a> Ui<'a> {
         });
     }
 
-    pub fn use_state<T>(&mut self, key: &str, initial_value: impl FnOnce() -> T) -> (T, Box<dyn Fn(&T)>)
+    pub fn use_state<T, F>(&mut self, key: &str, initial_value: F) -> (T, Box<dyn Fn(&T)>)
     where
         T: Serialize + Deserialize<'a>,
+        F: FnOnce() -> T + 'static,
     {
         let mut state_path_hasher = self.path_hasher.clone();
         key.hash(&mut state_path_hasher);
@@ -191,6 +198,42 @@ impl<'a> Ui<'a> {
         (state, set_state)
     }
 
+    pub fn use_ref<T, F>(&mut self, key: &str, initial_value: F) -> Rc<RefCell<T>>
+    where
+        T: Any + 'static,
+        F: FnOnce() -> T + 'static,
+    {
+        let mut state_path_hasher = self.path_hasher.clone();
+        key.hash(&mut state_path_hasher);
+        let state_path_hash = state_path_hasher.finish();
+
+        let rc = match self.ref_map.entry(state_path_hash) {
+            Entry::Occupied(mut occupied_entry) => {
+                let rc = occupied_entry.get_mut();
+
+                match rc.clone().downcast::<RefCell<T>>() {
+                    Ok(r) => r,
+                    Err(_) => {
+                        log::error!(
+                            "failed to downcast stored use_ref to requested type. Overwriting with initial value."
+                        );
+
+                        let new_rc = Rc::new(RefCell::new(initial_value()));
+                        *rc = Rc::clone(&new_rc) as Rc<dyn Any>;
+                        new_rc
+                    }
+                }
+            }
+            Entry::Vacant(vacant_entry) => {
+                let new_rc: Rc<RefCell<T>> = Rc::new(RefCell::new(initial_value()));
+                vacant_entry.insert(Rc::clone(&new_rc) as Rc<dyn Any>);
+                new_rc
+            }
+        };
+
+        rc
+    }
+
     fn compute_child_path_hasher(&self, child_node_type: UiNodeType) -> DefaultHasher {
         let mut child_path_hasher = self.path_hasher.clone();
         // TODO: this os O(n^2). Should keep track of counts.
@@ -214,8 +257,9 @@ pub fn mock_ui(f: impl FnOnce(&mut Ui<'_>)) -> UiNode {
     let node_data_map = HashMap::new();
     let state_map = HashMap::new();
     let (set_state_tx, _) = set_state_channel();
+    let mut ref_map = HashMap::new();
 
-    let mut ui = Ui::new(&node_data_map, &state_map, &set_state_tx);
+    let mut ui = Ui::new(&node_data_map, &state_map, &set_state_tx, &mut ref_map);
     f(&mut ui);
     let (children, _) = ui.finish();
 
