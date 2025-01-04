@@ -1,7 +1,4 @@
-use std::{
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{sync::Arc, time::Instant};
 
 use font::{
     font_engine::{FontEngine, TextPosition},
@@ -599,6 +596,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
 
                         let (count, set_count) = ui.use_state("qowdhqwd", || 0);
+                        let cursor_start_ref = ui.use_ref("", || Instant::now());
 
                         ui.text(
                             format!("{} HellÓowjdoqi129312893u!\nYegh", count),
@@ -607,7 +605,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                                 props.font_family = "times new roman".to_string();
                                 props.font_size = 17.0;
                                 props.line_height = 17.0;
-                                if SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() % 1000 < 500 {
+                                if cursor_start_ref.borrow().elapsed().as_millis() % 1000 < 500 {
                                     props.cursor_position = Some(TextPosition { line: 0, column: count });
                                 }
 
@@ -624,6 +622,7 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                                 if data.on_release() {
                                     set_count(&(count + 1));
+                                    *cursor_start_ref.borrow_mut() = Instant::now();
                                 }
                             },
                         );
