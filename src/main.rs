@@ -595,8 +595,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .weight(3.0)
                             .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
 
-                        let (count, set_count) = ui.use_state("qowdhqwd", || 0);
-                        let cursor_start_ref = ui.use_ref("", || Instant::now());
+                        let (count, set_count) = ui.use_state(|| 0);
+                        let cursor_start_ref = ui.use_ref(|| Instant::now());
 
                         ui.text(
                             format!("{} HellÓowjdoqi129312893u!\nYegh", count),
@@ -636,7 +636,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .height(Extent::FitContent)
                     .self_alignment(Alignment::BottomRight);
 
-                let (count, set_count) = use_state!(ui, || 0);
+                let (count, set_count) = ui.use_state(|| 0);
 
                 for i in 5..32 {
                     ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |props, modifiers, data| {

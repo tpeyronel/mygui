@@ -150,13 +150,13 @@ impl<'a> Ui<'a> {
         });
     }
 
-    pub fn use_state<T, F>(&mut self, key: &str, initial_value: F) -> (T, Box<dyn Fn(&T)>)
+    pub fn use_state<T, F>(&mut self, initial_value: F) -> (T, Box<dyn Fn(&T)>)
     where
         T: Serialize + Deserialize<'a>,
         F: FnOnce() -> T + 'static,
     {
         let mut state_path_hasher = self.path_hasher.clone();
-        key.hash(&mut state_path_hasher);
+        TypeId::of::<F>().hash(&mut state_path_hasher);
         let state_path_hash = state_path_hasher.finish();
 
         let set_state_tx = self.set_state_tx.clone();
@@ -198,13 +198,13 @@ impl<'a> Ui<'a> {
         (state, set_state)
     }
 
-    pub fn use_ref<T, F>(&mut self, key: &str, initial_value: F) -> Rc<RefCell<T>>
+    pub fn use_ref<T, F>(&mut self, initial_value: F) -> Rc<RefCell<T>>
     where
         T: Any + 'static,
         F: FnOnce() -> T + 'static,
     {
         let mut state_path_hasher = self.path_hasher.clone();
-        key.hash(&mut state_path_hasher);
+        TypeId::of::<F>().hash(&mut state_path_hasher);
         let state_path_hash = state_path_hasher.finish();
 
         let rc = match self.ref_map.entry(state_path_hash) {
