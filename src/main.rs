@@ -663,8 +663,10 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .self_alignment(Alignment::Left)
                             .fill_color(if input.is_pressed() {
                                 Color::new(0.0, 0.0, 1.0, 1.0)
-                            // } else if data.hovered() {
-                            //     Color::new(1.0, 1.0, 1.0, 1.0)
+                            } else if input.on_hover() {
+                                Color::new(1.0, 1.0, 1.0, 1.0)
+                            } else if input.on_unhover() {
+                                Color::new(0.0, 0.0, 0.0, 1.0)
                             } else if i % 2 == 0 {
                                 Color::new(1.0, 0.0, 0.0, 0.5)
                             } else {
