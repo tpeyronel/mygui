@@ -199,22 +199,24 @@ impl ApplicationHandler for App {
 
 #[allow(unused)]
 fn simple_ui(ui: &mut Ui<'_>) {
-    ui.column(|ui, _, _| {
+    ui.column(|ui, _| {
         (0..3).for_each(|_| {
-            ui.row(|ui, attr, _| {
+            ui.row(|ui, attr| {
                 attr.height(Extent::FitContent);
 
-                ui.block(|ui, attr, data| {
+                ui.block(|ui, attr| {
+                    let input = ui.use_input();
+
                     attr.width(Extent::Px(0.0))
                         .height(Extent::Px(48.0))
                         .weight(1.0)
-                        .fill_color(if data.hovered() {
+                        .fill_color(if input.is_hovered() {
                             Color::new(1.0, 1.0, 0.0, 1.0)
                         } else {
                             Color::new(1.0, 0.0, 0.0, 1.0)
                         });
 
-                    ui.block(|_, attr, _| {
+                    ui.block(|_, attr| {
                         attr.margin(Margin::all(16.0))
                             .fill_color(Color::new(0.0, 1.0, 0.0, 0.5));
                     });
@@ -222,15 +224,18 @@ fn simple_ui(ui: &mut Ui<'_>) {
 
                 ui.text(
                     "Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw",
-                    |props, modifiers, data| {
+                    |ui, props, modifiers| {
+                        let input = ui.use_input();
+
                         props.font_family = "Jetbrains Mono".into();
                         props.font_size = 64.0;
                         props.line_height = 64.0;
+
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
                             .height(Extent::FitContent)
-                            .fill_color(if data.hovered() {
+                            .fill_color(if input.is_hovered() {
                                 Color::new(1.0, 0.0, 0.5, 0.5)
                             } else {
                                 Color::new(0.5, 0.5, 0.5, 0.5)
@@ -239,7 +244,7 @@ fn simple_ui(ui: &mut Ui<'_>) {
                     },
                 );
 
-                ui.block(|_, attr, _| {
+                ui.block(|_, attr| {
                     attr.width(Extent::Px(0.0))
                         .weight(1.0)
                         .fill_color(Color::new(0.0, 0.0, 1.0, 1.0));
@@ -250,7 +255,7 @@ fn simple_ui(ui: &mut Ui<'_>) {
 }
 
 fn example_ui(ui: &mut Ui<'_>) {
-    ui.block(|ui, modifiers, _| {
+    ui.block(|ui, modifiers| {
         modifiers
             .width(Extent::FillParent)
             .height(Extent::FillParent)
@@ -259,7 +264,7 @@ fn example_ui(ui: &mut Ui<'_>) {
             .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
             .border_radius(BorderRadius::all(16.0));
 
-        ui.block(|ui, modifiers, _| {
+        ui.block(|ui, modifiers| {
             modifiers
                 .width(Extent::FillParent)
                 .height(Extent::FillParent)
@@ -269,7 +274,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                 .border_thickness(BorderThickness::all(4.0))
                 .border_radius(BorderRadius::all(8.0));
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -280,7 +285,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::all(4.0));
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -292,7 +297,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::all(4.0));
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -303,7 +308,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0));
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -313,7 +318,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0));
             });
 
-            ui.block(|ui, modifiers, _| {
+            ui.block(|ui, modifiers| {
                 modifiers
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
@@ -321,7 +326,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_color(Color::new(1.0, 1.0, 1.0, 0.4))
                     .border_thickness(BorderThickness::all(2.0));
 
-                ui.block(|ui, modifiers, _| {
+                ui.block(|ui, modifiers| {
                     modifiers
                         .width(Extent::FillParent)
                         .height(Extent::FillParent)
@@ -329,12 +334,12 @@ fn example_ui(ui: &mut Ui<'_>) {
                         .border_color(Color::new(1.0, 0.0, 0.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0));
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers.fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
                     });
                 });
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .width(Extent::Px(8.0))
                         .height(Extent::Px(64.0))
@@ -343,7 +348,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                         .self_alignment(Alignment::BottomLeft);
                 });
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .width(Extent::Px(96.0))
                         .height(Extent::Px(8.0))
@@ -353,7 +358,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                 });
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -364,7 +369,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::all(4.0));
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -375,7 +380,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::all(4.0));
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -386,7 +391,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::all(4.0));
             });
 
-            ui.block(|_, modifiers, _| {
+            ui.block(|_, modifiers| {
                 modifiers
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
@@ -397,7 +402,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_radius(BorderRadius::all(4.0));
             });
 
-            ui.row(|ui, modifiers, _| {
+            ui.row(|ui, modifiers| {
                 modifiers
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
@@ -405,7 +410,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .border_thickness(BorderThickness::all(4.0))
                     .border_color(Color::new(1.0, 1.0, 1.0, 1.0));
 
-                ui.column(|ui, modifiers, _| {
+                ui.column(|ui, modifiers| {
                     modifiers
                         .width(Extent::Px(256.0))
                         .height(Extent::FitContent)
@@ -413,7 +418,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                         .border_thickness(BorderThickness::all(4.0))
                         .border_color(Color::new(1.0, 1.0, 1.0, 1.0));
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::Px(24.0))
                             .fill_color(Color::new(0.0, 1.0, 1.0, 0.5))
@@ -422,7 +427,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .border_radius(BorderRadius::all(8.0));
                     });
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::FillParent)
                             .fill_color(Color::new(1.0, 0.0, 1.0, 0.5))
@@ -431,7 +436,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .border_radius(BorderRadius::all(8.0));
                     });
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::Px(32.0))
                             .fill_color(Color::new(1.0, 0.0, 0.0, 0.5))
@@ -440,7 +445,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .border_radius(BorderRadius::all(8.0));
                     });
 
-                    ui.block(|ui, modifiers, _| {
+                    ui.block(|ui, modifiers| {
                         modifiers
                             .width(Extent::Px(96.0))
                             .height(Extent::Px(64.0))
@@ -452,7 +457,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .border_thickness(BorderThickness::all(4.0))
                             .border_radius(BorderRadius::all(8.0));
 
-                        ui.block(|_, modifiers, _| {
+                        ui.block(|_, modifiers| {
                             modifiers
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
@@ -463,7 +468,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                         });
                     });
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::Px(32.0))
                             .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
@@ -473,21 +478,21 @@ fn example_ui(ui: &mut Ui<'_>) {
                     });
                 });
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .width(Extent::Px(64.0))
                         .height(Extent::FillParent)
                         .fill_color(Color::new(0.25, 0.25, 1.0, 0.5));
                 });
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .width(Extent::Px(64.0))
                         .height(Extent::Px(32.0))
                         .fill_color(Color::new(0.25, 0.25, 1.0, 0.25));
                 });
 
-                ui.block(|ui, modifiers, _| {
+                ui.block(|ui, modifiers| {
                     modifiers
                         .width(Extent::FillParent)
                         .height(Extent::FillParent)
@@ -495,7 +500,7 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                     ui.text(
                         "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee.",
-                        |props, modifiers, _| {
+                        |_, props, modifiers| {
                             props.text_color = Color::ONE;
                             props.font_family = "jetbrains mono".to_string();
                             props.font_size = 24.0;
@@ -506,24 +511,24 @@ fn example_ui(ui: &mut Ui<'_>) {
                 });
             });
 
-            ui.column(|ui, modifiers, _| {
+            ui.column(|ui, modifiers| {
                 modifiers.width(Extent::Px(256.0)).self_alignment(Alignment::Left);
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .height(Extent::Px(0.0))
                         .weight(1.0)
                         .fill_color(Color::new(1.0, 0.0, 0.0, 0.4));
                 });
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .height(Extent::Px(0.0))
                         .weight(2.0)
                         .fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
                 });
 
-                ui.block(|_, modifiers, _| {
+                ui.block(|_, modifiers| {
                     modifiers
                         .height(Extent::Px(0.0))
                         .weight(1.0)
@@ -531,33 +536,33 @@ fn example_ui(ui: &mut Ui<'_>) {
                 });
             });
 
-            ui.column(|ui, modifiers, _| {
+            ui.column(|ui, modifiers| {
                 modifiers.height(Extent::FitContent);
 
-                ui.row(|ui, modifiers, _| {
+                ui.row(|ui, modifiers| {
                     modifiers.height(Extent::Px(128.0)).self_alignment(Alignment::Top);
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
                             .fill_color(Color::new(1.0, 0.0, 0.0, 0.4));
                     });
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(2.0)
                             .fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
                     });
 
-                    ui.block(|ui, modifiers, _| {
+                    ui.block(|ui, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
                             .fill_color(Color::new(0.0, 0.0, 1.0, 0.4));
 
-                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |props, modifiers, _| {
+                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |_, props, modifiers| {
                             props.text_color = Color::ONE;
                             props.font_family = "Segoe UI Emoji".to_string();
                             props.font_size = 24.0;
@@ -574,24 +579,24 @@ fn example_ui(ui: &mut Ui<'_>) {
                     });
                 });
 
-                ui.row(|ui, modifiers, _| {
+                ui.row(|ui, modifiers| {
                     modifiers.height(Extent::Px(128.0)).self_alignment(Alignment::Top);
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(2.0)
                             .fill_color(Color::new(1.0, 1.0, 0.0, 0.4));
                     });
 
-                    ui.block(|_, modifiers, _| {
+                    ui.block(|_, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
                             .fill_color(Color::new(0.0, 1.0, 1.0, 0.4));
                     });
 
-                    ui.block(|ui, modifiers, _| {
+                    ui.block(|ui, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(3.0)
@@ -602,7 +607,9 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                         ui.text(
                             format!("{} HellÓowjdoqi129312893u!\nYegh", count),
-                            |props, modifiers, data| {
+                            |ui, props, modifiers| {
+                                let input = ui.use_input();
+
                                 props.text_color = Color::ONE;
                                 props.font_family = "times new roman".to_string();
                                 props.font_size = 17.0;
@@ -612,9 +619,9 @@ fn example_ui(ui: &mut Ui<'_>) {
                                 }
 
                                 modifiers
-                                    .fill_color(if data.pressed() {
+                                    .fill_color(if input.is_pressed() {
                                         Color::new(1.0, 1.0, 1.0, 0.5)
-                                    } else if data.hovered() {
+                                    } else if input.is_hovered() {
                                         Color::new(1.0, 1.0, 1.0, 0.25)
                                     } else {
                                         Color::new(0.0, 0.0, 0.0, 0.5)
@@ -622,7 +629,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                                     .border_radius(BorderRadius::all(8.0))
                                     .padding(Padding::all(8.0));
 
-                                if data.on_release() {
+                                if input.on_release() {
                                     set_count(&(count + 1));
                                     *cursor_start_ref.borrow_mut() = Instant::now();
                                 }
@@ -632,7 +639,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                 });
             });
 
-            ui.column(|ui, modifiers, _| {
+            ui.column(|ui, modifiers| {
                 modifiers
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
@@ -641,17 +648,20 @@ fn example_ui(ui: &mut Ui<'_>) {
                 let (count, set_count) = ui.use_state(|| 0);
 
                 for i in 5..32 {
-                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |props, modifiers, data| {
+                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |ui, props, modifiers| {
+                        let input = ui.use_input();
+
                         props.text_color = Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
                         props.font_family = "tangerine".to_string();
                         props.font_size = i as f32;
                         props.line_height = i as f32;
+
                         modifiers
                             .width(Extent::FitContent)
                             .height(Extent::FitContent)
                             .no_max_width()
                             .self_alignment(Alignment::Left)
-                            .fill_color(if data.pressed() {
+                            .fill_color(if input.is_pressed() {
                                 Color::new(0.0, 0.0, 1.0, 1.0)
                             // } else if data.hovered() {
                             //     Color::new(1.0, 1.0, 1.0, 1.0)
@@ -661,7 +671,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                                 Color::new(0.0, 1.0, 0.0, 0.5)
                             });
 
-                        if data.on_press() {
+                        if input.on_press() {
                             set_count(&(count + 1));
                         }
                     });
