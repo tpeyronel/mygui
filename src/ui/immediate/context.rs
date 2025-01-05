@@ -79,12 +79,39 @@ impl UiContext {
     fn on_cursor_moved(&mut self, cursor_position: Option<Vec2>) {
         self.input_state.cursor_position = cursor_position;
 
-        let Some(cursor_position) = cursor_position else {
-            self.input_state.hovered_node_hash = None;
-            return;
-        };
+        let new_hovered_node_hash = cursor_position
+            .map(|p| self.find_node_hash_by_cursor_position(p))
+            .flatten();
 
-        self.input_state.hovered_node_hash = self.find_node_hash_by_cursor_position(cursor_position);
+        match (self.input_state.hovered_node_hash, new_hovered_node_hash) {
+            (None, None) => (),
+            (None, Some(new_hovered)) => {
+                self.input_state.emit(
+                    new_hovered,
+                    NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent { hovered: true }),
+                );
+            }
+            (Some(old_hovered), None) => {
+                self.input_state.emit(
+                    old_hovered,
+                    NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent { hovered: false }),
+                );
+            }
+            (Some(old_hovered), Some(new_hovered)) => {
+                if old_hovered != new_hovered {
+                    self.input_state.emit(
+                        old_hovered,
+                        NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent { hovered: false }),
+                    );
+                    self.input_state.emit(
+                        new_hovered,
+                        NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent { hovered: true }),
+                    );
+                }
+            }
+        }
+
+        self.input_state.hovered_node_hash = new_hovered_node_hash;
     }
 
     fn on_lmb_state_changed(&mut self, state: ElementState) {
@@ -99,14 +126,13 @@ impl UiContext {
                     return;
                 };
 
-                self.input_state
-                    .events
-                    .entry(pressed_node_hash)
-                    .or_insert_with(|| Vec::new())
-                    .push(NodeInputEvent::MouseEvent {
+                self.input_state.emit(
+                    pressed_node_hash,
+                    NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
                         button: MouseButton::Left,
                         state: ElementState::Pressed,
-                    });
+                    }),
+                );
                 self.input_state.pressed_node_hash = Some(pressed_node_hash);
             }
             ElementState::Released => {
@@ -118,14 +144,13 @@ impl UiContext {
                 if self.input_state.pressed_node_hash == Some(released_node_hash)
                     && self.input_state.hovered_node_hash == Some(released_node_hash)
                 {
-                    self.input_state
-                        .events
-                        .entry(released_node_hash)
-                        .or_insert_with(|| Vec::new())
-                        .push(NodeInputEvent::MouseEvent {
+                    self.input_state.emit(
+                        released_node_hash,
+                        NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
                             button: MouseButton::Left,
                             state: ElementState::Released,
-                        });
+                        }),
+                    );
                 }
                 self.input_state.pressed_node_hash = None;
             }
@@ -165,6 +190,10 @@ impl InputState {
             events: self.events.get(&node_hash).cloned().unwrap_or_else(|| Vec::new()),
         }
     }
+
+    fn emit(&mut self, node_hash: u64, event: NodeInputEvent) {
+        self.events.entry(node_hash).or_insert_with(|| Vec::new()).push(event);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -183,32 +212,44 @@ impl NodeInputState {
         self.is_pressed
     }
 
+    pub fn on_hover(&self) -> bool {
+        self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent {
+            hovered: true,
+        }))
+    }
+
+    pub fn on_unhover(&self) -> bool {
+        self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent {
+            hovered: false,
+        }))
+    }
+
     pub fn on_press(&self) -> bool {
-        self.events
-            .iter()
-            .find(|e| {
-                **e == NodeInputEvent::MouseEvent {
-                    button: MouseButton::Left,
-                    state: ElementState::Pressed,
-                }
-            })
-            .is_some()
+        self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
+            button: MouseButton::Left,
+            state: ElementState::Pressed,
+        }))
     }
 
     pub fn on_release(&self) -> bool {
-        self.events
-            .iter()
-            .find(|e| {
-                **e == NodeInputEvent::MouseEvent {
-                    button: MouseButton::Left,
-                    state: ElementState::Released,
-                }
-            })
-            .is_some()
+        self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
+            button: MouseButton::Left,
+            state: ElementState::Released,
+        }))
+    }
+
+    fn has_event(&self, event: NodeInputEvent) -> bool {
+        self.events.iter().find(|e| **e == event).is_some()
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NodeInputEvent {
-    MouseEvent { button: MouseButton, state: ElementState },
+    MouseEvent(MouseEvent),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MouseEvent {
+    MouseButtonEvent { button: MouseButton, state: ElementState },
+    MouseHoverEvent { hovered: bool },
 }
