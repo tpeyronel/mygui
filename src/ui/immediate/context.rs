@@ -115,37 +115,30 @@ impl UiContext {
     }
 
     fn on_lmb_state_changed(&mut self, state: ElementState) {
-        let Some(cursor_position) = self.input_state.cursor_position else {
-            return;
-        };
-
         match state {
             ElementState::Pressed => {
-                // TODO: maybe use input_state.hovered_node_hash?
-                let Some(pressed_node_hash) = self.find_node_hash_by_cursor_position(cursor_position) else {
+                let Some(hovered_node_hash) = self.input_state.hovered_node_hash else {
                     return;
                 };
 
                 self.input_state.emit(
-                    pressed_node_hash,
+                    hovered_node_hash,
                     NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
                         button: MouseButton::Left,
                         state: ElementState::Pressed,
                     }),
                 );
-                self.input_state.pressed_node_hash = Some(pressed_node_hash);
+                self.input_state.pressed_node_hash = Some(hovered_node_hash);
             }
             ElementState::Released => {
-                let Some(released_node_hash) = self.find_node_hash_by_cursor_position(cursor_position) else {
+                let Some(hovered_node_hash) = self.input_state.hovered_node_hash else {
                     return;
                 };
 
-                // Only emit Released event if element is both pressed and hovered.
-                if self.input_state.pressed_node_hash == Some(released_node_hash)
-                    && self.input_state.hovered_node_hash == Some(released_node_hash)
-                {
+                // Only emit Released event if element is also pressed.
+                if self.input_state.pressed_node_hash == Some(hovered_node_hash) {
                     self.input_state.emit(
-                        released_node_hash,
+                        hovered_node_hash,
                         NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
                             button: MouseButton::Left,
                             state: ElementState::Released,
