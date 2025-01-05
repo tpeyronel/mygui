@@ -6,7 +6,7 @@ use font::{
 };
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
-use input::{InputEvent, InputState, MouseButton};
+use input::{ElementState, InputEvent, MouseButton};
 use renderer::renderer::Renderer;
 use ui::{
     border_radius::BorderRadius,
@@ -20,7 +20,7 @@ use ui::{
 use vertex::Color;
 use winit::{
     application::ApplicationHandler,
-    event::{ElementState, WindowEvent},
+    event::WindowEvent,
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::PhysicalKey,
     window::{Window, WindowId},
@@ -147,7 +147,9 @@ impl ApplicationHandler for App {
                 event,
                 is_synthetic: _is_synthetic,
             } => match event.physical_key {
-                PhysicalKey::Code(winit::keyboard::KeyCode::Escape) if event.state == ElementState::Released => {
+                PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
+                    if event.state == winit::event::ElementState::Released =>
+                {
                     event_loop.exit()
                 }
                 _ => {}
@@ -175,7 +177,7 @@ impl ApplicationHandler for App {
                     return;
                 };
 
-                let button_state = InputState::from_winit(button_state);
+                let button_state = ElementState::from_winit(button_state);
 
                 state.ui_context.process_input_event(InputEvent::MouseInput {
                     button,

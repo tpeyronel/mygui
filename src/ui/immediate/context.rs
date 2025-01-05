@@ -4,37 +4,34 @@ use glam::Vec2;
 
 use crate::{
     font::font_engine::FontEngine,
-    input::{InputEvent, InputState, MouseButton},
+    input::{ElementState, InputEvent, MouseButton},
     rectangle::Rectangle,
     ui::{draw_element::DrawElement, to_draw_data},
 };
 
-use super::{set_state::set_state_channel, ui::Ui, UiNodeData, UiNodeDataFlags};
+use super::{set_state::set_state_channel, ui::Ui};
 
 pub struct UiContext {
-    nodes_data: HashMap<u64, UiNodeData>,
+    input_state: InputState,
     states: HashMap<u64, Vec<u8>>,
     refs: HashMap<u64, Rc<dyn Any>>,
     bounding_boxes: Vec<(u64, Rectangle)>,
-    cursor_position: Vec2,
 }
 
 impl UiContext {
     pub fn new() -> Self {
         Self {
-            nodes_data: HashMap::new(),
+            input_state: InputState::new(),
             states: HashMap::new(),
             refs: HashMap::new(),
             bounding_boxes: Vec::new(),
-            cursor_position: Vec2::ZERO,
         }
     }
 
     pub fn process_input_event(&mut self, event: InputEvent) {
         match event {
             InputEvent::CursorMoved { position } => {
-                self.cursor_position = position;
-                self.on_cursor_moved();
+                self.on_cursor_moved(Some(position));
             }
             InputEvent::MouseInput { button, state } => match button {
                 MouseButton::Left => self.on_lmb_state_changed(state),
@@ -54,7 +51,7 @@ impl UiContext {
     ) -> Vec<DrawElement> {
         let (set_state_tx, set_state_rx) = set_state_channel();
 
-        let mut root_ui = Ui::new(&self.nodes_data, &self.states, &set_state_tx, &mut self.refs);
+        let mut root_ui = Ui::new(&self.input_state, &self.states, &set_state_tx, &mut self.refs);
         f(&mut root_ui);
         let (children, children_path_hash_nodes) = root_ui.finish();
 
@@ -74,65 +71,144 @@ impl UiContext {
             self.states.insert(hash, bytes);
         });
 
-        self.nodes_data.iter_mut().for_each(|(_, d)| {
-            d.flags
-                .remove(UiNodeDataFlags::ON_PRESS | UiNodeDataFlags::ON_HOVER | UiNodeDataFlags::ON_RELEASE)
-        });
-        self.on_cursor_moved();
+        self.input_state.events.clear();
 
         draw_data
     }
 
-    fn on_cursor_moved(&mut self) {
-        let old_nodes_data = self.nodes_data.clone();
-        self.nodes_data
-            .iter_mut()
-            .for_each(|(_, d)| d.flags.remove(UiNodeDataFlags::HOVERED | UiNodeDataFlags::PRESSED));
+    fn on_cursor_moved(&mut self, cursor_position: Option<Vec2>) {
+        self.input_state.cursor_position = cursor_position;
 
-        for (hash, bbox) in &self.bounding_boxes {
-            if !bbox.contains(self.cursor_position) {
-                continue;
-            }
+        let Some(cursor_position) = cursor_position else {
+            self.input_state.hovered_node_hash = None;
+            return;
+        };
 
-            let node_data = self.nodes_data.entry(*hash).or_default();
-            node_data.flags.insert(UiNodeDataFlags::HOVERED);
-
-            let old_node_data = old_nodes_data.get(hash);
-            if old_node_data.is_none_or(|d| !d.flags.contains(UiNodeDataFlags::HOVERED)) {
-                node_data.flags.insert(UiNodeDataFlags::ON_HOVER);
-            }
-
-            if old_node_data.is_some_and(|d| d.flags.contains(UiNodeDataFlags::PRESSED)) {
-                // Maintain PRESSED state when moving cursor inside element.
-                node_data.flags.insert(UiNodeDataFlags::PRESSED);
-            }
-        }
+        self.input_state.hovered_node_hash = self.find_node_hash_by_cursor_position(cursor_position);
     }
 
-    fn on_lmb_state_changed(&mut self, state: InputState) {
+    fn on_lmb_state_changed(&mut self, state: ElementState) {
+        let Some(cursor_position) = self.input_state.cursor_position else {
+            return;
+        };
+
         match state {
-            InputState::Pressed => {
-                for (hash, bbox) in &self.bounding_boxes {
-                    if !bbox.contains(self.cursor_position) {
-                        continue;
-                    }
+            ElementState::Pressed => {
+                // TODO: maybe use input_state.hovered_node_hash?
+                let Some(pressed_node_hash) = self.find_node_hash_by_cursor_position(cursor_position) else {
+                    return;
+                };
 
-                    let node_data = self.nodes_data.entry(*hash).or_default();
-
-                    if !node_data.flags.contains(UiNodeDataFlags::PRESSED) {
-                        node_data.flags.insert(UiNodeDataFlags::PRESSED);
-                        node_data.flags.insert(UiNodeDataFlags::ON_PRESS);
-                    }
-                }
+                self.input_state
+                    .events
+                    .entry(pressed_node_hash)
+                    .or_insert_with(|| Vec::new())
+                    .push(NodeInputEvent::MouseEvent {
+                        button: MouseButton::Left,
+                        state: ElementState::Pressed,
+                    });
+                self.input_state.pressed_node_hash = Some(pressed_node_hash);
             }
-            InputState::Released => {
-                self.nodes_data.iter_mut().for_each(|(_, node_data)| {
-                    if node_data.flags.contains(UiNodeDataFlags::PRESSED) {
-                        node_data.flags.remove(UiNodeDataFlags::PRESSED);
-                        node_data.flags.insert(UiNodeDataFlags::ON_RELEASE);
-                    }
-                });
+            ElementState::Released => {
+                let Some(released_node_hash) = self.find_node_hash_by_cursor_position(cursor_position) else {
+                    return;
+                };
+
+                // Only emit Released event if element is both pressed and hovered.
+                if self.input_state.pressed_node_hash == Some(released_node_hash)
+                    && self.input_state.hovered_node_hash == Some(released_node_hash)
+                {
+                    self.input_state
+                        .events
+                        .entry(released_node_hash)
+                        .or_insert_with(|| Vec::new())
+                        .push(NodeInputEvent::MouseEvent {
+                            button: MouseButton::Left,
+                            state: ElementState::Released,
+                        });
+                }
+                self.input_state.pressed_node_hash = None;
             }
         }
     }
+
+    fn find_node_hash_by_cursor_position(&self, cursor_position: Vec2) -> Option<u64> {
+        self.bounding_boxes
+            .iter()
+            .rev()
+            .find(|(_, bbox)| bbox.contains(cursor_position))
+            .map(|(h, _)| *h)
+    }
+}
+
+pub struct InputState {
+    cursor_position: Option<Vec2>,
+    hovered_node_hash: Option<u64>,
+    pressed_node_hash: Option<u64>,
+    events: HashMap<u64, Vec<NodeInputEvent>>,
+}
+
+impl InputState {
+    pub fn new() -> Self {
+        Self {
+            cursor_position: None,
+            hovered_node_hash: None,
+            pressed_node_hash: None,
+            events: HashMap::new(),
+        }
+    }
+
+    pub fn get_node_input_state(&self, node_hash: u64) -> NodeInputState {
+        NodeInputState {
+            is_hovered: self.hovered_node_hash == Some(node_hash),
+            is_pressed: self.pressed_node_hash == Some(node_hash),
+            events: self.events.get(&node_hash).cloned().unwrap_or_else(|| Vec::new()),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NodeInputState {
+    is_hovered: bool,
+    is_pressed: bool,
+    events: Vec<NodeInputEvent>,
+}
+
+impl NodeInputState {
+    pub fn is_hovered(&self) -> bool {
+        self.is_hovered
+    }
+
+    pub fn is_pressed(&self) -> bool {
+        self.is_pressed
+    }
+
+    pub fn on_press(&self) -> bool {
+        self.events
+            .iter()
+            .find(|e| {
+                **e == NodeInputEvent::MouseEvent {
+                    button: MouseButton::Left,
+                    state: ElementState::Pressed,
+                }
+            })
+            .is_some()
+    }
+
+    pub fn on_release(&self) -> bool {
+        self.events
+            .iter()
+            .find(|e| {
+                **e == NodeInputEvent::MouseEvent {
+                    button: MouseButton::Left,
+                    state: ElementState::Released,
+                }
+            })
+            .is_some()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum NodeInputEvent {
+    MouseEvent { button: MouseButton, state: ElementState },
 }

@@ -2,57 +2,8 @@ pub mod context;
 mod set_state;
 pub mod ui;
 
-use bitflags::bitflags;
-
 const DEFAULT_FONT_SIZE: f32 = 14.0;
 const DEFAULT_LINE_HEIGHT: f32 = DEFAULT_FONT_SIZE;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct UiNodeData {
-    flags: UiNodeDataFlags,
-}
-
-impl Default for UiNodeData {
-    fn default() -> Self {
-        Self {
-            flags: UiNodeDataFlags::empty(),
-        }
-    }
-}
-
-#[allow(unused)]
-impl UiNodeData {
-    pub fn hovered(&self) -> bool {
-        self.flags.contains(UiNodeDataFlags::HOVERED)
-    }
-
-    pub fn on_hover(&self) -> bool {
-        self.flags.contains(UiNodeDataFlags::ON_HOVER)
-    }
-
-    pub fn pressed(&self) -> bool {
-        self.flags.contains(UiNodeDataFlags::PRESSED)
-    }
-
-    pub fn on_press(&self) -> bool {
-        self.flags.contains(UiNodeDataFlags::ON_PRESS)
-    }
-
-    pub fn on_release(&self) -> bool {
-        self.flags.contains(UiNodeDataFlags::ON_RELEASE)
-    }
-}
-
-bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct UiNodeDataFlags: u32 {
-        const ON_HOVER = 1 << 0;
-        const HOVERED = 1 << 1;
-        const PRESSED = 1 << 2;
-        const ON_PRESS = 1 << 3;
-        const ON_RELEASE = 1 << 4;
-    }
-}
 
 // #[macro_export]
 // macro_rules! use_state {
@@ -96,7 +47,7 @@ mod tests {
     fn single_block() {
         immediate_test(
             |ui| {
-                ui.block(|_, _, _| {});
+                ui.block(|_, _| {});
             },
             vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
         );
@@ -106,9 +57,9 @@ mod tests {
     fn multiple_blocks() {
         immediate_test(
             |ui| {
-                ui.block(|_, _, _| {});
-                ui.block(|_, _, _| {});
-                ui.block(|_, _, _| {});
+                ui.block(|_, _| {});
+                ui.block(|_, _| {});
+                ui.block(|_, _| {});
             },
             vec![
                 UiNode::new(BlockProps, Modifiers::new(), vec![]),
@@ -122,11 +73,11 @@ mod tests {
     fn multiple_blocks_with_custom_attributes() {
         immediate_test(
             |ui| {
-                ui.block(|_, _, _| {});
-                ui.block(|_, attr, _| {
+                ui.block(|_, _| {});
+                ui.block(|_, attr| {
                     attr.border_color(Color::new(1.0, 0.0, 0.0, 0.0));
                 });
-                ui.block(|_, _, _| {});
+                ui.block(|_, _| {});
             },
             vec![
                 UiNode::new(BlockProps, Modifiers::new(), vec![]),
@@ -144,7 +95,7 @@ mod tests {
     fn single_column() {
         immediate_test(
             |ui| {
-                ui.column(|_, _, _| {});
+                ui.column(|_, _| {});
             },
             vec![UiNode::new(ColumnProps, Modifiers::new(), vec![])],
         );
@@ -154,7 +105,7 @@ mod tests {
     fn single_row() {
         immediate_test(
             |ui| {
-                ui.row(|_, _, _| {});
+                ui.row(|_, _| {});
             },
             vec![UiNode::new(RowProps, Modifiers::new(), vec![])],
         );
@@ -164,9 +115,9 @@ mod tests {
     fn nested_block_column_row() {
         immediate_test(
             |ui| {
-                ui.block(|ui, _, _| {
-                    ui.column(|ui, _, _| {
-                        ui.row(|_, _, _| {});
+                ui.block(|ui, _| {
+                    ui.column(|ui, _| {
+                        ui.row(|_, _| {});
                     });
                 });
             },
@@ -186,7 +137,7 @@ mod tests {
     fn single_text() {
         immediate_test(
             |ui| {
-                ui.text("Hello", |_, _, _| {});
+                ui.text("Hello", |_, _| {});
             },
             vec![UiNode::new(
                 TextProps {

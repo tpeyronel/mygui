@@ -17,8 +17,9 @@ use crate::{
 };
 
 use super::{
+    context::{InputState, NodeInputState},
     set_state::{set_state_channel, SetStateSender},
-    UiNodeData, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
+    DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -31,10 +32,11 @@ impl UiNode {
 }
 
 pub struct Ui<'a> {
-    node_data_map: &'a HashMap<u64, UiNodeData>,
+    input_state: &'a InputState,
     state_map: &'a HashMap<u64, Vec<u8>>,
     set_state_tx: &'a SetStateSender,
     ref_map: &'a mut HashMap<u64, Rc<dyn Any>>,
+    path_hash: u64,
     path_hasher: DefaultHasher,
     children: Vec<UiNode>,
     children_path_hash_nodes: Vec<HashNode>,
@@ -42,16 +44,17 @@ pub struct Ui<'a> {
 
 impl<'a> Ui<'a> {
     pub fn new(
-        node_data_map: &'a HashMap<u64, UiNodeData>,
+        input_state: &'a InputState,
         state_map: &'a HashMap<u64, Vec<u8>>,
         set_state_tx: &'a SetStateSender,
         ref_map: &'a mut HashMap<u64, Rc<dyn Any>>,
     ) -> Self {
         Self {
-            node_data_map,
+            input_state,
             state_map,
             set_state_tx,
             ref_map,
+            path_hash: DefaultHasher::new().finish(),
             path_hasher: DefaultHasher::new(),
             children: vec![],
             children_path_hash_nodes: vec![],
@@ -62,18 +65,17 @@ impl<'a> Ui<'a> {
         (self.children, self.children_path_hash_nodes)
     }
 
-    fn node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData) -> P) {
+    fn node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Ui, &mut Modifiers) -> P) {
         let node_type = UiNodeType(TypeId::of::<P>());
         let child_path_hasher = self.compute_child_path_hasher(node_type);
         let child_path_hash = child_path_hasher.finish();
 
-        let node_data = self.get_node_data_for_path_or_default(child_path_hash);
-
         let mut ui = Ui {
-            node_data_map: self.node_data_map,
+            input_state: self.input_state,
             state_map: self.state_map,
             set_state_tx: self.set_state_tx,
             ref_map: self.ref_map,
+            path_hash: child_path_hash,
             path_hasher: child_path_hasher,
             children: vec![],
             children_path_hash_nodes: vec![],
@@ -81,7 +83,7 @@ impl<'a> Ui<'a> {
 
         let mut modifiers = Modifiers::new();
 
-        let props = make_props(&mut ui, &mut modifiers, node_data);
+        let props = make_props(&mut ui, &mut modifiers);
 
         let ui_node = UiNode {
             props: Box::new(props),
@@ -100,36 +102,36 @@ impl<'a> Ui<'a> {
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
-    fn leaf_node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Modifiers, UiNodeData) -> P) {
-        self.node(|_, modifiers, node_data| make_props(modifiers, node_data));
+    fn leaf_node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Modifiers) -> P) {
+        self.node(|_, modifiers| make_props(modifiers));
     }
 
-    pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node(|ui, modifiers, node_data| {
-            f(ui, modifiers, node_data);
+    pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
+        self.node(|ui, modifiers| {
+            f(ui, modifiers);
 
             BlockProps
         });
     }
 
-    pub fn column(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node(|ui, modifiers, node_data| {
-            f(ui, modifiers, node_data);
+    pub fn column(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
+        self.node(|ui, modifiers| {
+            f(ui, modifiers);
 
             ColumnProps
         });
     }
 
-    pub fn row(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers, UiNodeData)) {
-        self.node(|ui, modifiers, node_data| {
-            f(ui, modifiers, node_data);
+    pub fn row(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
+        self.node(|ui, modifiers| {
+            f(ui, modifiers);
 
             RowProps
         });
     }
 
-    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, &mut Modifiers, UiNodeData)) {
-        self.leaf_node(|modifiers, node_data| {
+    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, &mut Modifiers)) {
+        self.leaf_node(|modifiers| {
             modifiers
                 .width(Extent::FitContent)
                 .max_width(Extent::FillParent)
@@ -144,7 +146,7 @@ impl<'a> Ui<'a> {
                 cursor_position: None,
             };
 
-            f(&mut props, modifiers, node_data);
+            f(&mut props, modifiers);
 
             props
         });
@@ -234,6 +236,10 @@ impl<'a> Ui<'a> {
         rc
     }
 
+    pub fn use_input(&mut self) -> NodeInputState {
+        self.input_state.get_node_input_state(self.path_hash)
+    }
+
     fn compute_child_path_hasher(&self, child_node_type: UiNodeType) -> DefaultHasher {
         let mut child_path_hasher = self.path_hasher.clone();
         // TODO: this os O(n^2). Should keep track of counts.
@@ -246,20 +252,16 @@ impl<'a> Ui<'a> {
         child_node_type.hash(&mut child_path_hasher);
         child_path_hasher
     }
-
-    fn get_node_data_for_path_or_default(&self, path_hash: u64) -> UiNodeData {
-        self.node_data_map.get(&path_hash).cloned().unwrap_or_default()
-    }
 }
 
 #[allow(unused)]
 pub fn mock_ui(f: impl FnOnce(&mut Ui<'_>)) -> UiNode {
-    let node_data_map = HashMap::new();
+    let input_state = InputState::new();
     let state_map = HashMap::new();
     let (set_state_tx, _) = set_state_channel();
     let mut ref_map = HashMap::new();
 
-    let mut ui = Ui::new(&node_data_map, &state_map, &set_state_tx, &mut ref_map);
+    let mut ui = Ui::new(&input_state, &state_map, &set_state_tx, &mut ref_map);
     f(&mut ui);
     let (children, _) = ui.finish();
 

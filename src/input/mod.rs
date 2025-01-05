@@ -1,6 +1,6 @@
 use glam::Vec2;
-use winit::event::ElementState;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MouseButton {
     Left,
     Right,
@@ -23,21 +23,21 @@ impl MouseButton {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum InputState {
+pub enum ElementState {
     Pressed,
     Released,
 }
 
-impl InputState {
-    pub fn from_winit(element_state: ElementState) -> Self {
+impl ElementState {
+    pub fn from_winit(element_state: winit::event::ElementState) -> Self {
         match element_state {
-            ElementState::Pressed => InputState::Pressed,
-            ElementState::Released => InputState::Released,
+            winit::event::ElementState::Pressed => ElementState::Pressed,
+            winit::event::ElementState::Released => ElementState::Released,
         }
     }
 }
 
 pub enum InputEvent {
     CursorMoved { position: Vec2 },
-    MouseInput { button: MouseButton, state: InputState },
+    MouseInput { button: MouseButton, state: ElementState },
 }
