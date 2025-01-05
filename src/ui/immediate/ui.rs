@@ -102,8 +102,12 @@ impl<'a> Ui<'a> {
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
-    fn leaf_node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Modifiers) -> P) {
-        self.node(|_, modifiers| make_props(modifiers));
+    fn leaf_node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Ui, &mut Modifiers) -> P) {
+        self.node(|ui, modifiers| {
+            let props = make_props(ui, modifiers);
+            assert!(ui.children.is_empty(), "leaf node may not have children!");
+            props
+        });
     }
 
     pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
@@ -130,8 +134,8 @@ impl<'a> Ui<'a> {
         });
     }
 
-    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut TextProps, &mut Modifiers)) {
-        self.leaf_node(|modifiers| {
+    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut Ui, &mut TextProps, &mut Modifiers)) {
+        self.leaf_node(|ui, modifiers| {
             modifiers
                 .width(Extent::FitContent)
                 .max_width(Extent::FillParent)
@@ -146,7 +150,7 @@ impl<'a> Ui<'a> {
                 cursor_position: None,
             };
 
-            f(&mut props, modifiers);
+            f(ui, &mut props, modifiers);
 
             props
         });
