@@ -40,4 +40,5 @@ impl ElementState {
 pub enum InputEvent {
     CursorMoved { position: Vec2 },
     MouseInput { button: MouseButton, state: ElementState },
+    TextInput { text: String },
 }

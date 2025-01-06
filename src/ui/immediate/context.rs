@@ -40,6 +40,7 @@ impl UiContext {
                 MouseButton::Back => {}
                 MouseButton::Forward => {}
             },
+            InputEvent::TextInput { text } => self.handle_text_input_event(&text),
         }
     }
 
@@ -129,6 +130,7 @@ impl UiContext {
                     }),
                 );
                 self.input_state.pressed_node_hash = Some(hovered_node_hash);
+                self.input_state.focused_node_hash = Some(hovered_node_hash);
             }
             ElementState::Released => {
                 let Some(hovered_node_hash) = self.input_state.hovered_node_hash else {
@@ -157,12 +159,22 @@ impl UiContext {
             .find(|(_, bbox)| bbox.contains(cursor_position))
             .map(|(h, _)| *h)
     }
+
+    fn handle_text_input_event(&mut self, text: &str) {
+        let Some(focused_node_hash) = self.input_state.focused_node_hash else {
+            return;
+        };
+
+        self.input_state
+            .emit(focused_node_hash, NodeInputEvent::TextInput { text: text.to_string() });
+    }
 }
 
 pub struct InputState {
     cursor_position: Option<Vec2>,
     hovered_node_hash: Option<u64>,
     pressed_node_hash: Option<u64>,
+    focused_node_hash: Option<u64>,
     events: HashMap<u64, Vec<NodeInputEvent>>,
 }
 
@@ -172,6 +184,7 @@ impl InputState {
             cursor_position: None,
             hovered_node_hash: None,
             pressed_node_hash: None,
+            focused_node_hash: None,
             events: HashMap::new(),
         }
     }
@@ -180,6 +193,7 @@ impl InputState {
         NodeInputState {
             is_hovered: self.hovered_node_hash == Some(node_hash),
             is_pressed: self.pressed_node_hash == Some(node_hash),
+            is_focused: self.focused_node_hash == Some(node_hash),
             events: self.events.get(&node_hash).cloned().unwrap_or_else(|| Vec::new()),
         }
     }
@@ -193,6 +207,7 @@ impl InputState {
 pub struct NodeInputState {
     is_hovered: bool,
     is_pressed: bool,
+    is_focused: bool,
     events: Vec<NodeInputEvent>,
 }
 
@@ -231,18 +246,27 @@ impl NodeInputState {
         }))
     }
 
+    pub fn is_focused(&self) -> bool {
+        self.is_focused
+    }
+
+    pub fn events(&self) -> &[NodeInputEvent] {
+        &self.events
+    }
+
     fn has_event(&self, event: NodeInputEvent) -> bool {
         self.events.iter().find(|e| **e == event).is_some()
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum NodeInputEvent {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NodeInputEvent {
     MouseEvent(MouseEvent),
+    TextInput { text: String },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum MouseEvent {
+pub enum MouseEvent {
     MouseButtonEvent { button: MouseButton, state: ElementState },
     MouseHoverEvent { hovered: bool },
 }

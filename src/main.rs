@@ -12,7 +12,10 @@ use ui::{
     border_radius::BorderRadius,
     border_thickness::BorderThickness,
     draw_element::DrawElement,
-    immediate::{context::UiContext, ui::Ui},
+    immediate::{
+        context::{NodeInputEvent, UiContext},
+        ui::Ui,
+    },
     margin::Margin,
     padding::Padding,
     Alignment, Extent,
@@ -146,14 +149,30 @@ impl ApplicationHandler for App {
                 device_id: _device_id,
                 event,
                 is_synthetic: _is_synthetic,
-            } => match event.physical_key {
-                PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
-                    if event.state == winit::event::ElementState::Released =>
-                {
-                    event_loop.exit()
+            } => {
+                let state = self.state.as_mut().unwrap();
+
+                match event.physical_key {
+                    PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
+                        if event.state == winit::event::ElementState::Released =>
+                    {
+                        event_loop.exit();
+                        return;
+                    }
+                    _ => {}
+                };
+
+                if event.state != winit::event::ElementState::Pressed {
+                    return;
                 }
-                _ => {}
-            },
+
+                if let Some(text) = event.text {
+                    let text = if text.as_str() == "\r" { "\n" } else { text.as_str() };
+                    let event = InputEvent::TextInput { text: text.to_string() };
+
+                    state.ui_context.process_input_event(event);
+                }
+            }
             WindowEvent::CursorMoved { position, .. } => {
                 let state = self.state.as_mut().unwrap();
 
