@@ -624,20 +624,21 @@ fn example_ui(ui: &mut Ui<'_>) {
                         let (count, set_count) = ui.use_state(|| 0);
                         let cursor_start_ref = ui.use_ref(|| Instant::now());
 
-                        ui.text(
-                            format!("{} HellÓowjdoqi129312893u!\nYegh", count),
-                            |ui, props, modifiers| {
-                                let input = ui.use_input();
+                        ui.text("", |ui, props, modifiers| {
+                            let input = ui.use_input();
+                            let (text, set_text) = ui.use_state(|| String::new());
 
-                                props.text_color = Color::ONE;
-                                props.font_family = "times new roman".to_string();
-                                props.font_size = 17.0;
-                                props.line_height = 17.0;
-                                if cursor_start_ref.borrow().elapsed().as_millis() % 1000 < 500 {
-                                    props.cursor_position = Some(TextPosition { line: 0, column: count });
-                                }
+                            props.text = text.clone();
+                            props.text_color = Color::ONE;
+                            props.font_family = "times new roman".to_string();
+                            props.font_size = 17.0;
+                            props.line_height = 17.0;
+                            if input.is_focused() && cursor_start_ref.borrow().elapsed().as_millis() % 1000 < 500 {
+                                props.cursor_position = Some(TextPosition { line: 0, column: count });
+                            }
 
-                                modifiers
+                            modifiers
+                                .min_width(Extent::Px(64.0))
                                     .fill_color(if input.is_pressed() {
                                         Color::new(1.0, 1.0, 1.0, 0.5)
                                     } else if input.is_hovered() {
@@ -646,14 +647,28 @@ fn example_ui(ui: &mut Ui<'_>) {
                                         Color::new(0.0, 0.0, 0.0, 0.5)
                                     })
                                     .border_radius(BorderRadius::all(8.0))
-                                    .padding(Padding::all(8.0));
+                                    .border_thickness(BorderThickness::all(2.0));
 
-                                if input.on_release() {
-                                    set_count(&(count + 1));
-                                    *cursor_start_ref.borrow_mut() = Instant::now();
-                                }
-                            },
-                        );
+                            if input.is_focused() {
+                                modifiers.border_color(Color::new(1.0, 0.0, 0.0, 1.0));
+                            }
+
+                            if input.on_release() {
+                                set_count(&(count + 1));
+                                *cursor_start_ref.borrow_mut() = Instant::now();
+                            }
+
+                            let new_text = input
+                                .events()
+                                .iter()
+                                .filter_map(|e| match e {
+                                    NodeInputEvent::TextInput { text } => Some(text.as_str()),
+                                    _ => None,
+                                })
+                                .collect::<Vec<&str>>()
+                                .join("");
+                            set_text(&(text + &new_text));
+                        });
                     });
                 });
             });
