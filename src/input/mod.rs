@@ -37,8 +37,24 @@ impl ElementState {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
     CursorMoved { position: Vec2 },
     MouseInput { button: MouseButton, state: ElementState },
-    TextInput { text: String },
+    TextEvent(TextEvent),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TextEvent {
+    TextInput(String),
+    TextCommand(TextCommand),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TextCommand {
+    ArrowRight,
+    ArrowUp,
+    ArrowLeft,
+    ArrowDown,
+    Backspace,
 }

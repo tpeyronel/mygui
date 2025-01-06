@@ -4,7 +4,7 @@ use glam::Vec2;
 
 use crate::{
     font::font_engine::FontEngine,
-    input::{ElementState, InputEvent, MouseButton},
+    input::{ElementState, InputEvent, MouseButton, TextEvent},
     rectangle::Rectangle,
     ui::{draw_element::DrawElement, to_draw_data},
 };
@@ -40,7 +40,7 @@ impl UiContext {
                 MouseButton::Back => {}
                 MouseButton::Forward => {}
             },
-            InputEvent::TextInput { text } => self.handle_text_input_event(&text),
+            InputEvent::TextEvent(text_event) => self.handle_text_event(text_event),
         }
     }
 
@@ -160,13 +160,12 @@ impl UiContext {
             .map(|(h, _)| *h)
     }
 
-    fn handle_text_input_event(&mut self, text: &str) {
+    fn handle_text_event(&mut self, e: TextEvent) {
         let Some(focused_node_hash) = self.input_state.focused_node_hash else {
             return;
         };
 
-        self.input_state
-            .emit(focused_node_hash, NodeInputEvent::TextInput { text: text.to_string() });
+        self.input_state.emit(focused_node_hash, NodeInputEvent::TextEvent(e));
     }
 }
 
@@ -259,13 +258,13 @@ impl NodeInputState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NodeInputEvent {
     MouseEvent(MouseEvent),
-    TextInput { text: String },
+    TextEvent(TextEvent),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MouseEvent {
     MouseButtonEvent { button: MouseButton, state: ElementState },
     MouseHoverEvent { hovered: bool },
