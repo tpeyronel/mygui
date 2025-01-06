@@ -1,3 +1,4 @@
+pub mod base_text_field;
 pub mod context;
 mod set_state;
 pub mod ui;
@@ -137,7 +138,7 @@ mod tests {
     fn single_text() {
         immediate_test(
             |ui| {
-                ui.text("Hello", |_, _| {});
+                ui.text("Hello", |_, _, _| {});
             },
             vec![UiNode::new(
                 TextProps {

@@ -1,9 +1,6 @@
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
-use font::{
-    font_engine::{FontEngine, TextPosition, TextPositionCoords},
-    freetype_font_engine::FreetypeFontEngine,
-};
+use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use input::{ElementState, InputEvent, MouseButton, TextCommand, TextEvent};
@@ -12,10 +9,7 @@ use ui::{
     border_radius::BorderRadius,
     border_thickness::BorderThickness,
     draw_element::DrawElement,
-    immediate::{
-        context::{NodeInputEvent, UiContext},
-        ui::Ui,
-    },
+    immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
     margin::Margin,
     padding::Padding,
     Alignment, Extent,
@@ -665,112 +659,9 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .weight(3.0)
                             .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
 
-                        let (count, set_count) = ui.use_state(|| 0);
-                        let cursor_start_ref = ui.use_ref(|| Instant::now());
+                        let (text, set_text) = ui.use_state(|| String::new());
 
-                        ui.text("", |ui, props, modifiers| {
-                            let input = ui.use_input();
-                            let (text, set_text) = ui.use_state(|| String::new());
-                            let (cursor_position, set_cursor_position) = ui.use_state(|| 0u32);
-
-                            props.text = text.clone();
-                            props.text_color = Color::ONE;
-                            props.font_family = "times new roman".to_string();
-                            props.font_size = 17.0;
-                            props.line_height = 17.0;
-                            if input.is_focused() && cursor_start_ref.borrow().elapsed().as_millis() % 1000 < 500 {
-                                props.cursor_position = Some(TextPosition::Index(cursor_position));
-                            }
-
-                            modifiers
-                                .min_width(Extent::Px(64.0))
-                                .fill_color(if input.is_pressed() {
-                                    Color::new(1.0, 1.0, 1.0, 0.5)
-                                } else if input.is_hovered() {
-                                    Color::new(1.0, 1.0, 1.0, 0.25)
-                                } else {
-                                    Color::new(0.0, 0.0, 0.0, 0.5)
-                                })
-                                .border_radius(BorderRadius::all(8.0))
-                                .border_thickness(BorderThickness::all(2.0));
-
-                            if input.is_focused() {
-                                modifiers.border_color(Color::new(1.0, 0.0, 0.0, 1.0));
-                            }
-
-                            if input.on_release() {
-                                set_count(&(count + 1));
-                                *cursor_start_ref.borrow_mut() = Instant::now();
-                            }
-
-                            let mut new_text = text.clone();
-                            let mut new_cursor_position = cursor_position;
-                            for text_event in input.events().iter().filter_map(|e| match e {
-                                NodeInputEvent::TextEvent(text_event) => Some(text_event),
-                                _ => None,
-                            }) {
-                                match text_event {
-                                    TextEvent::TextInput(text_input) => {
-                                        let (left, right) = new_text.split_at(new_cursor_position as usize);
-                                        new_text = left.to_string() + text_input + right;
-                                        new_cursor_position += text_input.len() as u32;
-                                    }
-                                    TextEvent::TextCommand(command) => match command {
-                                        TextCommand::ArrowRight => {
-                                            let Some(char_at_position) =
-                                                new_text[new_cursor_position as usize..].chars().next()
-                                            else {
-                                                continue;
-                                            };
-
-                                            new_cursor_position += char_at_position.len_utf8() as u32;
-                                        }
-                                        TextCommand::ArrowUp => {}
-                                        TextCommand::ArrowLeft => {
-                                            let (left, _) = new_text.split_at(new_cursor_position as usize);
-
-                                            new_cursor_position -=
-                                                left.chars().next_back().map(|c| c.len_utf8() as u32).unwrap_or(0);
-                                        }
-                                        TextCommand::ArrowDown => {
-                                            // let (_, right) = new_text.split_at(new_cursor_position as usize);
-                                            // let original_text_coords =
-                                            //     TextPosition::Index(new_cursor_position).to_coords(&text);
-                                            // let target_text_coords = TextPositionCoords {
-                                            //     line: original_text_coords.line + 1,
-                                            //     column: original_text_coords.column,
-                                            // };
-                                            // let mut text_coords =
-                                            //     TextPosition::Index(new_cursor_position).to_coords(&text);
-
-                                            // for c in right.chars() {
-                                            //     if text_coords.line > target_text_coords.line
-                                            //         || (text_coords.line == target_text_coords.line
-                                            //             && text_coords.column >= target_text_coords.column)
-                                            //     {
-                                            //         break;
-                                            //     }
-                                            // }
-                                        }
-                                        TextCommand::Backspace => {
-                                            let (left, right) = new_text.split_at(new_cursor_position as usize);
-                                            let Some((last_left_char_index, last_left_char)) =
-                                                left.char_indices().next_back()
-                                            else {
-                                                continue;
-                                            };
-
-                                            new_text = left[..last_left_char_index].to_string() + right;
-                                            new_cursor_position -= last_left_char.len_utf8() as u32;
-                                        }
-                                    },
-                                }
-                            }
-
-                            set_text(&new_text);
-                            set_cursor_position(&new_cursor_position);
-                            *cursor_start_ref.borrow_mut() = Instant::now();
-                        });
+                        ui.base_text_field(text, |t| set_text(&t), |_, _, _| {});
                     });
                 });
             });
