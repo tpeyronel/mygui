@@ -3,8 +3,7 @@ use std::time::Instant;
 use crate::{
     input::{TextCommand, TextEvent},
     text::text_position::TextPosition,
-    ui::{border_radius::BorderRadius, border_thickness::BorderThickness, node::text::TextProps, Extent, Modifiers},
-    vertex::Color,
+    ui::{node::text::TextProps, Modifiers},
 };
 
 use super::{context::NodeInputEvent, ui::Ui};
@@ -39,25 +38,8 @@ impl BaseTextField for Ui<'_> {
             let mut internal_state = internal_state.borrow_mut();
 
             props.text = text.into();
-            props.font_family = "times new roman".into();
             if input.is_focused() && internal_state.is_cursor_visible() {
                 props.cursor_position = Some(TextPosition::from_text_index(&props.text, internal_state.cursor_index));
-            }
-
-            modifiers
-                .min_width(Extent::Px(64.0))
-                .fill_color(if input.is_pressed() {
-                    Color::new(1.0, 1.0, 1.0, 0.5)
-                } else if input.is_hovered() {
-                    Color::new(1.0, 1.0, 1.0, 0.25)
-                } else {
-                    Color::new(0.0, 0.0, 0.0, 0.5)
-                })
-                .border_radius(BorderRadius::all(8.0))
-                .border_thickness(BorderThickness::all(2.0));
-
-            if input.is_focused() {
-                modifiers.border_color(Color::new(1.0, 0.0, 0.0, 1.0));
             }
 
             if input.on_release() {

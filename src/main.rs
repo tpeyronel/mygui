@@ -670,7 +670,31 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                         let (text, set_text) = ui.use_state(|| String::new());
 
-                        ui.base_text_field(text, |t| set_text(&t), |_, _, _| {});
+                        ui.base_text_field(
+                            text,
+                            |t| set_text(&t),
+                            |ui, props, modifiers| {
+                                let input = ui.use_input();
+
+                                props.font_family = "times new roman".into();
+
+                                modifiers
+                                    .min_width(Extent::Px(64.0))
+                                    .fill_color(if input.is_pressed() {
+                                        Color::new(1.0, 1.0, 1.0, 0.5)
+                                    } else if input.is_hovered() {
+                                        Color::new(1.0, 1.0, 1.0, 0.25)
+                                    } else {
+                                        Color::new(0.0, 0.0, 0.0, 0.5)
+                                    })
+                                    .border_radius(BorderRadius::all(8.0))
+                                    .border_thickness(BorderThickness::all(2.0));
+
+                                if input.is_focused() {
+                                    modifiers.border_color(Color::new(1.0, 0.0, 0.0, 1.0));
+                                }
+                            },
+                        );
                     });
                 });
             });
