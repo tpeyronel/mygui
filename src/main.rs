@@ -680,18 +680,15 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                                 modifiers
                                     .min_width(Extent::Px(64.0))
-                                    .fill_color(if input.is_pressed() {
-                                        Color::new(1.0, 1.0, 1.0, 0.5)
-                                    } else if input.is_hovered() {
-                                        Color::new(1.0, 1.0, 1.0, 0.25)
-                                    } else {
-                                        Color::new(0.0, 0.0, 0.0, 0.5)
-                                    })
+                                    .fill_color(Color::new(0.25, 0.25, 0.25, 1.0))
                                     .border_radius(BorderRadius::all(8.0))
+                                    .padding(Padding::all(8.0))
                                     .border_thickness(BorderThickness::all(2.0));
 
                                 if input.is_focused() {
-                                    modifiers.border_color(Color::new(1.0, 0.0, 0.0, 1.0));
+                                    modifiers.border_color(Color::new(0.0, 0.0, 1.0, 1.0));
+                                } else {
+                                    modifiers.border_color(Color::new(0.25, 0.25, 0.25, 1.0));
                                 }
                             },
                         );
