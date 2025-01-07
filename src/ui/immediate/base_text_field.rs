@@ -86,7 +86,11 @@ fn process_input_events(
         _ => None,
     });
 
+    let mut shuold_reset_cursor_blink = false;
+
     for text_event in text_events_iter {
+        shuold_reset_cursor_blink = true;
+
         match text_event {
             TextEvent::TextInput(text_input) => {
                 let (left, right) = text.split_at(cursor_index);
@@ -117,6 +121,14 @@ fn process_input_events(
                     text = left[..char_to_the_left_index].to_string() + right;
                     cursor_index -= char_to_the_left.len_utf8();
                 }
+                TextCommand::Delete => {
+                    let (left, right) = text.split_at(cursor_index);
+                    let Some(char_at_index) = right.chars().next() else {
+                        continue;
+                    };
+
+                    text = left.to_string() + &right[char_at_index.len_utf8()..];
+                }
                 _ => {}
             },
         }
@@ -126,9 +138,10 @@ fn process_input_events(
         on_text_change(text);
     }
 
-    if internal_state.cursor_index != cursor_index {
+    internal_state.cursor_index = cursor_index;
+
+    if shuold_reset_cursor_blink {
         internal_state.reset_cursor_blink();
-        internal_state.cursor_index = cursor_index;
     }
 }
 

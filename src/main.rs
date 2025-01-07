@@ -30,9 +30,9 @@ mod input;
 mod is_integer;
 mod rectangle;
 mod renderer;
+mod text;
 mod ui;
 mod vertex;
-mod text;
 
 struct App {
     state: Option<AppState>,
@@ -194,6 +194,14 @@ impl ApplicationHandler for App {
                                 .ui_context
                                 .process_input_event(InputEvent::TextEvent(TextEvent::TextCommand(
                                     TextCommand::Backspace,
+                                )));
+                            return;
+                        }
+                        PhysicalKey::Code(winit::keyboard::KeyCode::Delete) => {
+                            state
+                                .ui_context
+                                .process_input_event(InputEvent::TextEvent(TextEvent::TextCommand(
+                                    TextCommand::Delete,
                                 )));
                             return;
                         }

@@ -57,4 +57,5 @@ pub enum TextCommand {
     ArrowLeft,
     ArrowDown,
     Backspace,
+    Delete,
 }
