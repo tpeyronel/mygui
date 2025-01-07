@@ -15,6 +15,7 @@ impl<'a> TextCursor<'a> {
         }
     }
 
+    #[allow(unused)]
     pub fn index(&self) -> usize {
         self.index
     }
