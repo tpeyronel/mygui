@@ -1,8 +1,8 @@
 use std::time::Instant;
 
 use crate::{
-    font::font_engine::TextPosition,
     input::{TextCommand, TextEvent},
+    text::text_position::TextPosition,
     ui::{border_radius::BorderRadius, border_thickness::BorderThickness, node::text::TextProps, Extent, Modifiers},
     vertex::Color,
 };
@@ -41,7 +41,7 @@ impl BaseTextField for Ui<'_> {
             props.text = text.into();
             props.font_family = "times new roman".into();
             if input.is_focused() && internal_state.is_cursor_visible() {
-                props.cursor_position = Some(TextPosition::Index(internal_state.cursor_index));
+                props.cursor_position = Some(TextPosition::from_text_index(&props.text, internal_state.cursor_index));
             }
 
             modifiers
@@ -89,53 +89,35 @@ fn process_input_events(
     for text_event in text_events_iter {
         match text_event {
             TextEvent::TextInput(text_input) => {
-                let (left, right) = text.split_at(cursor_index as usize);
+                let (left, right) = text.split_at(cursor_index);
                 text = left.to_string() + text_input + right;
-                cursor_index += text_input.len() as u32;
+                cursor_index += text_input.len();
             }
             TextEvent::TextCommand(command) => match command {
                 TextCommand::ArrowRight => {
-                    let Some(char_at_position) = text[cursor_index as usize..].chars().next() else {
+                    let Some(char_at_index) = text[cursor_index..].chars().next() else {
                         continue;
                     };
 
-                    cursor_index += char_at_position.len_utf8() as u32;
+                    cursor_index += char_at_index.len_utf8();
                 }
-                TextCommand::ArrowUp => {}
                 TextCommand::ArrowLeft => {
-                    let (left, _) = text.split_at(cursor_index as usize);
+                    let Some(char_to_the_left) = text[..cursor_index].chars().next_back() else {
+                        continue;
+                    };
 
-                    cursor_index -= left.chars().next_back().map(|c| c.len_utf8() as u32).unwrap_or(0);
-                }
-                TextCommand::ArrowDown => {
-                    // let (_, right) = new_text.split_at(new_cursor_position as usize);
-                    // let original_text_coords =
-                    //     TextPosition::Index(new_cursor_position).to_coords(&text);
-                    // let target_text_coords = TextPositionCoords {
-                    //     line: original_text_coords.line + 1,
-                    //     column: original_text_coords.column,
-                    // };
-                    // let mut text_coords =
-                    //     TextPosition::Index(new_cursor_position).to_coords(&text);
-
-                    // for c in right.chars() {
-                    //     if text_coords.line > target_text_coords.line
-                    //         || (text_coords.line == target_text_coords.line
-                    //             && text_coords.column >= target_text_coords.column)
-                    //     {
-                    //         break;
-                    //     }
-                    // }
+                    cursor_index -= char_to_the_left.len_utf8();
                 }
                 TextCommand::Backspace => {
-                    let (left, right) = text.split_at(cursor_index as usize);
-                    let Some((last_left_char_index, last_left_char)) = left.char_indices().next_back() else {
+                    let (left, right) = text.split_at(cursor_index);
+                    let Some((char_to_the_left_index, char_to_the_left)) = left.char_indices().next_back() else {
                         continue;
                     };
 
-                    text = left[..last_left_char_index].to_string() + right;
-                    cursor_index -= last_left_char.len_utf8() as u32;
+                    text = left[..char_to_the_left_index].to_string() + right;
+                    cursor_index -= char_to_the_left.len_utf8();
                 }
+                _ => {}
             },
         }
     }
@@ -144,7 +126,6 @@ fn process_input_events(
         on_text_change(text);
     }
 
-    // TODO: text position may change without requiring index to change if the text changes.
     if internal_state.cursor_index != cursor_index {
         internal_state.reset_cursor_blink();
         internal_state.cursor_index = cursor_index;
@@ -153,7 +134,7 @@ fn process_input_events(
 
 struct BaseTextFieldInternalState {
     cursor_blink_start: Instant,
-    cursor_index: u32,
+    cursor_index: usize,
 }
 
 impl BaseTextFieldInternalState {

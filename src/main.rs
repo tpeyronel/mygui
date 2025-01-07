@@ -32,6 +32,7 @@ mod rectangle;
 mod renderer;
 mod ui;
 mod vertex;
+mod text;
 
 struct App {
     state: Option<AppState>,

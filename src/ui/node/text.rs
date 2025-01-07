@@ -2,8 +2,9 @@ use dyn_partial_eq::DynPartialEq;
 use glam::{Vec2, Vec4};
 
 use crate::{
-    font::font_engine::{TextLayoutOptions, TextPosition},
+    font::font_engine::TextLayoutOptions,
     rectangle::Rectangle,
+    text::text_position::TextPosition,
     ui::{draw_element::DrawElement, processor::UiNodeProcessor, Layout, Modifiers},
     vertex::Color,
 };
@@ -109,7 +110,7 @@ impl UiNodeProps for TextProps {
         if let Some(cursor_position) = cursor_position {
             const CURSOR_WIDTH: f32 = 2.0;
 
-            let mut position = origin + text_layout.text_map.get_clamped(cursor_position.to_coords(text));
+            let mut position = origin + text_layout.text_map.get_clamped(*cursor_position);
             position.x -= (0.5 * CURSOR_WIDTH).round();
             let cursor_rectangle = DrawElement::Rectangle {
                 bounds: Rectangle::from_position_size(position, Vec2::new(CURSOR_WIDTH, options.line_height)),

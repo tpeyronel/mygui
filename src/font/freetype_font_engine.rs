@@ -7,10 +7,10 @@ use std::{
 use glam::Vec2;
 use walkdir::WalkDir;
 
-use crate::{config::ENABLE_SUBPIXEL_RENDERING, image::image_manager::ImageManager};
+use crate::{config::ENABLE_SUBPIXEL_RENDERING, image::image_manager::ImageManager, text::text_position::TextPosition};
 
 use super::{
-    font_engine::{FontEngine, LaidOutGlyph, TextLayout, TextLayoutOptions, TextMap, TextPositionCoords},
+    font_engine::{FontEngine, LaidOutGlyph, TextLayout, TextLayoutOptions, TextMap},
     font_face::FontFace,
     font_style::FontStyle,
     font_weight::FontWeight,
@@ -321,7 +321,7 @@ struct PenState {
     x: f32,
     baseline_y: f32, // Distance from the top of the text bounds to the *baseline* of the current line, in pixels.
     line_y: f32,     // Distance from the top of the text bounds to the *bottom* of the current line, in pixels.
-    text_position: TextPositionCoords,
+    text_position: TextPosition,
     max_computed_line_width: f32,
 }
 
@@ -331,7 +331,7 @@ impl PenState {
             x: 0.0,
             baseline_y: -(line_height * 0.5 + font_size * 0.5).round() - scaled_descender,
             line_y: -line_height,
-            text_position: TextPositionCoords { line: 0, column: 0 },
+            text_position: TextPosition { line: 0, column: 0 },
             max_computed_line_width: 0.0,
         }
     }

@@ -1,14 +1,12 @@
-use dyn_partial_eq::DynPartialEq;
 use glam::Vec2;
 
 use crate::{
     image::image_manager::{ImageId, ImageManager},
     rectangle::Rectangle,
+    text::text_position::TextPosition,
 };
 
 use super::font_face::GlyphPixelMode;
-
-const TAB_SIZE: u32 = 4;
 
 pub trait FontEngine {
     fn update(&mut self, image_manager: &mut ImageManager);
@@ -51,7 +49,7 @@ impl TextMap {
         Self { lines: Vec::new() }
     }
 
-    pub fn insert(&mut self, text_position: TextPositionCoords, screen_position: Vec2) {
+    pub fn insert(&mut self, text_position: TextPosition, screen_position: Vec2) {
         if text_position.column == 0 {
             assert_eq!(self.lines.len() as u32, text_position.line);
             self.lines.push(TextMapLine {
@@ -66,7 +64,7 @@ impl TextMap {
         }
     }
 
-    pub fn get_clamped(&self, text_position: TextPositionCoords) -> Vec2 {
+    pub fn get_clamped(&self, text_position: TextPosition) -> Vec2 {
         let line = self.lines.get(text_position.line as usize).or(self.lines.last());
 
         match line {
@@ -80,57 +78,6 @@ impl TextMap {
                 Vec2::new(x, y)
             }
             None => Vec2::ZERO,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, DynPartialEq, Eq, Hash)]
-pub struct TextPositionCoords {
-    pub line: u32,
-    pub column: u32,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, DynPartialEq, Eq, Hash)]
-pub enum TextPosition {
-    Coords(TextPositionCoords),
-    Index(u32),
-}
-
-impl TextPosition {
-    pub fn to_coords(&self, text: &str) -> TextPositionCoords {
-        match self {
-            TextPosition::Coords(text_position_coords) => *text_position_coords,
-            &TextPosition::Index(target_index) => {
-                let mut line = 0;
-                let mut column = 0;
-                let mut i = 0;
-
-                for c in text.chars() {
-                    if i >= target_index {
-                        break;
-                    }
-
-                    match c {
-                        '\n' => {
-                            line += 1;
-                            column = 0;
-                        }
-                        '\t' => {
-                            column += TAB_SIZE - (column % TAB_SIZE);
-                        }
-                        _ => {
-                            column += 1;
-                        }
-                    }
-
-                    i += c.len_utf8() as u32;
-                }
-
-                // TODO: don't panic?
-                assert_eq!(i, target_index, "invalid index '{}' for text '{}'", target_index, text);
-
-                TextPositionCoords { line, column }
-            }
         }
     }
 }
