@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap, sync::Arc};
 
 use futures::executor;
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, Extent3d};
 
 use crate::{
     font::font_face::GlyphPixelMode,
@@ -16,11 +16,13 @@ use super::mesh::Mesh;
 const MAX_RECTANGLES: u64 = 2048 * 10;
 const MAX_VERTICES: u64 = 4 * MAX_RECTANGLES;
 const MAX_INDICES: u64 = 6 * MAX_RECTANGLES;
+const MSAA_SAMPLE_COUNT: u32 = 8;
 
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
     queue: wgpu::Queue,
+    multisampled_framebuffer_view: wgpu::TextureView,
     box_pipeline: wgpu::RenderPipeline,
     text_grayscale_pipeline: wgpu::RenderPipeline,
     text_subpixel_pipeline: wgpu::RenderPipeline,
@@ -72,7 +74,8 @@ impl Renderer {
                 required_features: wgpu::Features::BUFFER_BINDING_ARRAY
                     | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY // TODO: apparently not needed?
                     | wgpu::Features::PUSH_CONSTANTS
-                    | wgpu::Features::DUAL_SOURCE_BLENDING,
+                    | wgpu::Features::DUAL_SOURCE_BLENDING
+                    | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 required_limits,
                 memory_hints: wgpu::MemoryHints::MemoryUsage,
             },
@@ -229,6 +232,9 @@ impl Renderer {
             .copied()
             .unwrap_or(swapchain_capabilities.formats[0]);
 
+        let multisampled_framebuffer_view =
+            Self::create_msaa_framebuffer(&device, window_size.width, window_size.height, swapchain_format);
+
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: "vertex buffer".into(),
             size: MAX_VERTICES * std::mem::size_of::<Vertex>() as u64,
@@ -271,7 +277,10 @@ impl Renderer {
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: MSAA_SAMPLE_COUNT,
+                ..Default::default()
+            },
             multiview: None,
             cache: None,
         });
@@ -304,7 +313,10 @@ impl Renderer {
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: MSAA_SAMPLE_COUNT,
+                ..Default::default()
+            },
             multiview: None,
             cache: None,
         });
@@ -337,7 +349,10 @@ impl Renderer {
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: MSAA_SAMPLE_COUNT,
+                ..Default::default()
+            },
             multiview: None,
             cache: None,
         });
@@ -370,7 +385,10 @@ impl Renderer {
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: MSAA_SAMPLE_COUNT,
+                ..Default::default()
+            },
             multiview: None,
             cache: None,
         });
@@ -392,6 +410,7 @@ impl Renderer {
             surface,
             device,
             queue,
+            multisampled_framebuffer_view,
             box_pipeline,
             text_grayscale_pipeline,
             text_subpixel_pipeline,
@@ -416,6 +435,8 @@ impl Renderer {
         self.global_uniform.viewport_width = self.config.width as f32;
         self.global_uniform.viewport_height = self.config.height as f32;
         self.surface.configure(&self.device, &self.config);
+        self.multisampled_framebuffer_view =
+            Self::create_msaa_framebuffer(&self.device, self.config.width, self.config.height, self.config.format);
     }
 
     pub fn register_image(&mut self, image_manager: &ImageManager, image_id: ImageId) {
@@ -606,8 +627,8 @@ impl Renderer {
             let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
+                    view: &self.multisampled_framebuffer_view,
+                    resolve_target: Some(&view),
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
                             r: 0.0,
@@ -673,6 +694,30 @@ impl Renderer {
 
         self.queue.submit(Some(encoder.finish()));
         frame.present();
+    }
+
+    fn create_msaa_framebuffer(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        format: wgpu::TextureFormat,
+    ) -> wgpu::TextureView {
+        device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("multisampled framebuffer"),
+                size: Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: MSAA_SAMPLE_COUNT,
+                dimension: wgpu::TextureDimension::D2,
+                format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default())
     }
 }
 
