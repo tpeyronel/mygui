@@ -13,6 +13,7 @@ use glam::Vec2;
 use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
+use crate::vertex::Vertex;
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
 
 pub struct UiNodeProcessor<'a> {
@@ -381,15 +382,248 @@ impl<'a> UiNodeProcessor<'a> {
         border_thickness: BorderThickness,
         border_radius: BorderRadius,
     ) {
-        let rectangle = DrawElement::Rectangle {
-            bounds: Rectangle::from_position_size(position, size),
-            fill_color,
-            border_color,
-            border_radius: border_radius.to_vec4(),
-            border_width: border_thickness.to_vec4(),
+        let mut vertices = vec![];
+
+        let bl = position;
+        let br = position + Vec2::new(size.x, 0.0);
+        let tr = position + size;
+        let tl = position + Vec2::new(0.0, size.y);
+
+        let (bl_left, bl_right) = if border_radius.bottom_left > 0.0 {
+            vertices.push(Vertex {
+                pos: bl + Vec2::new(0.0, border_radius.bottom_left),
+                uv: Vec2::ZERO,
+            });
+
+            vertices.push(Vertex {
+                pos: bl + Vec2::new(border_radius.bottom_left, 0.0),
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+        } else {
+            vertices.push(Vertex {
+                pos: bl,
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
         };
 
-        self.draw_data.push(rectangle);
+        let (br_left, br_right) = if border_radius.bottom_right > 0.0 {
+            vertices.push(Vertex {
+                pos: br + Vec2::new(-border_radius.bottom_right, 0.0),
+                uv: Vec2::ZERO,
+            });
+
+            vertices.push(Vertex {
+                pos: br + Vec2::new(0.0, border_radius.bottom_right),
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+        } else {
+            vertices.push(Vertex {
+                pos: br,
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+        };
+
+        let (tr_left, tr_right) = if border_radius.top_right > 0.0 {
+            vertices.push(Vertex {
+                pos: tr + Vec2::new(0.0, -border_radius.top_right),
+                uv: Vec2::ZERO,
+            });
+
+            vertices.push(Vertex {
+                pos: tr + Vec2::new(-border_radius.top_right, 0.0),
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+        } else {
+            vertices.push(Vertex {
+                pos: tr,
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+        };
+
+        let (tl_left, tl_right) = if border_radius.top_left > 0.0 {
+            vertices.push(Vertex {
+                pos: tl + Vec2::new(border_radius.top_left, 0.0),
+                uv: Vec2::ZERO,
+            });
+
+            vertices.push(Vertex {
+                pos: tl + Vec2::new(0.0, -border_radius.top_left),
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+        } else {
+            vertices.push(Vertex {
+                pos: tl,
+                uv: Vec2::ZERO,
+            });
+
+            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+        };
+
+        let mut indices = vec![[bl_right, br_left, tr_right], [bl_right, tr_right, tl_left]];
+
+        match (bl_left != bl_right, tl_left != tl_right) {
+            (false, false) => (),
+            (false, true) => indices.push([bl_left, tl_left, tl_right]),
+            (true, false) => indices.push([bl_left, bl_right, tl_left]),
+            (true, true) => {
+                indices.push([bl_left, bl_right, tl_left]);
+                indices.push([bl_left, tl_left, tl_right]);
+            }
+        }
+
+        match (br_left == br_right, tr_left == tr_right) {
+            (true, true) => (),
+            (true, false) => indices.push([br_left, tr_left, tr_right]),
+            (false, true) => indices.push([tr_left, br_left, br_right]),
+            (false, false) => {
+                indices.push([br_left, br_right, tr_left]);
+                indices.push([br_left, tr_left, tr_right]);
+            }
+        }
+
+        /* Emit corners */
+
+        let depth = 3;
+
+        if border_radius.bottom_left > 0.0 {
+            Self::emit_rectangle_corners_rec(
+                bl,
+                border_radius.bottom_left,
+                Vec2::new(-1.0, -1.0),
+                0.0,
+                bl_left,
+                std::f32::consts::FRAC_PI_2,
+                bl_right,
+                depth,
+                &mut vertices,
+                &mut indices,
+            );
+        }
+
+        if border_radius.bottom_right > 0.0 {
+            Self::emit_rectangle_corners_rec(
+                br,
+                border_radius.bottom_right,
+                Vec2::new(1.0, -1.0),
+                std::f32::consts::FRAC_PI_2,
+                br_left,
+                0.0,
+                br_right,
+                depth,
+                &mut vertices,
+                &mut indices,
+            );
+        }
+
+        if border_radius.top_right > 0.0 {
+            Self::emit_rectangle_corners_rec(
+                tr,
+                border_radius.top_right,
+                Vec2::new(1.0, 1.0),
+                0.0,
+                tr_left,
+                std::f32::consts::FRAC_PI_2,
+                tr_right,
+                depth,
+                &mut vertices,
+                &mut indices,
+            );
+        }
+
+        if border_radius.top_left > 0.0 {
+            Self::emit_rectangle_corners_rec(
+                tl,
+                border_radius.top_left,
+                Vec2::new(-1.0, 1.0),
+                std::f32::consts::FRAC_PI_2,
+                tl_left,
+                0.0,
+                tl_right,
+                depth,
+                &mut vertices,
+                &mut indices,
+            );
+        }
+
+        let indices = indices.into_flattened();
+
+        self.draw_data.push(DrawElement::Mesh {
+            vertices,
+            indices,
+            fill_color,
+        });
+    }
+
+    fn emit_rectangle_corners_rec(
+        position: Vec2,
+        corner_radius: f32,
+        rotation: Vec2,
+        left_angle: f32,
+        left_index: u32,
+        right_angle: f32,
+        right_index: u32,
+        depth: u32,
+        vertices: &mut Vec<Vertex>,
+        indices: &mut Vec<[u32; 3]>,
+    ) {
+        let angle = (left_angle + right_angle) * 0.5;
+
+        let (y_unit, x_unit) = angle.sin_cos();
+        let x = x_unit * corner_radius;
+        let y = y_unit * corner_radius;
+
+        let vertex = Vertex {
+            pos: position + corner_radius * (-rotation) + Vec2::new(x, y) * rotation,
+            uv: Vec2::ZERO,
+        };
+
+        vertices.push(vertex);
+
+        let index = vertices.len() as u32 - 1;
+
+        indices.push([left_index, index, right_index]);
+
+        if depth > 0 {
+            Self::emit_rectangle_corners_rec(
+                position,
+                corner_radius,
+                rotation,
+                left_angle,
+                left_index,
+                angle,
+                index,
+                depth - 1,
+                vertices,
+                indices,
+            );
+
+            Self::emit_rectangle_corners_rec(
+                position,
+                corner_radius,
+                rotation,
+                angle,
+                index,
+                right_angle,
+                right_index,
+                depth - 1,
+                vertices,
+                indices,
+            );
+        }
     }
 }
 

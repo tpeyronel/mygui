@@ -3,7 +3,7 @@ use glam::{Vec2, Vec4};
 pub type Color = Vec4;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable, PartialEq)]
 pub struct Vertex {
     pub pos: Vec2,
     pub uv: Vec2,

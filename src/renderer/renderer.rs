@@ -13,7 +13,7 @@ use crate::{
 
 use super::mesh::Mesh;
 
-const MAX_RECTANGLES: u64 = 2048;
+const MAX_RECTANGLES: u64 = 2048 * 10;
 const MAX_VERTICES: u64 = 4 * MAX_RECTANGLES;
 const MAX_INDICES: u64 = 6 * MAX_RECTANGLES;
 
@@ -515,6 +515,8 @@ impl Renderer {
                         indices,
                         rectangle_data,
                     } => {
+                        assert_eq!(vertices.len(), 4);
+                        assert_eq!(indices.len(), 6);
                         all_vertices.extend(vertices);
                         all_indices.extend(indices);
 
@@ -524,6 +526,7 @@ impl Renderer {
                         ProcessedMesh::Rectangle {
                             base_vertex,
                             first_index,
+                            index_count: 6,
                             rectangle_data_index,
                         }
                     }
@@ -543,6 +546,26 @@ impl Renderer {
                             text_color,
                             image_id,
                             pixel_mode,
+                        }
+                    }
+                    Mesh::Mesh {
+                        vertices,
+                        indices,
+                        rectangle_data,
+                    } => {
+                        let index_count = indices.len() as u32;
+
+                        all_vertices.extend(vertices);
+                        all_indices.extend(indices);
+
+                        let rectangle_data_index = all_rectangle_data.len() as u32;
+                        all_rectangle_data.push(rectangle_data);
+
+                        ProcessedMesh::Rectangle {
+                            base_vertex,
+                            first_index,
+                            index_count,
+                            rectangle_data_index,
                         }
                     }
                 }
@@ -608,6 +631,7 @@ impl Renderer {
                     ProcessedMesh::Rectangle {
                         base_vertex,
                         first_index,
+                        index_count,
                         rectangle_data_index,
                     } => {
                         rpass.set_pipeline(&self.box_pipeline);
@@ -618,7 +642,7 @@ impl Renderer {
                             0,
                             bytemuck::cast_slice(&[*rectangle_data_index]),
                         );
-                        rpass.draw_indexed(*first_index..*first_index + 6, *base_vertex, 0..1);
+                        rpass.draw_indexed(*first_index..*first_index + *index_count, *base_vertex, 0..1);
                     }
                     ProcessedMesh::TextGlyph {
                         base_vertex,
@@ -673,6 +697,7 @@ enum ProcessedMesh {
     Rectangle {
         base_vertex: i32,
         first_index: u32,
+        index_count: u32,
         rectangle_data_index: u32,
     },
     TextGlyph {

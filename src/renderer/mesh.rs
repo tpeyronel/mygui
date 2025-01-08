@@ -9,6 +9,11 @@ use crate::{
 };
 
 pub enum Mesh {
+    Mesh {
+        vertices: Vec<Vertex>,
+        indices: Vec<u32>,
+        rectangle_data: RectangleData,
+    },
     Rectangle {
         vertices: Vec<Vertex>,
         indices: Vec<u32>,
@@ -92,6 +97,24 @@ impl Mesh {
                     pixel_mode: *pixel_mode,
                 }
             }
+            DrawElement::Mesh {
+                vertices,
+                indices,
+                fill_color,
+            } => Self::Mesh {
+                vertices: vertices.clone(),
+                indices: indices.clone(),
+                rectangle_data: RectangleData {
+                    left: 0.0,
+                    bottom: 0.0,
+                    right: 0.0,
+                    top: 0.0,
+                    fill_color: *fill_color,
+                    border_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                    border_radius: Vec4::ZERO,
+                    border_width: Vec4::ZERO,
+                },
+            },
         }
     }
 }
