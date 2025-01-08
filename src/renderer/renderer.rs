@@ -75,6 +75,7 @@ impl Renderer {
                     | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY // TODO: apparently not needed?
                     | wgpu::Features::PUSH_CONSTANTS
                     | wgpu::Features::DUAL_SOURCE_BLENDING
+                    | wgpu::Features::POLYGON_MODE_LINE
                     | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 required_limits,
                 memory_hints: wgpu::MemoryHints::MemoryUsage,
@@ -275,7 +276,10 @@ impl Renderer {
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
-            primitive: wgpu::PrimitiveState::default(),
+            primitive: wgpu::PrimitiveState {
+                // polygon_mode: wgpu::PolygonMode::Line,
+                ..Default::default()
+            },
             depth_stencil: None,
             multisample: wgpu::MultisampleState {
                 count: MSAA_SAMPLE_COUNT,
