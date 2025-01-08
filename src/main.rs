@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{atomic::AtomicU32, Arc};
 
 use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
@@ -33,6 +33,8 @@ mod renderer;
 mod text;
 mod ui;
 mod vertex;
+
+pub static DEPTH_COUNT: AtomicU32 = AtomicU32::new(5);
 
 struct App {
     state: Option<AppState>,
@@ -134,6 +136,7 @@ impl ApplicationHandler for App {
                 let window_size = Vec2::new(window_size.width as f32, window_size.height as f32);
                 state.draw_data = state.ui_context.build_ui(window_size, &mut state.font_engine, |ui| {
                     example_ui(ui);
+                    // test_rectangle_ui(ui);
                 });
                 state.renderer.update_draw_data(&state.draw_data);
                 state.renderer.render();
@@ -734,6 +737,60 @@ fn example_ui(ui: &mut Ui<'_>) {
                             set_count(&(count + 1));
                         }
                     });
+                }
+            });
+        });
+    });
+}
+
+fn test_rectangle_ui(ui: &mut Ui) {
+    ui.column(|ui, _| {
+        ui.block(|_, modifiers| {
+            modifiers
+                .height(Extent::Px(0.0))
+                .weight(1.0)
+                .margin(Margin::all(8.0))
+                .fill_color(Color::new(1.0, 1.0, 1.0, 1.0))
+                .border_radius(BorderRadius::new(320.0, 640.0, 80.0, 160.0));
+        });
+
+        ui.row(|ui, modifiers| {
+            modifiers.height(Extent::FitContent);
+
+            ui.block(|ui, modifiers| {
+                modifiers
+                    .width(Extent::Px(0.0))
+                    .fill_color(Color::new(1.0, 1.0, 0.0, 1.0))
+                    .weight(1.0);
+
+                let input = ui.use_input();
+
+                if input.on_release() {
+                    let d = DEPTH_COUNT.load(std::sync::atomic::Ordering::SeqCst);
+                    DEPTH_COUNT.store(d.saturating_sub(1), std::sync::atomic::Ordering::SeqCst);
+                }
+            });
+
+            ui.text(
+                format!("{}", DEPTH_COUNT.load(std::sync::atomic::Ordering::SeqCst)),
+                |_, props, modifiers| {
+                    props.font_family = "jetbrains mono".into();
+
+                    modifiers.padding(Padding::all(16.0));
+                },
+            );
+
+            ui.block(|ui, modifiers| {
+                modifiers
+                    .width(Extent::Px(0.0))
+                    .fill_color(Color::new(1.0, 1.0, 0.0, 1.0))
+                    .weight(1.0);
+
+                let input = ui.use_input();
+
+                if input.on_release() {
+                    let d = DEPTH_COUNT.load(std::sync::atomic::Ordering::SeqCst);
+                    DEPTH_COUNT.store(d.saturating_add(1), std::sync::atomic::Ordering::Release);
                 }
             });
         });

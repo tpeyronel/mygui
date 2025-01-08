@@ -14,6 +14,7 @@ use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
 use crate::vertex::Vertex;
+use crate::DEPTH_COUNT;
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
 
 pub struct UiNodeProcessor<'a> {
@@ -497,7 +498,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         /* Emit corners */
 
-        let depth = 3;
+        let depth = DEPTH_COUNT.load(std::sync::atomic::Ordering::Relaxed);
 
         if border_radius.bottom_left > 0.0 {
             Self::emit_rectangle_corners_rec(
