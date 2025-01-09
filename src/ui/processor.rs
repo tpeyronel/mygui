@@ -2,6 +2,7 @@ use core::f32;
 use std::u64;
 
 use super::border_thickness::BorderThickness;
+use super::color_mesh_builder::ColorMeshBuilder;
 use super::draw_element::DrawElement;
 use super::margin::Margin;
 use super::measurements_cache::MeasurementsCache;
@@ -13,7 +14,6 @@ use glam::Vec2;
 use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
-use crate::vertex::Vertex;
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
 
 pub struct UiNodeProcessor<'a> {
@@ -372,7 +372,7 @@ impl<'a> UiNodeProcessor<'a> {
     }
 
     fn emit_rectangle(&mut self, layout: &Layout, fill_color: Color, border_color: Color, border_radius: BorderRadius) {
-        let mut vertices = vec![];
+        let mut builder = ColorMeshBuilder::new();
 
         let padding_bl = layout.padding_position();
         let padding_br = layout.padding_position() + layout.padding_size().with_y(0.0);
@@ -380,108 +380,69 @@ impl<'a> UiNodeProcessor<'a> {
         let padding_tl = layout.padding_position() + layout.padding_size().with_x(0.0);
 
         let (bl_left, bl_right) = if border_radius.bottom_left > 0.0 {
-            vertices.push(Vertex {
-                pos: padding_bl + Vec2::new(0.0, border_radius.bottom_left),
-                uv: Vec2::ZERO,
-            });
+            let left = builder.add_vertex(padding_bl + Vec2::new(0.0, border_radius.bottom_left), fill_color);
+            let right = builder.add_vertex(padding_bl + Vec2::new(border_radius.bottom_left, 0.0), fill_color);
 
-            vertices.push(Vertex {
-                pos: padding_bl + Vec2::new(border_radius.bottom_left, 0.0),
-                uv: Vec2::ZERO,
-            });
-
-            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+            (left, right)
         } else {
-            vertices.push(Vertex {
-                pos: padding_bl,
-                uv: Vec2::ZERO,
-            });
+            let idx = builder.add_vertex(padding_bl, fill_color);
 
-            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+            (idx, idx)
         };
 
         let (br_left, br_right) = if border_radius.bottom_right > 0.0 {
-            vertices.push(Vertex {
-                pos: padding_br + Vec2::new(-border_radius.bottom_right, 0.0),
-                uv: Vec2::ZERO,
-            });
+            let left = builder.add_vertex(padding_br + Vec2::new(-border_radius.bottom_right, 0.0), fill_color);
+            let right = builder.add_vertex(padding_br + Vec2::new(0.0, border_radius.bottom_right), fill_color);
 
-            vertices.push(Vertex {
-                pos: padding_br + Vec2::new(0.0, border_radius.bottom_right),
-                uv: Vec2::ZERO,
-            });
-
-            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+            (left, right)
         } else {
-            vertices.push(Vertex {
-                pos: padding_br,
-                uv: Vec2::ZERO,
-            });
+            let idx = builder.add_vertex(padding_br, fill_color);
 
-            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+            (idx, idx)
         };
 
         let (tr_left, tr_right) = if border_radius.top_right > 0.0 {
-            vertices.push(Vertex {
-                pos: padding_tr + Vec2::new(0.0, -border_radius.top_right),
-                uv: Vec2::ZERO,
-            });
+            let left = builder.add_vertex(padding_tr + Vec2::new(0.0, -border_radius.top_right), fill_color);
+            let right = builder.add_vertex(padding_tr + Vec2::new(-border_radius.top_right, 0.0), fill_color);
 
-            vertices.push(Vertex {
-                pos: padding_tr + Vec2::new(-border_radius.top_right, 0.0),
-                uv: Vec2::ZERO,
-            });
-
-            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+            (left, right)
         } else {
-            vertices.push(Vertex {
-                pos: padding_tr,
-                uv: Vec2::ZERO,
-            });
+            let idx = builder.add_vertex(padding_tr, fill_color);
 
-            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+            (idx, idx)
         };
 
         let (tl_left, tl_right) = if border_radius.top_left > 0.0 {
-            vertices.push(Vertex {
-                pos: padding_tl + Vec2::new(border_radius.top_left, 0.0),
-                uv: Vec2::ZERO,
-            });
+            let left = builder.add_vertex(padding_tl + Vec2::new(border_radius.top_left, 0.0), fill_color);
+            let right = builder.add_vertex(padding_tl + Vec2::new(0.0, -border_radius.top_left), fill_color);
 
-            vertices.push(Vertex {
-                pos: padding_tl + Vec2::new(0.0, -border_radius.top_left),
-                uv: Vec2::ZERO,
-            });
-
-            (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
+            (left, right)
         } else {
-            vertices.push(Vertex {
-                pos: padding_tl,
-                uv: Vec2::ZERO,
-            });
+            let idx = builder.add_vertex(padding_tl, fill_color);
 
-            (vertices.len() as u32 - 1, vertices.len() as u32 - 1)
+            (idx, idx)
         };
 
-        let mut indices = vec![[bl_right, br_left, tr_right], [bl_right, tr_right, tl_left]];
+        builder.add_triangle(bl_right, br_left, tr_right);
+        builder.add_triangle(bl_right, tr_right, tl_left);
 
         match (bl_left != bl_right, tl_left != tl_right) {
             (false, false) => (),
-            (false, true) => indices.push([bl_left, tl_left, tl_right]),
-            (true, false) => indices.push([bl_left, bl_right, tl_left]),
+            (false, true) => builder.add_triangle(bl_left, tl_left, tl_right),
+            (true, false) => builder.add_triangle(bl_left, bl_right, tl_left),
             (true, true) => {
-                indices.push([bl_left, bl_right, tl_left]);
-                indices.push([bl_left, tl_left, tl_right]);
+                builder.add_triangle(bl_left, bl_right, tl_left);
+                builder.add_triangle(bl_left, tl_left, tl_right);
             }
         }
 
         match (br_left == br_right, tr_left == tr_right) {
             (true, true) => (),
-            (true, false) => indices.push([br_left, tr_left, tr_right]),
-            (false, true) => indices.push([tr_left, br_left, br_right]),
+            (true, false) => builder.add_triangle(br_left, tr_left, tr_right),
+            (false, true) => builder.add_triangle(tr_left, br_left, br_right),
             (false, false) => {
-                indices.push([br_left, br_right, tr_left]);
-                indices.push([br_left, tr_left, tr_right]);
+                builder.add_triangle(br_left, br_right, tr_left);
+                builder.add_triangle(br_left, tr_left, tr_right);
             }
         }
 
@@ -496,8 +457,8 @@ impl<'a> UiNodeProcessor<'a> {
                 std::f32::consts::FRAC_PI_2,
                 bl_right,
                 Self::compute_corner_depth(border_radius.bottom_left),
-                &mut vertices,
-                &mut indices,
+                fill_color,
+                &mut builder,
             );
         }
 
@@ -510,8 +471,8 @@ impl<'a> UiNodeProcessor<'a> {
                 0.0,
                 br_right,
                 Self::compute_corner_depth(border_radius.bottom_right),
-                &mut vertices,
-                &mut indices,
+                fill_color,
+                &mut builder,
             );
         }
 
@@ -524,8 +485,8 @@ impl<'a> UiNodeProcessor<'a> {
                 std::f32::consts::FRAC_PI_2,
                 tr_right,
                 Self::compute_corner_depth(border_radius.top_right),
-                &mut vertices,
-                &mut indices,
+                fill_color,
+                &mut builder,
             );
         }
 
@@ -538,18 +499,14 @@ impl<'a> UiNodeProcessor<'a> {
                 0.0,
                 tl_right,
                 Self::compute_corner_depth(border_radius.top_left),
-                &mut vertices,
-                &mut indices,
+                fill_color,
+                &mut builder,
             );
         }
 
-        let indices = indices.into_flattened();
+        let mesh = builder.build();
 
-        self.draw_data.push(DrawElement::Mesh {
-            vertices,
-            indices,
-            fill_color,
-        });
+        self.draw_data.push(DrawElement::Mesh(mesh));
     }
 
     fn compute_corner_depth(corner_radius: f32) -> u32 {
@@ -565,38 +522,20 @@ impl<'a> UiNodeProcessor<'a> {
         right_angle: f32,
         right_index: u32,
         depth: u32,
-        vertices: &mut Vec<Vertex>,
-        indices: &mut Vec<[u32; 3]>,
+        color: Color,
+        builder: &mut ColorMeshBuilder,
     ) {
         let alpha = (left_angle + right_angle) * 0.5;
 
         let (sin_alpha, cos_alpha) = alpha.sin_cos();
 
-        let vertex = Vertex {
-            pos: Vec2::new(lerp(w.x, v.x, cos_alpha), lerp(v.y, w.y, sin_alpha)),
-            uv: Vec2::ZERO,
-        };
+        let index = builder.add_vertex(Vec2::new(lerp(w.x, v.x, cos_alpha), lerp(v.y, w.y, sin_alpha)), color);
 
-        vertices.push(vertex);
-
-        let index = vertices.len() as u32 - 1;
-
-        indices.push([left_index, index, right_index]);
+        builder.add_triangle(left_index, index, right_index);
 
         if depth > 0 {
-            Self::emit_rectangle_corners_rec(v, w, left_angle, left_index, alpha, index, depth - 1, vertices, indices);
-
-            Self::emit_rectangle_corners_rec(
-                v,
-                w,
-                alpha,
-                index,
-                right_angle,
-                right_index,
-                depth - 1,
-                vertices,
-                indices,
-            );
+            Self::emit_rectangle_corners_rec(v, w, left_angle, left_index, alpha, index, depth - 1, color, builder);
+            Self::emit_rectangle_corners_rec(v, w, alpha, index, right_angle, right_index, depth - 1, color, builder);
         }
     }
 }

@@ -1,11 +1,13 @@
 use dyn_partial_eq::DynPartialEq;
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 
 use crate::{
     font::font_engine::TextLayoutOptions,
     rectangle::Rectangle,
     text::text_position::TextPosition,
-    ui::{draw_element::DrawElement, processor::UiNodeProcessor, Layout, Modifiers},
+    ui::{
+        color_mesh_builder::ColorMeshBuilder, draw_element::DrawElement, processor::UiNodeProcessor, Layout, Modifiers,
+    },
     vertex::Color,
 };
 
@@ -112,15 +114,20 @@ impl UiNodeProps for TextProps {
 
             let mut position = origin + text_layout.text_map.get_clamped(*cursor_position);
             position.x -= (0.5 * CURSOR_WIDTH).round();
-            let cursor_rectangle = DrawElement::Rectangle {
-                bounds: Rectangle::from_position_size(position, Vec2::new(CURSOR_WIDTH, options.line_height)),
-                fill_color: Color::new(1.0, 1.0, 1.0, 1.0),
-                border_color: Color::ZERO,
-                border_radius: Vec4::ZERO,
-                border_width: Vec4::ZERO,
-            };
 
-            processor.draw_data.push(cursor_rectangle);
+            let cursor_rectangle =
+                Rectangle::from_position_size(position, Vec2::new(CURSOR_WIDTH, options.line_height));
+            let cursor_color = Color::new(1.0, 1.0, 1.0, 1.0);
+
+            let mut mesh_builder = ColorMeshBuilder::new();
+            mesh_builder.add_vertex(cursor_rectangle.bottom_left(), cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.bottom_right(), cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.top_right(), cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.top_left(), cursor_color);
+            mesh_builder.add_triangle(0, 1, 2);
+            mesh_builder.add_triangle(0, 2, 3);
+
+            processor.draw_data.push(DrawElement::Mesh(mesh_builder.build()));
         }
     }
 }

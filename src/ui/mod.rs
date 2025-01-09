@@ -1,9 +1,11 @@
 pub mod border_radius;
 pub mod border_thickness;
+pub mod color_mesh_builder;
 pub mod draw_element;
 pub mod immediate;
 pub mod margin;
 mod measurements_cache;
+pub mod mesh;
 mod node;
 pub mod padding;
 mod processor;

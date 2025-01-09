@@ -20,12 +20,13 @@ var<push_constant> rectangle_idx: u32;
 
 struct VertexIn {
     @location(0) pos: vec2<f32>,
-    @location(1) uv: vec2<f32>,
+    @location(1) color: vec4<f32>,
 }
 
 struct VertexOut {
     @builtin(position) _position: vec4<f32>,
     @location(0) pos: vec2<f32>,
+    @location(1) color: vec4<f32>,
 };
 
 @vertex
@@ -38,15 +39,11 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, in: VertexIn) -> VertexOut {
         1.0,
     );
     out.pos = in.pos;
+    out.color = in.color;
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    let data = rectangle_data[rectangle_idx];
-
-    let fill_color = data.fill_color;
-    let border_color = data.border_color;
-
-    return fill_color;
+    return in.color;
 }
