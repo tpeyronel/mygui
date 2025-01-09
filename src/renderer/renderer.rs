@@ -23,6 +23,8 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     multisampled_framebuffer_view: wgpu::TextureView,
+    target_framebuffer_view: wgpu::TextureView,
+    target_framebuffer_sampler: wgpu::Sampler,
     box_pipeline: wgpu::RenderPipeline,
     text_grayscale_pipeline: wgpu::RenderPipeline,
     text_subpixel_pipeline: wgpu::RenderPipeline,
@@ -36,6 +38,9 @@ pub struct Renderer {
     global_uniform_bind_group: wgpu::BindGroup,
     rectangle_data_uniform_buffer: wgpu::Buffer,
     rectangle_data_uniform_bind_group: wgpu::BindGroup,
+    postprocess_bind_group_layout: wgpu::BindGroupLayout,
+    postprocess_bind_group: wgpu::BindGroup,
+    postprocess_pipeline: wgpu::RenderPipeline,
     config: wgpu::SurfaceConfiguration,
     processed_meshes: Vec<ProcessedMesh>,
 }
@@ -106,6 +111,13 @@ impl Renderer {
         let texture_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("texture shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/texture_shader.wgsl"))),
+        });
+
+        let postprocess_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("postprocess shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!(
+                "../../assets/shaders/gamma_correction.wgsl"
+            ))),
         });
 
         let global_uniform = GlobalUniform {
@@ -226,15 +238,24 @@ impl Renderer {
         });
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
-        let swapchain_format = swapchain_capabilities
-            .formats
-            .iter()
-            .find(|f| f.is_srgb())
-            .copied()
-            .unwrap_or(swapchain_capabilities.formats[0]);
+        let swapchain_format = wgpu::TextureFormat::Bgra8Unorm;
 
         let multisampled_framebuffer_view =
             Self::create_msaa_framebuffer(&device, window_size.width, window_size.height, swapchain_format);
+
+        let target_framebuffer_view =
+            Self::create_target_framebuffer(&device, window_size.width, window_size.height, swapchain_format);
+
+        let target_framebuffer_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("target framebuffer sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: "vertex buffer".into(),
@@ -397,6 +418,67 @@ impl Renderer {
             cache: None,
         });
 
+        let postprocess_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("postprocess bind group layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                    count: None,
+                },
+            ],
+        });
+
+        let postprocess_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("postprocess pipeline layout"),
+            bind_group_layouts: &[&postprocess_bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
+        let postprocess_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("postprocess pipeline"),
+            layout: Some(&postprocess_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &postprocess_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &postprocess_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: swapchain_format,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        let postprocess_bind_group = Self::create_postprocess_bind_group(
+            &device,
+            &texture_bind_group_layout,
+            &target_framebuffer_view,
+            &target_framebuffer_sampler,
+        );
+
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: swapchain_format,
@@ -415,6 +497,8 @@ impl Renderer {
             device,
             queue,
             multisampled_framebuffer_view,
+            target_framebuffer_view,
+            target_framebuffer_sampler,
             box_pipeline,
             text_grayscale_pipeline,
             text_subpixel_pipeline,
@@ -428,6 +512,9 @@ impl Renderer {
             global_uniform_bind_group,
             rectangle_data_uniform_buffer,
             rectangle_data_uniform_bind_group,
+            postprocess_bind_group_layout,
+            postprocess_bind_group,
+            postprocess_pipeline,
             config,
             processed_meshes: Vec::new(),
         }
@@ -441,6 +528,14 @@ impl Renderer {
         self.surface.configure(&self.device, &self.config);
         self.multisampled_framebuffer_view =
             Self::create_msaa_framebuffer(&self.device, self.config.width, self.config.height, self.config.format);
+        self.target_framebuffer_view =
+            Self::create_target_framebuffer(&self.device, self.config.width, self.config.height, self.config.format);
+        self.postprocess_bind_group = Self::create_postprocess_bind_group(
+            &self.device,
+            &self.postprocess_bind_group_layout,
+            &self.target_framebuffer_view,
+            &self.target_framebuffer_sampler,
+        );
     }
 
     pub fn register_image(&mut self, image_manager: &ImageManager, image_id: ImageId) {
@@ -632,7 +727,7 @@ impl Renderer {
                 label: None,
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &self.multisampled_framebuffer_view,
-                    resolve_target: Some(&view),
+                    resolve_target: Some(&self.target_framebuffer_view),
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
                             r: 0.0,
@@ -696,6 +791,33 @@ impl Renderer {
             }
         }
 
+        // Postprocess render pass
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: None,
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.0,
+                            g: 0.0,
+                            b: 0.0,
+                            a: 0.0,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+
+            rpass.set_pipeline(&self.postprocess_pipeline);
+            rpass.set_bind_group(0, &self.postprocess_bind_group, &[]);
+            rpass.draw(0..3, 0..1);
+        }
+
         self.queue.submit(Some(encoder.finish()));
         frame.present();
     }
@@ -722,6 +844,55 @@ impl Renderer {
                 view_formats: &[],
             })
             .create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
+    fn create_target_framebuffer(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        format: wgpu::TextureFormat,
+    ) -> wgpu::TextureView {
+        device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("target framebuffer"),
+                size: Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor {
+                label: Some("target framebuffer view"),
+                ..Default::default()
+            })
+    }
+
+    fn create_postprocess_bind_group(
+        device: &wgpu::Device,
+        bind_group_layout: &wgpu::BindGroupLayout,
+        target_framebuffer_view: &wgpu::TextureView,
+        target_framebuffer_sampler: &wgpu::Sampler,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("postprocess bind group"),
+            layout: bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(target_framebuffer_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(target_framebuffer_sampler),
+                },
+            ],
+        })
     }
 }
 
