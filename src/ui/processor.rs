@@ -14,7 +14,6 @@ use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
 use crate::vertex::Vertex;
-use crate::DEPTH_COUNT;
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
 
 pub struct UiNodeProcessor<'a> {
@@ -498,8 +497,6 @@ impl<'a> UiNodeProcessor<'a> {
 
         /* Emit corners */
 
-        let depth = DEPTH_COUNT.load(std::sync::atomic::Ordering::Relaxed);
-
         if border_radius.bottom_left > 0.0 {
             Self::emit_rectangle_corners_rec(
                 bl,
@@ -509,7 +506,7 @@ impl<'a> UiNodeProcessor<'a> {
                 bl_left,
                 std::f32::consts::FRAC_PI_2,
                 bl_right,
-                depth,
+                Self::compute_corner_depth(border_radius.bottom_left),
                 &mut vertices,
                 &mut indices,
             );
@@ -524,7 +521,7 @@ impl<'a> UiNodeProcessor<'a> {
                 br_left,
                 0.0,
                 br_right,
-                depth,
+                Self::compute_corner_depth(border_radius.bottom_right),
                 &mut vertices,
                 &mut indices,
             );
@@ -539,7 +536,7 @@ impl<'a> UiNodeProcessor<'a> {
                 tr_left,
                 std::f32::consts::FRAC_PI_2,
                 tr_right,
-                depth,
+                Self::compute_corner_depth(border_radius.top_right),
                 &mut vertices,
                 &mut indices,
             );
@@ -554,7 +551,7 @@ impl<'a> UiNodeProcessor<'a> {
                 tl_left,
                 0.0,
                 tl_right,
-                depth,
+                Self::compute_corner_depth(border_radius.top_left),
                 &mut vertices,
                 &mut indices,
             );
@@ -567,6 +564,11 @@ impl<'a> UiNodeProcessor<'a> {
             indices,
             fill_color,
         });
+    }
+
+    fn compute_corner_depth(corner_radius: f32) -> u32 {
+        const MAGIC: f32 = 0.5;
+        (MAGIC * corner_radius.log2()).round() as u32
     }
 
     fn emit_rectangle_corners_rec(
