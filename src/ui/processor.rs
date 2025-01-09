@@ -85,11 +85,9 @@ impl<'a> UiNodeProcessor<'a> {
         let layout = &layout_node.layout;
 
         self.emit_rectangle(
-            layout.border_position(),
-            layout.border_size(),
+            layout,
             modifiers.fill_color,
             modifiers.border_color,
-            modifiers.border_thickness,
             modifiers.border_radius,
         );
 
@@ -373,37 +371,29 @@ impl<'a> UiNodeProcessor<'a> {
         return ChildrenMeasurements(children.iter().map(|c| self.measure(c, parent_size)).collect());
     }
 
-    fn emit_rectangle(
-        &mut self,
-        position: Vec2,
-        size: Vec2,
-        fill_color: Color,
-        border_color: Color,
-        border_thickness: BorderThickness,
-        border_radius: BorderRadius,
-    ) {
+    fn emit_rectangle(&mut self, layout: &Layout, fill_color: Color, border_color: Color, border_radius: BorderRadius) {
         let mut vertices = vec![];
 
-        let bl = position;
-        let br = position + Vec2::new(size.x, 0.0);
-        let tr = position + size;
-        let tl = position + Vec2::new(0.0, size.y);
+        let padding_bl = layout.padding_position();
+        let padding_br = layout.padding_position() + layout.padding_size().with_y(0.0);
+        let padding_tr = layout.padding_position() + layout.padding_size();
+        let padding_tl = layout.padding_position() + layout.padding_size().with_x(0.0);
 
         let (bl_left, bl_right) = if border_radius.bottom_left > 0.0 {
             vertices.push(Vertex {
-                pos: bl + Vec2::new(0.0, border_radius.bottom_left),
+                pos: padding_bl + Vec2::new(0.0, border_radius.bottom_left),
                 uv: Vec2::ZERO,
             });
 
             vertices.push(Vertex {
-                pos: bl + Vec2::new(border_radius.bottom_left, 0.0),
+                pos: padding_bl + Vec2::new(border_radius.bottom_left, 0.0),
                 uv: Vec2::ZERO,
             });
 
             (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
         } else {
             vertices.push(Vertex {
-                pos: bl,
+                pos: padding_bl,
                 uv: Vec2::ZERO,
             });
 
@@ -412,19 +402,19 @@ impl<'a> UiNodeProcessor<'a> {
 
         let (br_left, br_right) = if border_radius.bottom_right > 0.0 {
             vertices.push(Vertex {
-                pos: br + Vec2::new(-border_radius.bottom_right, 0.0),
+                pos: padding_br + Vec2::new(-border_radius.bottom_right, 0.0),
                 uv: Vec2::ZERO,
             });
 
             vertices.push(Vertex {
-                pos: br + Vec2::new(0.0, border_radius.bottom_right),
+                pos: padding_br + Vec2::new(0.0, border_radius.bottom_right),
                 uv: Vec2::ZERO,
             });
 
             (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
         } else {
             vertices.push(Vertex {
-                pos: br,
+                pos: padding_br,
                 uv: Vec2::ZERO,
             });
 
@@ -433,19 +423,19 @@ impl<'a> UiNodeProcessor<'a> {
 
         let (tr_left, tr_right) = if border_radius.top_right > 0.0 {
             vertices.push(Vertex {
-                pos: tr + Vec2::new(0.0, -border_radius.top_right),
+                pos: padding_tr + Vec2::new(0.0, -border_radius.top_right),
                 uv: Vec2::ZERO,
             });
 
             vertices.push(Vertex {
-                pos: tr + Vec2::new(-border_radius.top_right, 0.0),
+                pos: padding_tr + Vec2::new(-border_radius.top_right, 0.0),
                 uv: Vec2::ZERO,
             });
 
             (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
         } else {
             vertices.push(Vertex {
-                pos: tr,
+                pos: padding_tr,
                 uv: Vec2::ZERO,
             });
 
@@ -454,19 +444,19 @@ impl<'a> UiNodeProcessor<'a> {
 
         let (tl_left, tl_right) = if border_radius.top_left > 0.0 {
             vertices.push(Vertex {
-                pos: tl + Vec2::new(border_radius.top_left, 0.0),
+                pos: padding_tl + Vec2::new(border_radius.top_left, 0.0),
                 uv: Vec2::ZERO,
             });
 
             vertices.push(Vertex {
-                pos: tl + Vec2::new(0.0, -border_radius.top_left),
+                pos: padding_tl + Vec2::new(0.0, -border_radius.top_left),
                 uv: Vec2::ZERO,
             });
 
             (vertices.len() as u32 - 2, vertices.len() as u32 - 1)
         } else {
             vertices.push(Vertex {
-                pos: tl,
+                pos: padding_tl,
                 uv: Vec2::ZERO,
             });
 
@@ -499,9 +489,8 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.bottom_left > 0.0 {
             Self::emit_rectangle_corners_rec(
-                bl,
-                border_radius.bottom_left,
-                Vec2::new(-1.0, -1.0),
+                padding_bl + Vec2::new(0.0, border_radius.bottom_left),
+                padding_bl + Vec2::new(border_radius.bottom_left, 0.0),
                 0.0,
                 bl_left,
                 std::f32::consts::FRAC_PI_2,
@@ -514,9 +503,8 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.bottom_right > 0.0 {
             Self::emit_rectangle_corners_rec(
-                br,
-                border_radius.bottom_right,
-                Vec2::new(1.0, -1.0),
+                padding_br + Vec2::new(0.0, border_radius.bottom_right),
+                padding_br + Vec2::new(-border_radius.bottom_right, 0.0),
                 std::f32::consts::FRAC_PI_2,
                 br_left,
                 0.0,
@@ -529,9 +517,8 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.top_right > 0.0 {
             Self::emit_rectangle_corners_rec(
-                tr,
-                border_radius.top_right,
-                Vec2::new(1.0, 1.0),
+                padding_tr + Vec2::new(0.0, -border_radius.top_right),
+                padding_tr + Vec2::new(-border_radius.top_right, 0.0),
                 0.0,
                 tr_left,
                 std::f32::consts::FRAC_PI_2,
@@ -544,9 +531,8 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.top_left > 0.0 {
             Self::emit_rectangle_corners_rec(
-                tl,
-                border_radius.top_left,
-                Vec2::new(-1.0, 1.0),
+                padding_tl + Vec2::new(0.0, -border_radius.top_left),
+                padding_tl + Vec2::new(border_radius.top_left, 0.0),
                 std::f32::consts::FRAC_PI_2,
                 tl_left,
                 0.0,
@@ -572,9 +558,8 @@ impl<'a> UiNodeProcessor<'a> {
     }
 
     fn emit_rectangle_corners_rec(
-        position: Vec2,
-        corner_radius: f32,
-        rotation: Vec2,
+        v: Vec2,
+        w: Vec2,
         left_angle: f32,
         left_index: u32,
         right_angle: f32,
@@ -583,14 +568,12 @@ impl<'a> UiNodeProcessor<'a> {
         vertices: &mut Vec<Vertex>,
         indices: &mut Vec<[u32; 3]>,
     ) {
-        let angle = (left_angle + right_angle) * 0.5;
+        let alpha = (left_angle + right_angle) * 0.5;
 
-        let (y_unit, x_unit) = angle.sin_cos();
-        let x = x_unit * corner_radius;
-        let y = y_unit * corner_radius;
+        let (sin_alpha, cos_alpha) = alpha.sin_cos();
 
         let vertex = Vertex {
-            pos: position + corner_radius * (-rotation) + Vec2::new(x, y) * rotation,
+            pos: Vec2::new(lerp(w.x, v.x, cos_alpha), lerp(v.y, w.y, sin_alpha)),
             uv: Vec2::ZERO,
         };
 
@@ -601,24 +584,12 @@ impl<'a> UiNodeProcessor<'a> {
         indices.push([left_index, index, right_index]);
 
         if depth > 0 {
-            Self::emit_rectangle_corners_rec(
-                position,
-                corner_radius,
-                rotation,
-                left_angle,
-                left_index,
-                angle,
-                index,
-                depth - 1,
-                vertices,
-                indices,
-            );
+            Self::emit_rectangle_corners_rec(v, w, left_angle, left_index, alpha, index, depth - 1, vertices, indices);
 
             Self::emit_rectangle_corners_rec(
-                position,
-                corner_radius,
-                rotation,
-                angle,
+                v,
+                w,
+                alpha,
                 index,
                 right_angle,
                 right_index,
@@ -666,4 +637,8 @@ impl IntoIterator for ChildrenMeasurements {
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
+}
+
+fn lerp(x: f32, y: f32, a: f32) -> f32 {
+    x * (1.0 - a) + y * a
 }
