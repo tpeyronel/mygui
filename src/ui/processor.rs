@@ -436,6 +436,7 @@ impl<'a> UiNodeProcessor<'a> {
         }
 
         /* Fill borders */
+        /* TODO: optimize unnecessary vertices and triangles */
 
         // Bottom border
         builder.add_quad(
