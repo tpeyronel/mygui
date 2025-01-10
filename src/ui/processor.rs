@@ -473,10 +473,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.bottom_left() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                bl.border_outer_ver.pos,
-                bl.border_outer_hor.pos,
-                bl.fill_ver.pos,
-                bl.fill_hor.pos,
+                &bl,
                 0.0,
                 bl.border_outer_ver.idx,
                 bl.fill_ver.idx,
@@ -492,10 +489,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.bottom_right() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                br.border_outer_ver.pos,
-                br.border_outer_hor.pos,
-                br.fill_ver.pos,
-                br.fill_hor.pos,
+                &br,
                 0.0,
                 br.border_outer_ver.idx,
                 br.fill_ver.idx,
@@ -511,10 +505,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.top_right() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                tr.border_outer_ver.pos,
-                tr.border_outer_hor.pos,
-                tr.fill_ver.pos,
-                tr.fill_hor.pos,
+                &tr,
                 0.0,
                 tr.border_outer_ver.idx,
                 tr.fill_ver.idx,
@@ -530,10 +521,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.top_left() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                tl.border_outer_ver.pos,
-                tl.border_outer_hor.pos,
-                tl.fill_ver.pos,
-                tl.fill_hor.pos,
+                &tl,
                 0.0,
                 tl.border_outer_ver.idx,
                 tl.fill_ver.idx,
@@ -558,10 +546,7 @@ impl<'a> UiNodeProcessor<'a> {
     }
 
     fn emit_rectangle_corners_rec(
-        v_outer: Vec2,
-        w_outer: Vec2,
-        v_inner: Vec2,
-        w_inner: Vec2,
+        v: &CornerVertices,
         left_angle: f32,
         left_index_outer: u32,
         left_index_inner: u32,
@@ -579,15 +564,15 @@ impl<'a> UiNodeProcessor<'a> {
 
         let outer_index = builder.add_vertex(
             Vec2::new(
-                lerp(w_outer.x, v_outer.x, cos_alpha),
-                lerp(v_outer.y, w_outer.y, sin_alpha),
+                lerp(v.border_outer_hor.pos.x, v.border_outer_ver.pos.x, cos_alpha),
+                lerp(v.border_outer_ver.pos.y, v.border_outer_hor.pos.y, sin_alpha),
             ),
             *border_color,
         );
         let inner_index = builder.add_vertex(
             Vec2::new(
-                lerp(w_inner.x, v_inner.x, cos_alpha),
-                lerp(v_inner.y, w_inner.y, sin_alpha),
+                lerp(v.fill_hor.pos.x, v.fill_ver.pos.x, cos_alpha),
+                lerp(v.fill_ver.pos.y, v.fill_hor.pos.y, sin_alpha),
             ),
             *fill_color,
         );
@@ -596,10 +581,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if depth > 0 {
             Self::emit_rectangle_corners_rec(
-                v_outer,
-                w_outer,
-                v_inner,
-                w_inner,
+                v,
                 left_angle,
                 left_index_outer,
                 left_index_inner,
@@ -612,10 +594,7 @@ impl<'a> UiNodeProcessor<'a> {
                 builder,
             );
             Self::emit_rectangle_corners_rec(
-                v_outer,
-                w_outer,
-                v_inner,
-                w_inner,
+                v,
                 alpha,
                 outer_index,
                 inner_index,
