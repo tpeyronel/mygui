@@ -441,22 +441,22 @@ impl<'a> UiNodeProcessor<'a> {
         builder.add_quad(
             bl.border_outer_hor.idx,
             br.border_outer_hor.idx,
-            br.fill_hor.idx,
-            bl.fill_hor.idx,
+            br.border_inner_hor.idx,
+            bl.border_inner_hor.idx,
         );
 
         // Right border
         builder.add_quad(
-            br.fill_ver.idx,
+            br.border_inner_ver.idx,
             br.border_outer_ver.idx,
             tr.border_outer_ver.idx,
-            tr.fill_ver.idx,
+            tr.border_inner_ver.idx,
         );
 
         // Top border
         builder.add_quad(
-            tl.fill_hor.idx,
-            tr.fill_hor.idx,
+            tl.border_inner_hor.idx,
+            tr.border_inner_hor.idx,
             tr.border_outer_hor.idx,
             tl.border_outer_hor.idx,
         );
@@ -464,8 +464,8 @@ impl<'a> UiNodeProcessor<'a> {
         // Left border
         builder.add_quad(
             bl.border_outer_ver.idx,
-            bl.fill_ver.idx,
-            tl.fill_ver.idx,
+            bl.border_inner_ver.idx,
+            tl.border_inner_ver.idx,
             tl.border_outer_ver.idx,
         );
 
@@ -476,9 +476,11 @@ impl<'a> UiNodeProcessor<'a> {
                 &bl,
                 0.0,
                 bl.border_outer_ver.idx,
+                bl.border_inner_ver.idx,
                 bl.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
                 bl.border_outer_hor.idx,
+                bl.border_inner_hor.idx,
                 bl.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.bottom_left()),
                 &fill_color,
@@ -492,9 +494,11 @@ impl<'a> UiNodeProcessor<'a> {
                 &br,
                 0.0,
                 br.border_outer_ver.idx,
+                br.border_inner_ver.idx,
                 br.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
                 br.border_outer_hor.idx,
+                br.border_inner_hor.idx,
                 br.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.bottom_right()),
                 &fill_color,
@@ -508,9 +512,11 @@ impl<'a> UiNodeProcessor<'a> {
                 &tr,
                 0.0,
                 tr.border_outer_ver.idx,
+                tr.border_inner_ver.idx,
                 tr.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
                 tr.border_outer_hor.idx,
+                tr.border_inner_hor.idx,
                 tr.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.top_right()),
                 &fill_color,
@@ -524,9 +530,11 @@ impl<'a> UiNodeProcessor<'a> {
                 &tl,
                 0.0,
                 tl.border_outer_ver.idx,
+                tl.border_inner_ver.idx,
                 tl.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
                 tl.border_outer_hor.idx,
+                tl.border_inner_hor.idx,
                 tl.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.top_left()),
                 &fill_color,
@@ -548,11 +556,13 @@ impl<'a> UiNodeProcessor<'a> {
     fn emit_rectangle_corners_rec(
         v: &CornerVertices,
         left_angle: f32,
-        left_index_outer: u32,
-        left_index_inner: u32,
+        left_border_outer_idx: u32,
+        left_border_inner_idx: u32,
+        left_fill_idx: u32,
         right_angle: f32,
-        right_index_outer: u32,
-        right_index_inner: u32,
+        right_border_outer_idx: u32,
+        right_border_inner_idx: u32,
+        right_fill_idx: u32,
         depth: u32,
         fill_color: &Color,
         border_color: &Color,
@@ -562,32 +572,33 @@ impl<'a> UiNodeProcessor<'a> {
 
         let (sin_alpha, cos_alpha) = alpha.sin_cos();
 
-        let outer_index = builder.add_vertex(
-            Vec2::new(
-                lerp(v.border_outer_hor.pos.x, v.border_outer_ver.pos.x, cos_alpha),
-                lerp(v.border_outer_ver.pos.y, v.border_outer_hor.pos.y, sin_alpha),
-            ),
-            *border_color,
-        );
-        let inner_index = builder.add_vertex(
-            Vec2::new(
-                lerp(v.fill_hor.pos.x, v.fill_ver.pos.x, cos_alpha),
-                lerp(v.fill_ver.pos.y, v.fill_hor.pos.y, sin_alpha),
-            ),
-            *fill_color,
+        let outer_pos = Vec2::new(
+            lerp(v.border_outer_hor.pos.x, v.border_outer_ver.pos.x, cos_alpha),
+            lerp(v.border_outer_ver.pos.y, v.border_outer_hor.pos.y, sin_alpha),
         );
 
-        builder.add_triangle(left_index_inner, inner_index, right_index_inner);
+        let inner_pos = Vec2::new(
+            lerp(v.fill_hor.pos.x, v.fill_ver.pos.x, cos_alpha),
+            lerp(v.fill_ver.pos.y, v.fill_hor.pos.y, sin_alpha),
+        );
+
+        let border_outer_idx = builder.add_vertex(outer_pos, *border_color);
+        let border_inner_idx = builder.add_vertex(inner_pos, *border_color);
+        let fill_idx = builder.add_vertex(inner_pos, *fill_color);
+
+        builder.add_triangle(left_fill_idx, fill_idx, right_fill_idx);
 
         if depth > 0 {
             Self::emit_rectangle_corners_rec(
                 v,
                 left_angle,
-                left_index_outer,
-                left_index_inner,
+                left_border_outer_idx,
+                left_border_inner_idx,
+                left_fill_idx,
                 alpha,
-                outer_index,
-                inner_index,
+                border_outer_idx,
+                border_inner_idx,
+                fill_idx,
                 depth - 1,
                 fill_color,
                 border_color,
@@ -596,11 +607,13 @@ impl<'a> UiNodeProcessor<'a> {
             Self::emit_rectangle_corners_rec(
                 v,
                 alpha,
-                outer_index,
-                inner_index,
+                border_outer_idx,
+                border_inner_idx,
+                fill_idx,
                 right_angle,
-                right_index_outer,
-                right_index_inner,
+                right_border_outer_idx,
+                right_border_inner_idx,
+                right_fill_idx,
                 depth - 1,
                 fill_color,
                 border_color,
@@ -608,10 +621,10 @@ impl<'a> UiNodeProcessor<'a> {
             );
         } else {
             // Emit border thickness
-            builder.add_triangle(left_index_inner, inner_index, outer_index);
-            builder.add_triangle(left_index_inner, outer_index, left_index_outer);
-            builder.add_triangle(inner_index, right_index_inner, right_index_outer);
-            builder.add_triangle(inner_index, right_index_outer, outer_index);
+            builder.add_triangle(left_border_inner_idx, border_inner_idx, border_outer_idx);
+            builder.add_triangle(left_border_inner_idx, border_outer_idx, left_border_outer_idx);
+            builder.add_triangle(border_inner_idx, right_border_inner_idx, right_border_outer_idx);
+            builder.add_triangle(border_inner_idx, right_border_outer_idx, border_outer_idx);
         }
     }
 }
