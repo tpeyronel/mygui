@@ -9,7 +9,7 @@ use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
 use super::{border_radius::BorderRadius, UiNode};
 use super::{Axis, HashNode, Measurements, UiNodeLayout};
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 
 use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
@@ -374,132 +374,154 @@ impl<'a> UiNodeProcessor<'a> {
     fn emit_rectangle(&mut self, layout: &Layout, fill_color: Color, border_color: Color, border_radius: BorderRadius) {
         let mut builder = ColorMeshBuilder::new();
 
-        let padding_bl = layout.padding_position();
-        let padding_br = layout.padding_position() + layout.padding_size().with_y(0.0);
-        let padding_tr = layout.padding_position() + layout.padding_size();
-        let padding_tl = layout.padding_position() + layout.padding_size().with_x(0.0);
+        let border_thickness = layout.border_thickness;
 
-        let (bl_left, bl_right) = if border_radius.bottom_left > 0.0 {
-            let left = builder.add_vertex(padding_bl + Vec2::new(0.0, border_radius.bottom_left), fill_color);
-            let right = builder.add_vertex(padding_bl + Vec2::new(border_radius.bottom_left, 0.0), fill_color);
+        let bl = CornerVertices::new(
+            layout.border_position(),
+            border_radius.bottom_left(),
+            Vec2::new(border_thickness.left(), border_thickness.bottom()),
+            Vec2::new(1.0, 1.0),
+            border_color,
+            fill_color,
+            &mut builder,
+        );
 
-            (left, right)
-        } else {
-            let idx = builder.add_vertex(padding_bl, fill_color);
+        let br = CornerVertices::new(
+            layout.border_position() + layout.border_size().with_y(0.0),
+            border_radius.bottom_right(),
+            Vec2::new(border_thickness.right(), border_thickness.bottom()),
+            Vec2::new(-1.0, 1.0),
+            border_color,
+            fill_color,
+            &mut builder,
+        );
 
-            (idx, idx)
-        };
+        let tr = CornerVertices::new(
+            layout.border_position() + layout.border_size(),
+            border_radius.top_right(),
+            Vec2::new(border_thickness.right(), border_thickness.top()),
+            Vec2::new(-1.0, -1.0),
+            border_color,
+            fill_color,
+            &mut builder,
+        );
 
-        let (br_left, br_right) = if border_radius.bottom_right > 0.0 {
-            let left = builder.add_vertex(padding_br + Vec2::new(-border_radius.bottom_right, 0.0), fill_color);
-            let right = builder.add_vertex(padding_br + Vec2::new(0.0, border_radius.bottom_right), fill_color);
+        let tl = CornerVertices::new(
+            layout.border_position() + layout.border_size().with_x(0.0),
+            border_radius.top_left(),
+            Vec2::new(border_thickness.left(), border_thickness.top()),
+            Vec2::new(1.0, -1.0),
+            border_color,
+            fill_color,
+            &mut builder,
+        );
 
-            (left, right)
-        } else {
-            let idx = builder.add_vertex(padding_br, fill_color);
+        // Fill inner center
+        builder.add_quad(bl.inner_hor.idx, br.inner_hor.idx, tr.inner_hor.idx, tl.inner_hor.idx);
 
-            (idx, idx)
-        };
-
-        let (tr_left, tr_right) = if border_radius.top_right > 0.0 {
-            let left = builder.add_vertex(padding_tr + Vec2::new(0.0, -border_radius.top_right), fill_color);
-            let right = builder.add_vertex(padding_tr + Vec2::new(-border_radius.top_right, 0.0), fill_color);
-
-            (left, right)
-        } else {
-            let idx = builder.add_vertex(padding_tr, fill_color);
-
-            (idx, idx)
-        };
-
-        let (tl_left, tl_right) = if border_radius.top_left > 0.0 {
-            let left = builder.add_vertex(padding_tl + Vec2::new(border_radius.top_left, 0.0), fill_color);
-            let right = builder.add_vertex(padding_tl + Vec2::new(0.0, -border_radius.top_left), fill_color);
-
-            (left, right)
-        } else {
-            let idx = builder.add_vertex(padding_tl, fill_color);
-
-            (idx, idx)
-        };
-
-        builder.add_triangle(bl_right, br_left, tr_right);
-        builder.add_triangle(bl_right, tr_right, tl_left);
-
-        match (bl_left != bl_right, tl_left != tl_right) {
+        // Fill inner left side
+        match (
+            bl.inner_hor.idx != bl.inner_ver.idx,
+            tl.inner_hor.idx != tl.inner_ver.idx,
+        ) {
             (false, false) => (),
-            (false, true) => builder.add_triangle(bl_left, tl_left, tl_right),
-            (true, false) => builder.add_triangle(bl_left, bl_right, tl_left),
-            (true, true) => {
-                builder.add_triangle(bl_left, bl_right, tl_left);
-                builder.add_triangle(bl_left, tl_left, tl_right);
-            }
+            (false, true) => builder.add_triangle(bl.inner_hor.idx, tl.inner_hor.idx, tl.inner_ver.idx),
+            (true, false) => builder.add_triangle(bl.inner_ver.idx, bl.inner_hor.idx, tl.inner_hor.idx),
+            (true, true) => builder.add_quad(bl.inner_ver.idx, bl.inner_hor.idx, tl.inner_hor.idx, tl.inner_ver.idx),
         }
 
-        match (br_left == br_right, tr_left == tr_right) {
-            (true, true) => (),
-            (true, false) => builder.add_triangle(br_left, tr_left, tr_right),
-            (false, true) => builder.add_triangle(tr_left, br_left, br_right),
-            (false, false) => {
-                builder.add_triangle(br_left, br_right, tr_left);
-                builder.add_triangle(br_left, tr_left, tr_right);
-            }
+        // Fill inner right side
+        match (
+            br.inner_hor.idx != br.inner_ver.idx,
+            tr.inner_hor.idx != tr.inner_ver.idx,
+        ) {
+            (false, false) => (),
+            (false, true) => builder.add_triangle(br.inner_hor.idx, tr.inner_ver.idx, tr.inner_hor.idx),
+            (true, false) => builder.add_triangle(br.inner_hor.idx, br.inner_ver.idx, tr.inner_hor.idx),
+            (true, true) => builder.add_quad(br.inner_hor.idx, br.inner_ver.idx, tr.inner_ver.idx, tr.inner_hor.idx),
         }
 
-        /* Emit corners */
+        /* Fill borders */
 
-        if border_radius.bottom_left > 0.0 {
+        builder.add_quad(bl.outer_hor.idx, br.outer_hor.idx, br.inner_hor.idx, bl.inner_hor.idx);
+        builder.add_quad(br.inner_ver.idx, br.outer_ver.idx, tr.outer_ver.idx, tr.inner_ver.idx);
+        builder.add_quad(tl.inner_hor.idx, tr.inner_hor.idx, tr.outer_hor.idx, tl.outer_hor.idx);
+        builder.add_quad(bl.outer_ver.idx, bl.inner_ver.idx, tl.inner_ver.idx, tl.outer_ver.idx);
+
+        /* Fill corners (with corner borders) */
+
+        if border_radius.bottom_left() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                padding_bl + Vec2::new(0.0, border_radius.bottom_left),
-                padding_bl + Vec2::new(border_radius.bottom_left, 0.0),
+                bl.outer_ver.pos,
+                bl.outer_hor.pos,
+                bl.inner_ver.pos,
+                bl.inner_hor.pos,
                 0.0,
-                bl_left,
+                bl.outer_ver.idx,
+                bl.inner_ver.idx,
                 std::f32::consts::FRAC_PI_2,
-                bl_right,
-                Self::compute_corner_depth(border_radius.bottom_left),
-                fill_color,
+                bl.outer_hor.idx,
+                bl.inner_hor.idx,
+                Self::compute_corner_depth(border_radius.bottom_left()),
+                &fill_color,
+                &border_color,
                 &mut builder,
             );
         }
 
-        if border_radius.bottom_right > 0.0 {
+        if border_radius.bottom_right() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                padding_br + Vec2::new(0.0, border_radius.bottom_right),
-                padding_br + Vec2::new(-border_radius.bottom_right, 0.0),
-                std::f32::consts::FRAC_PI_2,
-                br_left,
+                br.outer_ver.pos,
+                br.outer_hor.pos,
+                br.inner_ver.pos,
+                br.inner_hor.pos,
                 0.0,
-                br_right,
-                Self::compute_corner_depth(border_radius.bottom_right),
-                fill_color,
+                br.outer_ver.idx,
+                br.inner_ver.idx,
+                std::f32::consts::FRAC_PI_2,
+                br.outer_hor.idx,
+                br.inner_hor.idx,
+                Self::compute_corner_depth(border_radius.bottom_right()),
+                &fill_color,
+                &border_color,
                 &mut builder,
             );
         }
 
-        if border_radius.top_right > 0.0 {
+        if border_radius.top_right() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                padding_tr + Vec2::new(0.0, -border_radius.top_right),
-                padding_tr + Vec2::new(-border_radius.top_right, 0.0),
+                tr.outer_ver.pos,
+                tr.outer_hor.pos,
+                tr.inner_ver.pos,
+                tr.inner_hor.pos,
                 0.0,
-                tr_left,
+                tr.outer_ver.idx,
+                tr.inner_ver.idx,
                 std::f32::consts::FRAC_PI_2,
-                tr_right,
-                Self::compute_corner_depth(border_radius.top_right),
-                fill_color,
+                tr.outer_hor.idx,
+                tr.inner_hor.idx,
+                Self::compute_corner_depth(border_radius.top_right()),
+                &fill_color,
+                &border_color,
                 &mut builder,
             );
         }
 
-        if border_radius.top_left > 0.0 {
+        if border_radius.top_left() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                padding_tl + Vec2::new(0.0, -border_radius.top_left),
-                padding_tl + Vec2::new(border_radius.top_left, 0.0),
-                std::f32::consts::FRAC_PI_2,
-                tl_left,
+                tl.outer_ver.pos,
+                tl.outer_hor.pos,
+                tl.inner_ver.pos,
+                tl.inner_hor.pos,
                 0.0,
-                tl_right,
-                Self::compute_corner_depth(border_radius.top_left),
-                fill_color,
+                tl.outer_ver.idx,
+                tl.inner_ver.idx,
+                std::f32::consts::FRAC_PI_2,
+                tl.outer_hor.idx,
+                tl.inner_hor.idx,
+                Self::compute_corner_depth(border_radius.top_left()),
+                &fill_color,
+                &border_color,
                 &mut builder,
             );
         }
@@ -515,27 +537,81 @@ impl<'a> UiNodeProcessor<'a> {
     }
 
     fn emit_rectangle_corners_rec(
-        v: Vec2,
-        w: Vec2,
+        v_outer: Vec2,
+        w_outer: Vec2,
+        v_inner: Vec2,
+        w_inner: Vec2,
         left_angle: f32,
+        left_index_outer: u32,
         left_index: u32,
         right_angle: f32,
+        right_index_outer: u32,
         right_index: u32,
         depth: u32,
-        color: Color,
+        fill_color: &Color,
+        border_color: &Color,
         builder: &mut ColorMeshBuilder,
     ) {
         let alpha = (left_angle + right_angle) * 0.5;
 
         let (sin_alpha, cos_alpha) = alpha.sin_cos();
 
-        let index = builder.add_vertex(Vec2::new(lerp(w.x, v.x, cos_alpha), lerp(v.y, w.y, sin_alpha)), color);
+        let outer_index = builder.add_vertex(
+            Vec2::new(
+                lerp(w_outer.x, v_outer.x, cos_alpha),
+                lerp(v_outer.y, w_outer.y, sin_alpha),
+            ),
+            *border_color,
+        );
+        let inner_index = builder.add_vertex(
+            Vec2::new(
+                lerp(w_inner.x, v_inner.x, cos_alpha),
+                lerp(v_inner.y, w_inner.y, sin_alpha),
+            ),
+            *fill_color,
+        );
 
-        builder.add_triangle(left_index, index, right_index);
+        builder.add_triangle(left_index, inner_index, right_index);
 
         if depth > 0 {
-            Self::emit_rectangle_corners_rec(v, w, left_angle, left_index, alpha, index, depth - 1, color, builder);
-            Self::emit_rectangle_corners_rec(v, w, alpha, index, right_angle, right_index, depth - 1, color, builder);
+            Self::emit_rectangle_corners_rec(
+                v_outer,
+                w_outer,
+                v_inner,
+                w_inner,
+                left_angle,
+                left_index_outer,
+                left_index,
+                alpha,
+                outer_index,
+                inner_index,
+                depth - 1,
+                fill_color,
+                border_color,
+                builder,
+            );
+            Self::emit_rectangle_corners_rec(
+                v_outer,
+                w_outer,
+                v_inner,
+                w_inner,
+                alpha,
+                outer_index,
+                inner_index,
+                right_angle,
+                right_index_outer,
+                right_index,
+                depth - 1,
+                fill_color,
+                border_color,
+                builder,
+            );
+        } else {
+            // Emit border thickness
+            builder.add_triangle(left_index, inner_index, outer_index);
+            builder.add_triangle(left_index, outer_index, left_index_outer);
+            builder.add_triangle(inner_index, right_index, right_index_outer);
+            builder.add_triangle(inner_index, right_index_outer, outer_index);
         }
     }
 }
@@ -580,4 +656,69 @@ impl IntoIterator for ChildrenMeasurements {
 
 fn lerp(x: f32, y: f32, a: f32) -> f32 {
     x * (1.0 - a) + y * a
+}
+
+struct CornerVertices {
+    inner_hor: CornerVertex,
+    inner_ver: CornerVertex,
+    outer_hor: CornerVertex,
+    outer_ver: CornerVertex,
+}
+
+impl CornerVertices {
+    pub fn new(
+        corner_pos: Vec2,
+        corner_radius: f32,
+        corner_thickness: Vec2,
+        rotation: Vec2,
+        border_color: Vec4,
+        fill_color: Vec4,
+        builder: &mut ColorMeshBuilder,
+    ) -> Self {
+        let inner_hor_pos =
+            corner_pos + Vec2::new(corner_radius.max(corner_thickness.x), corner_thickness.y) * rotation;
+        let inner_hor_idx = builder.add_vertex(inner_hor_pos, fill_color);
+
+        let inner_ver_pos =
+            corner_pos + Vec2::new(corner_thickness.x, corner_radius.max(corner_thickness.y)) * rotation;
+        let inner_ver_idx = if inner_ver_pos == inner_hor_pos {
+            inner_hor_idx
+        } else {
+            builder.add_vertex(inner_ver_pos, fill_color)
+        };
+
+        let outer_hor_pos = corner_pos + Vec2::new(corner_radius, 0.0) * rotation;
+        let outer_hor_idx = builder.add_vertex(outer_hor_pos, border_color);
+
+        let outer_ver_pos = corner_pos + Vec2::new(0.0, corner_radius) * rotation;
+        let outer_ver_idx = if outer_ver_pos == outer_hor_pos {
+            outer_hor_idx
+        } else {
+            builder.add_vertex(outer_ver_pos, border_color)
+        };
+
+        Self {
+            inner_hor: CornerVertex {
+                pos: inner_hor_pos,
+                idx: inner_hor_idx,
+            },
+            inner_ver: CornerVertex {
+                pos: inner_ver_pos,
+                idx: inner_ver_idx,
+            },
+            outer_hor: CornerVertex {
+                pos: outer_hor_pos,
+                idx: outer_hor_idx,
+            },
+            outer_ver: CornerVertex {
+                pos: outer_ver_pos,
+                idx: outer_ver_idx,
+            },
+        }
+    }
+}
+
+struct CornerVertex {
+    pos: Vec2,
+    idx: u32,
 }
