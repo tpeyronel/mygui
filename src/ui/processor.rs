@@ -417,51 +417,72 @@ impl<'a> UiNodeProcessor<'a> {
         );
 
         // Fill inner center
-        builder.add_quad(bl.inner_hor.idx, br.inner_hor.idx, tr.inner_hor.idx, tl.inner_hor.idx);
+        builder.add_quad(bl.fill_hor.idx, br.fill_hor.idx, tr.fill_hor.idx, tl.fill_hor.idx);
 
         // Fill inner left side
-        match (
-            bl.inner_hor.idx != bl.inner_ver.idx,
-            tl.inner_hor.idx != tl.inner_ver.idx,
-        ) {
+        match (bl.fill_hor.idx != bl.fill_ver.idx, tl.fill_hor.idx != tl.fill_ver.idx) {
             (false, false) => (),
-            (false, true) => builder.add_triangle(bl.inner_hor.idx, tl.inner_hor.idx, tl.inner_ver.idx),
-            (true, false) => builder.add_triangle(bl.inner_ver.idx, bl.inner_hor.idx, tl.inner_hor.idx),
-            (true, true) => builder.add_quad(bl.inner_ver.idx, bl.inner_hor.idx, tl.inner_hor.idx, tl.inner_ver.idx),
+            (false, true) => builder.add_triangle(bl.fill_hor.idx, tl.fill_hor.idx, tl.fill_ver.idx),
+            (true, false) => builder.add_triangle(bl.fill_ver.idx, bl.fill_hor.idx, tl.fill_hor.idx),
+            (true, true) => builder.add_quad(bl.fill_ver.idx, bl.fill_hor.idx, tl.fill_hor.idx, tl.fill_ver.idx),
         }
 
         // Fill inner right side
-        match (
-            br.inner_hor.idx != br.inner_ver.idx,
-            tr.inner_hor.idx != tr.inner_ver.idx,
-        ) {
+        match (br.fill_hor.idx != br.fill_ver.idx, tr.fill_hor.idx != tr.fill_ver.idx) {
             (false, false) => (),
-            (false, true) => builder.add_triangle(br.inner_hor.idx, tr.inner_ver.idx, tr.inner_hor.idx),
-            (true, false) => builder.add_triangle(br.inner_hor.idx, br.inner_ver.idx, tr.inner_hor.idx),
-            (true, true) => builder.add_quad(br.inner_hor.idx, br.inner_ver.idx, tr.inner_ver.idx, tr.inner_hor.idx),
+            (false, true) => builder.add_triangle(br.fill_hor.idx, tr.fill_ver.idx, tr.fill_hor.idx),
+            (true, false) => builder.add_triangle(br.fill_hor.idx, br.fill_ver.idx, tr.fill_hor.idx),
+            (true, true) => builder.add_quad(br.fill_hor.idx, br.fill_ver.idx, tr.fill_ver.idx, tr.fill_hor.idx),
         }
 
         /* Fill borders */
 
-        builder.add_quad(bl.outer_hor.idx, br.outer_hor.idx, br.inner_hor.idx, bl.inner_hor.idx);
-        builder.add_quad(br.inner_ver.idx, br.outer_ver.idx, tr.outer_ver.idx, tr.inner_ver.idx);
-        builder.add_quad(tl.inner_hor.idx, tr.inner_hor.idx, tr.outer_hor.idx, tl.outer_hor.idx);
-        builder.add_quad(bl.outer_ver.idx, bl.inner_ver.idx, tl.inner_ver.idx, tl.outer_ver.idx);
+        // Bottom border
+        builder.add_quad(
+            bl.border_outer_hor.idx,
+            br.border_outer_hor.idx,
+            br.fill_hor.idx,
+            bl.fill_hor.idx,
+        );
+
+        // Right border
+        builder.add_quad(
+            br.fill_ver.idx,
+            br.border_outer_ver.idx,
+            tr.border_outer_ver.idx,
+            tr.fill_ver.idx,
+        );
+
+        // Top border
+        builder.add_quad(
+            tl.fill_hor.idx,
+            tr.fill_hor.idx,
+            tr.border_outer_hor.idx,
+            tl.border_outer_hor.idx,
+        );
+
+        // Left border
+        builder.add_quad(
+            bl.border_outer_ver.idx,
+            bl.fill_ver.idx,
+            tl.fill_ver.idx,
+            tl.border_outer_ver.idx,
+        );
 
         /* Fill corners (with corner borders) */
 
         if border_radius.bottom_left() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                bl.outer_ver.pos,
-                bl.outer_hor.pos,
-                bl.inner_ver.pos,
-                bl.inner_hor.pos,
+                bl.border_outer_ver.pos,
+                bl.border_outer_hor.pos,
+                bl.fill_ver.pos,
+                bl.fill_hor.pos,
                 0.0,
-                bl.outer_ver.idx,
-                bl.inner_ver.idx,
+                bl.border_outer_ver.idx,
+                bl.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
-                bl.outer_hor.idx,
-                bl.inner_hor.idx,
+                bl.border_outer_hor.idx,
+                bl.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.bottom_left()),
                 &fill_color,
                 &border_color,
@@ -471,16 +492,16 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.bottom_right() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                br.outer_ver.pos,
-                br.outer_hor.pos,
-                br.inner_ver.pos,
-                br.inner_hor.pos,
+                br.border_outer_ver.pos,
+                br.border_outer_hor.pos,
+                br.fill_ver.pos,
+                br.fill_hor.pos,
                 0.0,
-                br.outer_ver.idx,
-                br.inner_ver.idx,
+                br.border_outer_ver.idx,
+                br.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
-                br.outer_hor.idx,
-                br.inner_hor.idx,
+                br.border_outer_hor.idx,
+                br.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.bottom_right()),
                 &fill_color,
                 &border_color,
@@ -490,16 +511,16 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.top_right() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                tr.outer_ver.pos,
-                tr.outer_hor.pos,
-                tr.inner_ver.pos,
-                tr.inner_hor.pos,
+                tr.border_outer_ver.pos,
+                tr.border_outer_hor.pos,
+                tr.fill_ver.pos,
+                tr.fill_hor.pos,
                 0.0,
-                tr.outer_ver.idx,
-                tr.inner_ver.idx,
+                tr.border_outer_ver.idx,
+                tr.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
-                tr.outer_hor.idx,
-                tr.inner_hor.idx,
+                tr.border_outer_hor.idx,
+                tr.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.top_right()),
                 &fill_color,
                 &border_color,
@@ -509,16 +530,16 @@ impl<'a> UiNodeProcessor<'a> {
 
         if border_radius.top_left() > 0.0 {
             Self::emit_rectangle_corners_rec(
-                tl.outer_ver.pos,
-                tl.outer_hor.pos,
-                tl.inner_ver.pos,
-                tl.inner_hor.pos,
+                tl.border_outer_ver.pos,
+                tl.border_outer_hor.pos,
+                tl.fill_ver.pos,
+                tl.fill_hor.pos,
                 0.0,
-                tl.outer_ver.idx,
-                tl.inner_ver.idx,
+                tl.border_outer_ver.idx,
+                tl.fill_ver.idx,
                 std::f32::consts::FRAC_PI_2,
-                tl.outer_hor.idx,
-                tl.inner_hor.idx,
+                tl.border_outer_hor.idx,
+                tl.fill_hor.idx,
                 Self::compute_corner_depth(border_radius.top_left()),
                 &fill_color,
                 &border_color,
@@ -543,10 +564,10 @@ impl<'a> UiNodeProcessor<'a> {
         w_inner: Vec2,
         left_angle: f32,
         left_index_outer: u32,
-        left_index: u32,
+        left_index_inner: u32,
         right_angle: f32,
         right_index_outer: u32,
-        right_index: u32,
+        right_index_inner: u32,
         depth: u32,
         fill_color: &Color,
         border_color: &Color,
@@ -571,7 +592,7 @@ impl<'a> UiNodeProcessor<'a> {
             *fill_color,
         );
 
-        builder.add_triangle(left_index, inner_index, right_index);
+        builder.add_triangle(left_index_inner, inner_index, right_index_inner);
 
         if depth > 0 {
             Self::emit_rectangle_corners_rec(
@@ -581,7 +602,7 @@ impl<'a> UiNodeProcessor<'a> {
                 w_inner,
                 left_angle,
                 left_index_outer,
-                left_index,
+                left_index_inner,
                 alpha,
                 outer_index,
                 inner_index,
@@ -600,7 +621,7 @@ impl<'a> UiNodeProcessor<'a> {
                 inner_index,
                 right_angle,
                 right_index_outer,
-                right_index,
+                right_index_inner,
                 depth - 1,
                 fill_color,
                 border_color,
@@ -608,9 +629,9 @@ impl<'a> UiNodeProcessor<'a> {
             );
         } else {
             // Emit border thickness
-            builder.add_triangle(left_index, inner_index, outer_index);
-            builder.add_triangle(left_index, outer_index, left_index_outer);
-            builder.add_triangle(inner_index, right_index, right_index_outer);
+            builder.add_triangle(left_index_inner, inner_index, outer_index);
+            builder.add_triangle(left_index_inner, outer_index, left_index_outer);
+            builder.add_triangle(inner_index, right_index_inner, right_index_outer);
             builder.add_triangle(inner_index, right_index_outer, outer_index);
         }
     }
@@ -659,10 +680,12 @@ fn lerp(x: f32, y: f32, a: f32) -> f32 {
 }
 
 struct CornerVertices {
-    inner_hor: CornerVertex,
-    inner_ver: CornerVertex,
-    outer_hor: CornerVertex,
-    outer_ver: CornerVertex,
+    fill_hor: CornerVertex,
+    fill_ver: CornerVertex,
+    border_inner_hor: CornerVertex,
+    border_inner_ver: CornerVertex,
+    border_outer_hor: CornerVertex,
+    border_outer_ver: CornerVertex,
 }
 
 impl CornerVertices {
@@ -675,44 +698,64 @@ impl CornerVertices {
         fill_color: Vec4,
         builder: &mut ColorMeshBuilder,
     ) -> Self {
-        let inner_hor_pos =
-            corner_pos + Vec2::new(corner_radius.max(corner_thickness.x), corner_thickness.y) * rotation;
-        let inner_hor_idx = builder.add_vertex(inner_hor_pos, fill_color);
+        let fill_hor_pos = corner_pos + Vec2::new(corner_radius.max(corner_thickness.x), corner_thickness.y) * rotation;
+        let fill_hor_idx = builder.add_vertex(fill_hor_pos, fill_color);
 
-        let inner_ver_pos =
-            corner_pos + Vec2::new(corner_thickness.x, corner_radius.max(corner_thickness.y)) * rotation;
-        let inner_ver_idx = if inner_ver_pos == inner_hor_pos {
-            inner_hor_idx
+        let fill_ver_pos = corner_pos + Vec2::new(corner_thickness.x, corner_radius.max(corner_thickness.y)) * rotation;
+        let fill_ver_idx = if fill_ver_pos == fill_hor_pos {
+            fill_hor_idx
         } else {
-            builder.add_vertex(inner_ver_pos, fill_color)
+            builder.add_vertex(fill_ver_pos, fill_color)
         };
 
-        let outer_hor_pos = corner_pos + Vec2::new(corner_radius, 0.0) * rotation;
-        let outer_hor_idx = builder.add_vertex(outer_hor_pos, border_color);
+        let border_inner_hor_pos = fill_hor_pos;
+        let border_inner_hor_idx = builder.add_vertex(border_inner_hor_pos, border_color);
 
-        let outer_ver_pos = corner_pos + Vec2::new(0.0, corner_radius) * rotation;
-        let outer_ver_idx = if outer_ver_pos == outer_hor_pos {
-            outer_hor_idx
+        let border_inner_ver_pos = fill_ver_pos;
+        let border_inner_ver_idx = if border_inner_ver_pos == border_inner_hor_pos {
+            border_inner_hor_idx
         } else {
-            builder.add_vertex(outer_ver_pos, border_color)
+            builder.add_vertex(border_inner_ver_pos, border_color)
+        };
+
+        let border_outer_hor_pos = corner_pos + Vec2::new(corner_radius, 0.0) * rotation;
+        let border_outer_hor_idx = if border_outer_hor_pos == border_inner_hor_pos {
+            border_inner_hor_idx
+        } else {
+            builder.add_vertex(border_outer_hor_pos, border_color)
+        };
+
+        let border_outer_ver_pos = corner_pos + Vec2::new(0.0, corner_radius) * rotation;
+        let border_outer_ver_idx = if border_outer_ver_pos == border_outer_hor_pos {
+            border_outer_hor_idx
+        } else {
+            builder.add_vertex(border_outer_ver_pos, border_color)
         };
 
         Self {
-            inner_hor: CornerVertex {
-                pos: inner_hor_pos,
-                idx: inner_hor_idx,
+            fill_hor: CornerVertex {
+                pos: fill_hor_pos,
+                idx: fill_hor_idx,
             },
-            inner_ver: CornerVertex {
-                pos: inner_ver_pos,
-                idx: inner_ver_idx,
+            fill_ver: CornerVertex {
+                pos: fill_ver_pos,
+                idx: fill_ver_idx,
             },
-            outer_hor: CornerVertex {
-                pos: outer_hor_pos,
-                idx: outer_hor_idx,
+            border_inner_hor: CornerVertex {
+                pos: border_inner_hor_pos,
+                idx: border_inner_hor_idx,
             },
-            outer_ver: CornerVertex {
-                pos: outer_ver_pos,
-                idx: outer_ver_idx,
+            border_inner_ver: CornerVertex {
+                pos: border_inner_ver_pos,
+                idx: border_inner_ver_idx,
+            },
+            border_outer_hor: CornerVertex {
+                pos: border_outer_hor_pos,
+                idx: border_outer_hor_idx,
+            },
+            border_outer_ver: CornerVertex {
+                pos: border_outer_ver_pos,
+                idx: border_outer_ver_idx,
             },
         }
     }
