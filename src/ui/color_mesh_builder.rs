@@ -30,6 +30,11 @@ impl ColorMeshBuilder {
         self.indices.push([i, j, k]);
     }
 
+    pub fn add_quad(&mut self, i: u32, j: u32, k: u32, l: u32) {
+        self.indices.push([i, j, k]);
+        self.indices.push([i, k, l]);
+    }
+
     pub fn build(self) -> Mesh {
         let mut vertex_attributes: HashMap<VertexAttribute, Vec<u8>> = HashMap::new();
         vertex_attributes.insert(VertexAttribute::Position, self.positions);
