@@ -24,7 +24,34 @@ pub struct UiNodeProcessor<'a> {
 }
 
 impl<'a> UiNodeProcessor<'a> {
-    pub fn new(
+    pub fn process_ui(
+        ui_nodes: Vec<UiNode>,
+        hash_nodes: Vec<HashNode>,
+        boundary_pos: Vec2,
+        boundary_size: Vec2,
+        font_engine: &'a mut Box<dyn FontEngine>,
+        draw_data: &'a mut Vec<DrawElement>,
+        bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
+    ) {
+        let mut s = Self::new(font_engine, draw_data, bounding_boxes);
+        s.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
+    }
+
+    pub fn compute_layout_tree(
+        ui_nodes: Vec<UiNode>,
+        hash_nodes: Vec<HashNode>,
+        boundary_pos: Vec2,
+        boundary_size: Vec2,
+        font_engine: &'a mut Box<dyn FontEngine>,
+        draw_data: &'a mut Vec<DrawElement>,
+        bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
+    ) -> UiNodeLayout {
+        let mut s = Self::new(font_engine, draw_data, bounding_boxes);
+        let (_, _, layout_node) = s.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
+        layout_node
+    }
+
+    fn new(
         font_engine: &'a mut Box<dyn FontEngine>,
         draw_data: &'a mut Vec<DrawElement>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
@@ -37,16 +64,13 @@ impl<'a> UiNodeProcessor<'a> {
         }
     }
 
-    pub fn to_draw_data(
+    fn wrap_and_compute_layout_tree(
         &mut self,
         ui_nodes: Vec<UiNode>,
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
         boundary_size: Vec2,
-    ) {
-        assert_eq!(self.draw_data.len(), 0);
-        assert_eq!(self.bounding_boxes.len(), 0);
-
+    ) -> (UiNode, HashNode, UiNodeLayout) {
         let boundary_pos = boundary_pos.round();
         let boundary_size = boundary_size.round();
 
@@ -74,6 +98,19 @@ impl<'a> UiNodeProcessor<'a> {
         };
 
         let root_layout_node = self.compute_layout_rec(&root_node, root_layout);
+
+        (root_node, root_hash_node, root_layout_node)
+    }
+
+    fn to_draw_data(
+        &mut self,
+        ui_nodes: Vec<UiNode>,
+        hash_nodes: Vec<HashNode>,
+        boundary_pos: Vec2,
+        boundary_size: Vec2,
+    ) {
+        let (root_node, root_hash_node, root_layout_node) =
+            self.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         self.to_draw_data_rec(&root_node, &root_hash_node, &root_layout_node);
         self.draw_data.remove(0); // TODO: remove. This is mainly done to simplify testing (the first rectangle is completely transparent).
     }

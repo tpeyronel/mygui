@@ -182,19 +182,6 @@ pub struct HashNode {
     pub children: Vec<HashNode>,
 }
 
-pub fn to_draw_data(
-    ui_nodes: Vec<UiNode>,
-    hash_nodes: Vec<HashNode>,
-    boundary_pos: Vec2,
-    boundary_size: Vec2,
-    font_engine: &mut Box<dyn FontEngine>,
-    draw_elements: &mut Vec<DrawElement>,
-    bounding_boxes: &mut Vec<(u64, Rectangle)>,
-) {
-    let mut processor = UiNodeProcessor::new(font_engine, draw_elements, bounding_boxes);
-    processor.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
-}
-
 #[allow(unused)]
 pub fn to_draw_data_no_hashes(
     ui_nodes: Vec<UiNode>,
@@ -205,8 +192,15 @@ pub fn to_draw_data_no_hashes(
 ) {
     let hash_nodes = create_mock_hash_tree_rec(&ui_nodes);
     let mut bounding_boxes = vec![];
-    let mut processor = UiNodeProcessor::new(font_engine, draw_elements, &mut bounding_boxes);
-    processor.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
+    UiNodeProcessor::process_ui(
+        ui_nodes,
+        hash_nodes,
+        boundary_pos,
+        boundary_size,
+        font_engine,
+        draw_elements,
+        &mut bounding_boxes,
+    );
 }
 
 fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
@@ -219,7 +213,7 @@ fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
         .collect()
 }
 
-struct UiNodeLayout {
+pub struct UiNodeLayout {
     layout: Layout,
     children: Vec<UiNodeLayout>,
 }

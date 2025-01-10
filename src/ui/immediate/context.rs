@@ -6,7 +6,7 @@ use crate::{
     font::font_engine::FontEngine,
     input::{ElementState, InputEvent, MouseButton, TextEvent},
     rectangle::Rectangle,
-    ui::{draw_element::DrawElement, to_draw_data},
+    ui::{draw_element::DrawElement, processor::UiNodeProcessor},
 };
 
 use super::{set_state::set_state_channel, ui::Ui};
@@ -58,7 +58,7 @@ impl UiContext {
 
         let mut draw_data = vec![];
         self.bounding_boxes.clear();
-        to_draw_data(
+        UiNodeProcessor::process_ui(
             children,
             children_path_hash_nodes,
             Vec2::ZERO,
