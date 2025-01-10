@@ -471,81 +471,52 @@ impl<'a> UiNodeProcessor<'a> {
 
         /* Fill corners (with corner borders) */
 
-        if border_radius.bottom_left() > 0.0 {
-            Self::emit_rectangle_corners_rec(
-                &bl,
-                0.0,
-                bl.border_outer_ver.idx,
-                bl.border_inner_ver.idx,
-                bl.fill_ver.idx,
-                std::f32::consts::FRAC_PI_2,
-                bl.border_outer_hor.idx,
-                bl.border_inner_hor.idx,
-                bl.fill_hor.idx,
-                Self::compute_corner_depth(border_radius.bottom_left()),
-                &fill_color,
-                &border_color,
-                &mut builder,
-            );
-        }
-
-        if border_radius.bottom_right() > 0.0 {
-            Self::emit_rectangle_corners_rec(
-                &br,
-                0.0,
-                br.border_outer_ver.idx,
-                br.border_inner_ver.idx,
-                br.fill_ver.idx,
-                std::f32::consts::FRAC_PI_2,
-                br.border_outer_hor.idx,
-                br.border_inner_hor.idx,
-                br.fill_hor.idx,
-                Self::compute_corner_depth(border_radius.bottom_right()),
-                &fill_color,
-                &border_color,
-                &mut builder,
-            );
-        }
-
-        if border_radius.top_right() > 0.0 {
-            Self::emit_rectangle_corners_rec(
-                &tr,
-                0.0,
-                tr.border_outer_ver.idx,
-                tr.border_inner_ver.idx,
-                tr.fill_ver.idx,
-                std::f32::consts::FRAC_PI_2,
-                tr.border_outer_hor.idx,
-                tr.border_inner_hor.idx,
-                tr.fill_hor.idx,
-                Self::compute_corner_depth(border_radius.top_right()),
-                &fill_color,
-                &border_color,
-                &mut builder,
-            );
-        }
-
-        if border_radius.top_left() > 0.0 {
-            Self::emit_rectangle_corners_rec(
-                &tl,
-                0.0,
-                tl.border_outer_ver.idx,
-                tl.border_inner_ver.idx,
-                tl.fill_ver.idx,
-                std::f32::consts::FRAC_PI_2,
-                tl.border_outer_hor.idx,
-                tl.border_inner_hor.idx,
-                tl.fill_hor.idx,
-                Self::compute_corner_depth(border_radius.top_left()),
-                &fill_color,
-                &border_color,
-                &mut builder,
-            );
-        }
+        Self::emit_rectangle_corners(
+            &bl,
+            border_radius.bottom_left(),
+            &fill_color,
+            &border_color,
+            &mut builder,
+        );
+        Self::emit_rectangle_corners(
+            &br,
+            border_radius.bottom_right(),
+            &fill_color,
+            &border_color,
+            &mut builder,
+        );
+        Self::emit_rectangle_corners(&tr, border_radius.top_right(), &fill_color, &border_color, &mut builder);
+        Self::emit_rectangle_corners(&tl, border_radius.top_left(), &fill_color, &border_color, &mut builder);
 
         let mesh = builder.build();
 
         self.draw_data.push(DrawElement::Mesh(mesh));
+    }
+
+    fn emit_rectangle_corners(
+        v: &CornerVertices,
+        corner_radius: f32,
+        fill_color: &Color,
+        border_color: &Color,
+        builder: &mut ColorMeshBuilder,
+    ) {
+        if corner_radius > 0.0 {
+            Self::emit_rectangle_corners_rec(
+                v,
+                0.0,
+                v.border_outer_ver.idx,
+                v.border_inner_ver.idx,
+                v.fill_ver.idx,
+                std::f32::consts::FRAC_PI_2,
+                v.border_outer_hor.idx,
+                v.border_inner_hor.idx,
+                v.fill_hor.idx,
+                Self::compute_corner_depth(corner_radius),
+                fill_color,
+                border_color,
+                builder,
+            );
+        }
     }
 
     fn compute_corner_depth(corner_radius: f32) -> u32 {
