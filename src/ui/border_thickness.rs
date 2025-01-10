@@ -2,59 +2,58 @@ use glam::{Vec2, Vec4};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BorderThickness {
-    pub left: f32,
-    pub bottom: f32,
-    pub right: f32,
-    pub top: f32,
+    left: f32,
+    bottom: f32,
+    right: f32,
+    top: f32,
 }
 
 impl BorderThickness {
     pub fn new(left: f32, bottom: f32, right: f32, top: f32) -> Self {
         Self {
-            left,
-            bottom,
-            right,
-            top,
+            left: left.round(),
+            bottom: bottom.round(),
+            right: right.round(),
+            top: top.round(),
         }
     }
 
     pub fn all(x: f32) -> Self {
-        Self {
-            left: x,
-            bottom: x,
-            right: x,
-            top: x,
-        }
+        let x = x.round();
+        Self::new(x, x, x, x)
     }
 
     pub fn to_vec4(&self) -> Vec4 {
-        Vec4::new(
-            self.left.round(),
-            self.bottom.round(),
-            self.right.round(),
-            self.top.round(),
-        )
+        Vec4::new(self.left(), self.bottom(), self.right(), self.top())
     }
 
     pub fn delta_size(&self) -> Vec2 {
-        Vec2::new(
-            self.left.round() + self.right.round(),
-            self.bottom.round() + self.top.round(),
-        )
+        Vec2::new(self.left() + self.right(), self.bottom() + self.top())
     }
 
     pub fn delta_position(&self) -> Vec2 {
-        Vec2::new(self.left.round(), self.bottom.round()).round()
+        Vec2::new(self.left(), self.bottom())
+    }
+
+    pub fn left(&self) -> f32 {
+        self.left
+    }
+
+    pub fn bottom(&self) -> f32 {
+        self.bottom
+    }
+
+    pub fn right(&self) -> f32 {
+        self.right
+    }
+
+    pub fn top(&self) -> f32 {
+        self.top
     }
 }
 
 impl Default for BorderThickness {
     fn default() -> Self {
-        Self {
-            bottom: 0.0,
-            right: 0.0,
-            top: 0.0,
-            left: 0.0,
-        }
+        Self::all(0.0)
     }
 }
