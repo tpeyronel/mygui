@@ -216,9 +216,9 @@ fn create_mock_hash_tree_rec(ui_nodes: &[UiNode]) -> Vec<HashNode> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct UiNodeLayout {
+pub struct LayoutNode {
     layout: Layout,
-    children: Vec<UiNodeLayout>,
+    children: Vec<LayoutNode>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]

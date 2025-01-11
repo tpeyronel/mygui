@@ -7,7 +7,7 @@ use super::*;
 use glam::Vec2;
 use pretty_assertions::assert_eq;
 
-fn compute_layout_nodes(position: Vec2, size: Vec2, ui: UiNode) -> Vec<UiNodeLayout> {
+fn compute_layout_nodes(position: Vec2, size: Vec2, ui: UiNode) -> Vec<LayoutNode> {
     let root_ui_nodes = vec![ui];
     let root_hash_nodes = create_mock_hash_tree_rec(&root_ui_nodes);
 
@@ -28,7 +28,7 @@ fn compute_layout_nodes(position: Vec2, size: Vec2, ui: UiNode) -> Vec<UiNodeLay
     root_layout_node.children
 }
 
-fn test_layout(width: f32, height: f32, ui: UiNode, expected: UiNodeLayout) {
+fn test_layout(width: f32, height: f32, ui: UiNode, expected: LayoutNode) {
     let layout_nodes = compute_layout_nodes(Vec2::ZERO, Vec2::new(width, height), ui);
     assert_eq!(&[expected], &layout_nodes.as_slice());
 }
@@ -39,7 +39,7 @@ fn default_block() {
         32.0,
         32.0,
         UiNode::new(BlockProps, Modifiers::new(), vec![]),
-        UiNodeLayout {
+        LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
@@ -61,7 +61,7 @@ fn padding() {
             Modifiers::new().padding(Padding::all(8.0)).clone(),
             vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
         ),
-        UiNodeLayout {
+        LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
@@ -69,7 +69,7 @@ fn padding() {
                 padding: Padding::all(8.0),
                 ..Default::default()
             },
-            children: vec![UiNodeLayout {
+            children: vec![LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(8.0, 8.0),
                     margin_size: Vec2::new(16.0, 16.0),
@@ -88,7 +88,7 @@ fn margin() {
         32.0,
         32.0,
         UiNode::new(BlockProps, Modifiers::new().margin(Margin::all(8.0)).clone(), vec![]),
-        UiNodeLayout {
+        LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
@@ -111,7 +111,7 @@ fn full_padding() {
             Modifiers::new().padding(Padding::all(16.0)).clone(),
             vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
         ),
-        UiNodeLayout {
+        LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
@@ -119,7 +119,7 @@ fn full_padding() {
                 padding: Padding::all(16.0),
                 ..Default::default()
             },
-            children: vec![UiNodeLayout {
+            children: vec![LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(16.0, 16.0),
                     margin_size: Vec2::new(0.0, 0.0),
@@ -181,7 +181,7 @@ fn self_alignment_basic() {
                     .clone(),
                 vec![],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: expected_margin_position,
                     margin_size: Vec2::new(8.0, 8.0),
@@ -214,7 +214,7 @@ fn subpixel_alignment() {
             Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
             vec![],
         ),
-        UiNodeLayout {
+        LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(4.0, 4.0),
                 margin_size: Vec2::new(8.0, 8.0),
@@ -234,7 +234,7 @@ fn subpixel_alignment() {
             Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
             vec![],
         ),
-        UiNodeLayout {
+        LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(5.0, 5.0),
                 margin_size: Vec2::new(8.0, 8.0),
@@ -266,7 +266,7 @@ fn self_alignment_with_parent_border_thickness() {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 32.0),
@@ -274,7 +274,7 @@ fn self_alignment_with_parent_border_thickness() {
                     border_thickness: BorderThickness::all(4.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: expected_margin_position,
                         margin_size: Vec2::new(8.0, 8.0),
@@ -311,7 +311,7 @@ mod blocks {
                 Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)).clone(),
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 32.0),
@@ -319,7 +319,7 @@ mod blocks {
                     padding: Padding::new(1.0, 2.0, 4.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(8.0, 1.0),
                         margin_size: Vec2::new(32.0 - 10.0, 32.0 - 5.0),
@@ -344,7 +344,7 @@ mod blocks {
                     .clone(),
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 32.0),
@@ -352,7 +352,7 @@ mod blocks {
                     border_thickness: BorderThickness::new(1.0, 2.0, 4.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(1.0, 2.0),
                         margin_size: Vec2::new(32.0 - 5.0, 32.0 - 10.0),
@@ -406,7 +406,7 @@ mod blocks {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(96.0, 64.0),
@@ -414,7 +414,7 @@ mod blocks {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(96.0, 64.0),
@@ -423,7 +423,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(8.0, 64.0),
@@ -432,7 +432,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 64.0 - 8.0),
                             margin_size: Vec2::new(96.0, 8.0),
@@ -492,7 +492,7 @@ mod blocks {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(96.0, 64.0),
@@ -500,7 +500,7 @@ mod blocks {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(96.0, 64.0),
@@ -510,7 +510,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(8.0, 64.0),
@@ -520,7 +520,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 64.0 - 8.0),
                             margin_size: Vec2::new(96.0, 8.0),
@@ -577,7 +577,7 @@ mod blocks {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(96.0 + 16.0, 64.0 + 16.0),
@@ -586,7 +586,7 @@ mod blocks {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(8.0, 8.0),
                             margin_size: Vec2::new(96.0, 64.0),
@@ -595,7 +595,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(8.0, 8.0),
                             margin_size: Vec2::new(8.0, 64.0),
@@ -604,7 +604,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(8.0, 64.0),
                             margin_size: Vec2::new(96.0, 8.0),
@@ -661,7 +661,7 @@ mod blocks {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(96.0 + 16.0, 64.0 + 16.0),
@@ -670,7 +670,7 @@ mod blocks {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(8.0, 8.0),
                             margin_size: Vec2::new(96.0, 64.0),
@@ -679,7 +679,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(8.0, 8.0),
                             margin_size: Vec2::new(8.0, 64.0),
@@ -688,7 +688,7 @@ mod blocks {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(8.0, 64.0),
                             margin_size: Vec2::new(96.0, 8.0),
@@ -721,7 +721,7 @@ mod columns {
                     UiNode::new(BlockProps, Modifiers::new().height(Extent::Px(48.0)).clone(), vec![]),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 128.0),
@@ -729,7 +729,7 @@ mod columns {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 128.0 - 24.0),
                             margin_size: Vec2::new(32.0, 24.0),
@@ -738,7 +738,7 @@ mod columns {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 128.0 - 24.0 - 48.0),
                             margin_size: Vec2::new(32.0, 48.0),
@@ -772,7 +772,7 @@ mod columns {
                     UiNode::new(BlockProps, Modifiers::new().height(Extent::Px(48.0)).clone(), vec![]),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 128.0),
@@ -780,7 +780,7 @@ mod columns {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 128.0 - 24.0),
                             margin_size: Vec2::new(32.0, 24.0),
@@ -788,7 +788,7 @@ mod columns {
                             padding: Padding::all(2.0),
                             ..Default::default()
                         },
-                        children: vec![UiNodeLayout {
+                        children: vec![LayoutNode {
                             layout: Layout {
                                 margin_position: Vec2::new(2.0, 128.0 - 24.0 + 2.0),
                                 margin_size: Vec2::new(32.0 - 4.0, 24.0 - 4.0),
@@ -798,7 +798,7 @@ mod columns {
                             children: vec![],
                         }],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 128.0 - 24.0 - 48.0),
                             margin_size: Vec2::new(32.0, 48.0),
@@ -829,14 +829,14 @@ mod columns {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 128.0),
                     children_boundary_size: Vec2::new(32.0, 128.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(0.0, 128.0 - (16.0 + 4.0)),
                         margin_size: Vec2::new(32.0, 16.0 + 4.0),
@@ -881,7 +881,7 @@ mod columns {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(64.0, 64.0),
@@ -889,7 +889,7 @@ mod columns {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 32.0),
                             margin_size: Vec2::new(64.0, 32.0),
@@ -898,7 +898,7 @@ mod columns {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(64.0, 32.0),
@@ -931,7 +931,7 @@ mod columns {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(256.0, 32.0 + 16.0),
@@ -939,7 +939,7 @@ mod columns {
                     padding: Padding::all(8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(8.0, 8.0),
                         margin_size: Vec2::new(256.0 - 16.0, 32.0),
@@ -973,14 +973,14 @@ mod columns {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::ZERO,
                     children_boundary_size: Vec2::ZERO,
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::ZERO,
                         margin_size: Vec2::ZERO,
@@ -1015,14 +1015,14 @@ mod columns {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::ZERO,
                     children_boundary_size: Vec2::ZERO,
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::ZERO,
@@ -1067,7 +1067,7 @@ mod columns {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(64.0, 48.0),
@@ -1075,7 +1075,7 @@ mod columns {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(64.0, 48.0),
@@ -1084,7 +1084,7 @@ mod columns {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, -48.0),
                             margin_size: Vec2::new(64.0, 48.0),
@@ -1135,7 +1135,7 @@ mod rows {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(128.0, 32.0),
@@ -1143,7 +1143,7 @@ mod rows {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(64.0, 32.0),
@@ -1152,7 +1152,7 @@ mod rows {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(64.0, 0.0),
                             margin_size: Vec2::new(64.0, 32.0),
@@ -1197,7 +1197,7 @@ mod weight {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(50.0, 100.0),
@@ -1205,7 +1205,7 @@ mod weight {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 60.0),
                             margin_size: Vec2::new(50.0, 40.0),
@@ -1214,7 +1214,7 @@ mod weight {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(50.0, 60.0),
@@ -1253,7 +1253,7 @@ mod weight {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(100.0, 50.0),
@@ -1261,7 +1261,7 @@ mod weight {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 00.0),
                             margin_size: Vec2::new(40.0, 50.0),
@@ -1270,7 +1270,7 @@ mod weight {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(40.0, 0.0),
                             margin_size: Vec2::new(60.0, 50.0),
@@ -1314,7 +1314,7 @@ mod weight {
                     ),
                 ],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(50.0, 100.0),
@@ -1322,7 +1322,7 @@ mod weight {
                     ..Default::default()
                 },
                 children: vec![
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 100.0 - 34.0),
                             margin_size: Vec2::new(50.0, 34.0),
@@ -1331,7 +1331,7 @@ mod weight {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 100.0 - 34.0 - 33.0),
                             margin_size: Vec2::new(50.0, 33.0),
@@ -1340,7 +1340,7 @@ mod weight {
                         },
                         children: vec![],
                     },
-                    UiNodeLayout {
+                    LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(50.0, 33.0),
@@ -1376,14 +1376,14 @@ mod weight {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(50.0, 8.0),
                     children_boundary_size: Vec2::new(50.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::new(50.0, 8.0),
@@ -1426,14 +1426,14 @@ mod weight {
                     )],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(50.0, 8.0),
                     children_boundary_size: Vec2::new(50.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::new(50.0, 8.0),
@@ -1441,7 +1441,7 @@ mod weight {
                         border_thickness: BorderThickness::all(3.0),
                         ..Default::default()
                     },
-                    children: vec![UiNodeLayout {
+                    children: vec![LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(3.0, 3.0),
                             margin_size: Vec2::new(44.0, 2.0),
@@ -1484,14 +1484,14 @@ mod weight {
                     )],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(50.0, 8.0),
                     children_boundary_size: Vec2::new(50.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::new(50.0, 8.0),
@@ -1499,7 +1499,7 @@ mod weight {
                         padding: Padding::all(3.0),
                         ..Default::default()
                     },
-                    children: vec![UiNodeLayout {
+                    children: vec![LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::new(3.0, 3.0),
                             margin_size: Vec2::new(44.0, 2.0),
@@ -1545,28 +1545,28 @@ mod weight {
                     )],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(50.0, 8.0),
                     children_boundary_size: Vec2::new(50.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::ZERO,
                         margin_size: Vec2::new(50.0, 8.0),
                         children_boundary_size: Vec2::new(50.0, 8.0),
                         ..Default::default()
                     },
-                    children: vec![UiNodeLayout {
+                    children: vec![LayoutNode {
                         layout: Layout {
                             margin_position: Vec2::ZERO,
                             margin_size: Vec2::new(50.0, 8.0),
                             children_boundary_size: Vec2::new(50.0, 8.0),
                             ..Default::default()
                         },
-                        children: vec![UiNodeLayout {
+                        children: vec![LayoutNode {
                             layout: Layout {
                                 margin_position: Vec2::ZERO,
                                 margin_size: Vec2::new(50.0, 8.0),
@@ -1597,7 +1597,7 @@ mod rounding {
                 Modifiers::new().border_thickness(BorderThickness::all(3.5)).clone(), // Should all be rounded to 4.0
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 32.0),
@@ -1605,7 +1605,7 @@ mod rounding {
                     border_thickness: BorderThickness::all(3.5),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(4.0, 4.0),
                         margin_size: Vec2::new(24.0, 24.0),
@@ -1628,7 +1628,7 @@ mod rounding {
                 Modifiers::new().padding(Padding::all(3.5)).clone(), // Should all be rounded to 4.0
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 32.0),
@@ -1636,7 +1636,7 @@ mod rounding {
                     padding: Padding::all(3.5),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(4.0, 4.0),
                         margin_size: Vec2::new(24.0, 24.0),
@@ -1659,7 +1659,7 @@ mod rounding {
                 Modifiers::new().margin(Margin::all(3.5)).clone(), // Should all be rounded to 4.0
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 32.0),
@@ -1667,7 +1667,7 @@ mod rounding {
                     margin: Margin::all(3.5),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(4.0, 4.0),
                         margin_size: Vec2::new(24.0, 24.0),
@@ -1690,7 +1690,7 @@ mod rounding {
 
         let draw_data = compute_layout_nodes(root_position, root_size, ui);
 
-        let expected = vec![UiNodeLayout {
+        let expected = vec![LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(1.0, 1.0),
                 margin_size: Vec2::new(32.0, 32.0),
@@ -1724,14 +1724,14 @@ mod rounding {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(9.0, 8.0),
                     children_boundary_size: Vec2::new(9.0, 8.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::new(1.0, 0.0),
                         margin_size: Vec2::new(8.0, 8.0),
@@ -1750,7 +1750,7 @@ mod text {
 
     use crate::ui::node::text::TextProps;
 
-    use super::{test_layout, Alignment, Color, Extent, Layout, Modifiers, UiNode, UiNodeLayout};
+    use super::{test_layout, Alignment, Color, Extent, Layout, LayoutNode, Modifiers, UiNode};
 
     #[test]
     fn text_fit_content() {
@@ -1773,7 +1773,7 @@ mod text {
                     .clone(),
                 vec![],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(13.0 * 6.0, 16.0),
@@ -1807,7 +1807,7 @@ mod text {
                     .clone(),
                 vec![],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 16.0 * 3.0),
@@ -1825,7 +1825,7 @@ mod row_advanced {
 
     use crate::ui::node::{row::RowProps, text::TextProps};
 
-    use super::{test_layout, Alignment, Color, Extent, Layout, Modifiers, UiNode, UiNodeLayout};
+    use super::{test_layout, Alignment, Color, Extent, Layout, LayoutNode, Modifiers, UiNode};
 
     /// This test checks that if a row child has non-zero weight, then
     /// when weight is applied, the height of the element is recomputed
@@ -1864,14 +1864,14 @@ mod row_advanced {
                     vec![],
                 )],
             ),
-            UiNodeLayout {
+            LayoutNode {
                 layout: Layout {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 16.0 * 3.0),
                     children_boundary_size: Vec2::new(32.0, 48.0),
                     ..Default::default()
                 },
-                children: vec![UiNodeLayout {
+                children: vec![LayoutNode {
                     layout: Layout {
                         margin_position: Vec2::ZERO,
                         margin_size: Vec2::new(32.0, 16.0 * 3.0),

@@ -8,7 +8,7 @@ use super::margin::Margin;
 use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
 use super::{border_radius::BorderRadius, UiNode};
-use super::{Axis, HashNode, Measurements, UiNodeLayout};
+use super::{Axis, HashNode, LayoutNode, Measurements};
 use glam::Vec2;
 
 use crate::is_integer::IsInteger;
@@ -45,7 +45,7 @@ impl<'a> UiNodeProcessor<'a> {
         font_engine: &'a mut Box<dyn FontEngine>,
         draw_data: &'a mut Vec<DrawElement>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
-    ) -> UiNodeLayout {
+    ) -> LayoutNode {
         let mut s = Self::new(font_engine, draw_data, bounding_boxes);
         let (_, _, layout_node) = s.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         layout_node
@@ -70,7 +70,7 @@ impl<'a> UiNodeProcessor<'a> {
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
         boundary_size: Vec2,
-    ) -> (UiNode, HashNode, UiNodeLayout) {
+    ) -> (UiNode, HashNode, LayoutNode) {
         let boundary_pos = boundary_pos.round();
         let boundary_size = boundary_size.round();
 
@@ -115,7 +115,7 @@ impl<'a> UiNodeProcessor<'a> {
         self.draw_data.remove(0); // TODO: remove. This is mainly done to simplify testing (the first rectangle is completely transparent).
     }
 
-    fn to_draw_data_rec(&mut self, ui_node: &UiNode, hash_node: &HashNode, layout_node: &UiNodeLayout) {
+    fn to_draw_data_rec(&mut self, ui_node: &UiNode, hash_node: &HashNode, layout_node: &LayoutNode) {
         let modifiers = &ui_node.modifiers;
         let children = &ui_node.children;
 
@@ -142,21 +142,21 @@ impl<'a> UiNodeProcessor<'a> {
         }
     }
 
-    fn compute_layout_rec(&mut self, ui_node: &UiNode, layout: Layout) -> UiNodeLayout {
+    fn compute_layout_rec(&mut self, ui_node: &UiNode, layout: Layout) -> LayoutNode {
         assert!(layout.margin_position.x.is_integer());
         assert!(layout.margin_position.y.is_integer());
         assert!(layout.margin_size.x.is_integer());
         assert!(layout.margin_size.y.is_integer());
 
-        let children_layouts = self.compute_children_layouts(ui_node, &layout);
+        let children_layout_nodes = self.compute_children_layout_nodes(ui_node, &layout);
 
-        UiNodeLayout {
+        LayoutNode {
             layout,
-            children: children_layouts,
+            children: children_layout_nodes,
         }
     }
 
-    fn compute_children_layouts(&mut self, ui_node: &UiNode, layout: &Layout) -> Vec<UiNodeLayout> {
+    fn compute_children_layout_nodes(&mut self, ui_node: &UiNode, layout: &Layout) -> Vec<LayoutNode> {
         ui_node
             .props
             .compute_children_layouts(&ui_node.modifiers, &ui_node.children, self, layout)
