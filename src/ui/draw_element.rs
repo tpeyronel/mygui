@@ -1,4 +1,4 @@
-use crate::{font::font_face::GlyphPixelMode, image::image_manager::ImageId, rectangle::Rectangle, vertex::Color};
+use crate::{color::Color, font::font_face::GlyphPixelMode, image::image_manager::ImageId, rectangle::Rectangle};
 
 use super::mesh::Mesh;
 

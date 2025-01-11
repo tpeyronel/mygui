@@ -18,12 +18,12 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::{
+        color::Color,
         ui::{
             immediate::ui::mock_ui,
             node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps},
             Extent, Modifiers, UiNode,
         },
-        vertex::Color,
     };
 
     use super::{ui::Ui, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT};

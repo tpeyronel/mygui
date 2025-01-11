@@ -23,7 +23,7 @@ use node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProp
 use padding::Padding;
 use processor::UiNodeProcessor;
 
-use crate::{font::font_engine::FontEngine, vertex::Color};
+use crate::{color::Color, font::font_engine::FontEngine};
 
 enum Axis {
     X,

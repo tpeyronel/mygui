@@ -4,6 +4,7 @@ use std::{
     time::Instant,
 };
 
+use color::Color;
 use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
@@ -18,7 +19,6 @@ use ui::{
     padding::Padding,
     Alignment, Extent,
 };
-use vertex::Color;
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -27,6 +27,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
+mod color;
 mod config;
 mod font;
 mod image;
@@ -36,7 +37,6 @@ mod rectangle;
 mod renderer;
 mod text;
 mod ui;
-mod vertex;
 
 struct App {
     state: Option<AppState>,

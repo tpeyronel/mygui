@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use glam::Vec4;
 
 use crate::{
+    color::Color,
     font::font_face::GlyphPixelMode,
     image::image_manager::ImageId,
     ui::{self, draw_element::DrawElement, mesh::VertexAttribute},
-    vertex::Color,
 };
 
 pub enum Mesh {

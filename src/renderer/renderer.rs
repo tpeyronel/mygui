@@ -5,11 +5,11 @@ use glam::{Vec2, Vec4};
 use wgpu::{util::DeviceExt, Extent3d};
 
 use crate::{
+    color::Color,
     font::font_face::GlyphPixelMode,
     image::image_manager::{ImageId, ImageManager},
     rectangle::Rectangle,
     ui::{draw_element::DrawElement, mesh::VertexAttribute},
-    vertex::Color,
 };
 
 use super::mesh::Mesh;

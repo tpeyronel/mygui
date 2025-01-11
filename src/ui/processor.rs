@@ -14,7 +14,7 @@ use glam::{Vec2, Vec4};
 use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
-use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
+use crate::{color::Color, font::font_engine::FontEngine, rectangle::Rectangle};
 
 pub struct UiNodeProcessor<'a> {
     measurements_cache: MeasurementsCache,

@@ -2,13 +2,13 @@ use dyn_partial_eq::DynPartialEq;
 use glam::Vec2;
 
 use crate::{
+    color::Color,
     font::font_engine::TextLayoutOptions,
     rectangle::Rectangle,
     text::text_position::TextPosition,
     ui::{
         color_mesh_builder::ColorMeshBuilder, draw_element::DrawElement, processor::UiNodeProcessor, Layout, Modifiers,
     },
-    vertex::Color,
 };
 
 use super::{UiNode, UiNodeProps};

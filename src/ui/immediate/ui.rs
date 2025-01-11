@@ -9,11 +9,11 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    color::Color,
     ui::{
         node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNodeProps},
         Extent, HashNode, Modifiers, UiNode,
     },
-    vertex::Color,
 };
 
 use super::{
