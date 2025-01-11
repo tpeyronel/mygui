@@ -38,8 +38,9 @@ struct FragmentOut {
 
 @fragment
 fn fs_main(in: VertexOut) -> FragmentOut {
+    let glyph_alpha = vec4(textureSample(u_texture, u_sampler, in.uv).rgb, 1.0);
     var out: FragmentOut;
-    out.color = u_text_color;
-    out.mask = vec4(u_text_color.a * textureSample(u_texture, u_sampler, in.uv).rgb, 1.0);
+    out.color = u_text_color * glyph_alpha;
+    out.mask = u_text_color.a * glyph_alpha;
     return out;
 }
