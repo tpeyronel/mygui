@@ -46,6 +46,7 @@ pub struct Modifiers {
     border_radius: BorderRadius,
     self_alignment: Alignment,
     weight: f32,
+    overflow: Overflow,
 }
 
 #[allow(unused)]
@@ -141,6 +142,11 @@ impl Modifiers {
 
     pub fn weight(&mut self, weight: f32) -> &mut Self {
         self.weight = weight;
+        self
+    }
+
+    pub fn overflow(&mut self, overflow: Overflow) -> &mut Self {
+        self.overflow = overflow;
         self
     }
 }
@@ -322,6 +328,18 @@ impl Measurements {
     fn content_size(&self) -> Vec2 {
         (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size() - self.padding.delta_size())
             .max(Vec2::ZERO)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Overflow {
+    Visible,
+    Hidden,
+}
+
+impl Default for Overflow {
+    fn default() -> Self {
+        Self::Visible
     }
 }
 
