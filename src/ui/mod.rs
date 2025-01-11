@@ -3,6 +3,8 @@ pub mod border_thickness;
 pub mod color_mesh_builder;
 pub mod draw_element;
 pub mod immediate;
+#[cfg(test)]
+mod layout_tests;
 pub mod margin;
 mod measurements_cache;
 pub mod mesh;
@@ -21,7 +23,7 @@ use node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProp
 use padding::Padding;
 use processor::UiNodeProcessor;
 
-use crate::{font::font_engine::FontEngine, rectangle::Rectangle, vertex::Color};
+use crate::{font::font_engine::FontEngine, vertex::Color};
 
 enum Axis {
     X,
