@@ -46,7 +46,8 @@ pub struct Modifiers {
     border_radius: BorderRadius,
     self_alignment: Alignment,
     weight: f32,
-    overflow: Overflow,
+    mask: Mask,
+    children_mask: Mask,
 }
 
 #[allow(unused)]
@@ -145,9 +146,22 @@ impl Modifiers {
         self
     }
 
-    pub fn overflow(&mut self, overflow: Overflow) -> &mut Self {
-        self.overflow = overflow;
+    pub fn mask(&mut self, mask: Mask) -> &mut Self {
+        self.mask = mask;
         self
+    }
+
+    pub fn children_mask(&mut self, children_mask: Mask) -> &mut Self {
+        self.children_mask = children_mask;
+        self
+    }
+
+    pub fn overflow_visible(&mut self) -> &mut Self {
+        self.children_mask(Mask::Inherit)
+    }
+
+    pub fn overflow_hidden(&mut self) -> &mut Self {
+        self.children_mask(Mask::InheritOpParent(LogicalOperator::And))
     }
 }
 
@@ -332,15 +346,28 @@ impl Measurements {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Overflow {
-    Visible,
-    Hidden,
+pub enum Mask {
+    Inherit,
+    None,
+    Parent,
+    InheritOpParent(LogicalOperator),
 }
 
-impl Default for Overflow {
+impl Default for Mask {
     fn default() -> Self {
-        Self::Visible
+        Self::Inherit
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogicalOperator {
+    Not,
+    And,
+    Nand,
+    Or,
+    Nor,
+    Eq, // Same as XNOR
+    Ne, // Same as XOR
 }
 
 #[allow(unused)]
