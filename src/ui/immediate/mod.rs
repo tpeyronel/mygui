@@ -76,7 +76,7 @@ mod tests {
             |ui| {
                 ui.block(|_, _| {});
                 ui.block(|_, attr| {
-                    attr.border_color(Color::new(1.0, 0.0, 0.0, 0.0));
+                    attr.border_color(Color::rgba(1.0, 0.0, 0.0, 0.0));
                 });
                 ui.block(|_, _| {});
             },
@@ -84,7 +84,7 @@ mod tests {
                 UiNode::new(BlockProps, Modifiers::new(), vec![]),
                 UiNode::new(
                     BlockProps,
-                    Modifiers::new().border_color(Color::new(1.0, 0.0, 0.0, 0.0)).clone(),
+                    Modifiers::new().border_color(Color::rgba(1.0, 0.0, 0.0, 0.0)).clone(),
                     vec![],
                 ),
                 UiNode::new(BlockProps, Modifiers::new(), vec![]),
@@ -143,7 +143,7 @@ mod tests {
             vec![UiNode::new(
                 TextProps {
                     text: "Hello".into(),
-                    text_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                    text_color: Color::rgba(1.0, 1.0, 1.0, 1.0),
                     font_family: String::new(),
                     font_size: DEFAULT_FONT_SIZE,
                     line_height: DEFAULT_LINE_HEIGHT,

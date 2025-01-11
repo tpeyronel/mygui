@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use glam::{Vec2, Vec4};
+use glam::Vec2;
+
+use crate::color::Color;
 
 use super::mesh::{Mesh, VertexAttribute};
 
@@ -19,7 +21,7 @@ impl ColorMeshBuilder {
         }
     }
 
-    pub fn add_vertex(&mut self, position: Vec2, color: Vec4) -> u32 {
+    pub fn add_vertex(&mut self, position: Vec2, color: Color) -> u32 {
         let vertex_index = (self.positions.len() / std::mem::size_of::<Vec2>()) as u32;
         self.positions.extend_from_slice(bytemuck::bytes_of(&position));
         self.colors.extend_from_slice(bytemuck::bytes_of(&color));

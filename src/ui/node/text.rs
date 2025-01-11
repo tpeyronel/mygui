@@ -117,7 +117,7 @@ impl UiNodeProps for TextProps {
 
             let cursor_rectangle =
                 Rectangle::from_position_size(position, Vec2::new(CURSOR_WIDTH, options.line_height));
-            let cursor_color = Color::new(1.0, 1.0, 1.0, 1.0);
+            let cursor_color = Color::rgba(1.0, 1.0, 1.0, 1.0);
 
             let mut mesh_builder = ColorMeshBuilder::new();
             mesh_builder.add_vertex(cursor_rectangle.bottom_left(), cursor_color);

@@ -9,7 +9,7 @@ use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
 use super::{border_radius::BorderRadius, UiNode};
 use super::{Axis, HashNode, Measurements, UiNodeLayout};
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 
 use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
@@ -696,8 +696,8 @@ impl CornerVertices {
         corner_radius: f32,
         corner_thickness: Vec2,
         rotation: Vec2,
-        border_color: Vec4,
-        fill_color: Vec4,
+        border_color: Color,
+        fill_color: Color,
         builder: &mut ColorMeshBuilder,
     ) -> Self {
         let fill_hor_pos = corner_pos + Vec2::new(corner_radius.max(corner_thickness.x), corner_thickness.y) * rotation;

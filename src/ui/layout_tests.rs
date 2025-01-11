@@ -157,7 +157,7 @@ fn too_much_padding() {
     //         },
     //         DrawElement::Rectangle {
     //             bounds: Rectangle::from_position_size(Vec2::new(16.0, 16.0), Vec2::new(0.0, 0.0)),
-    //             fill_color: Color::new(1.0, 0.0, 0.0, 1.0),
+    //             fill_color: Color::rgba(1.0, 0.0, 0.0, 1.0),
     //             border_color: Color::ZERO,
     //             border_radius: Vec4::ZERO,
     //             border_width: Vec4::ZERO,
@@ -1760,7 +1760,7 @@ mod text {
             UiNode::new(
                 TextProps {
                     text: "abcdef".into(),
-                    text_color: Color::ONE,
+                    text_color: Color::WHITE,
                     font_family: String::new(),
                     font_size: 13.0,
                     line_height: 16.0,
@@ -1793,7 +1793,7 @@ mod text {
             UiNode::new(
                 TextProps {
                     text: "abcdef".into(),
-                    text_color: Color::ONE,
+                    text_color: Color::WHITE,
                     font_family: String::new(),
                     font_size: 13.0,
                     line_height: 16.0,
@@ -1849,7 +1849,7 @@ mod row_advanced {
                 vec![UiNode::new(
                     TextProps {
                         text: "abcdef".into(),
-                        text_color: Color::ONE,
+                        text_color: Color::WHITE,
                         font_family: String::new(),
                         font_size: 13.0,
                         line_height: 16.0,

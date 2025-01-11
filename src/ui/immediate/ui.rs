@@ -143,7 +143,7 @@ impl<'a> Ui<'a> {
 
             let mut props = TextProps {
                 text: text.into(),
-                text_color: Color::new(1.0, 1.0, 1.0, 1.0),
+                text_color: Color::WHITE,
                 font_family: String::new(),
                 font_size: DEFAULT_FONT_SIZE,
                 line_height: DEFAULT_LINE_HEIGHT,

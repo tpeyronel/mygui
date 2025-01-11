@@ -282,14 +282,14 @@ fn simple_ui(ui: &mut Ui<'_>) {
                         .height(Extent::Px(48.0))
                         .weight(1.0)
                         .fill_color(if input.is_hovered() {
-                            Color::new(1.0, 1.0, 0.0, 1.0)
+                            Color::rgba(1.0, 1.0, 0.0, 1.0)
                         } else {
-                            Color::new(1.0, 0.0, 0.0, 1.0)
+                            Color::rgba(1.0, 0.0, 0.0, 1.0)
                         });
 
                     ui.block(|_, attr| {
                         attr.margin(Margin::all(16.0))
-                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5));
+                            .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5));
                     });
                 });
 
@@ -307,9 +307,9 @@ fn simple_ui(ui: &mut Ui<'_>) {
                             .weight(1.0)
                             .height(Extent::FitContent)
                             .fill_color(if input.is_hovered() {
-                                Color::new(1.0, 0.0, 0.5, 0.5)
+                                Color::rgba(1.0, 0.0, 0.5, 0.5)
                             } else {
-                                Color::new(0.5, 0.5, 0.5, 0.5)
+                                Color::rgba(0.5, 0.5, 0.5, 0.5)
                             })
                             .self_alignment(ui::Alignment::Bottom);
                     },
@@ -318,7 +318,7 @@ fn simple_ui(ui: &mut Ui<'_>) {
                 ui.block(|_, attr| {
                     attr.width(Extent::Px(0.0))
                         .weight(1.0)
-                        .fill_color(Color::new(0.0, 0.0, 1.0, 1.0));
+                        .fill_color(Color::rgba(0.0, 0.0, 1.0, 1.0));
                 });
             });
         });
@@ -332,7 +332,7 @@ fn example_ui(ui: &mut Ui<'_>) {
             .height(Extent::FillParent)
             .margin(Margin::all(8.0))
             .padding(Padding::all(16.0))
-            .fill_color(Color::new(1.0, 1.0, 0.1, 0.25))
+            .fill_color(Color::rgba(1.0, 1.0, 0.1, 0.25))
             .border_radius(BorderRadius::all(16.0));
 
         ui.block(|ui, modifiers| {
@@ -340,8 +340,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                 .width(Extent::FillParent)
                 .height(Extent::FillParent)
                 .padding(Padding::all(0.0))
-                .fill_color(Color::new(1.0, 0.1, 0.1, 0.25))
-                .border_color(Color::new(1.0, 0.1, 0.1, 0.9))
+                .fill_color(Color::rgba(1.0, 0.1, 0.1, 0.25))
+                .border_color(Color::rgba(1.0, 0.1, 0.1, 0.9))
                 .border_thickness(BorderThickness::all(4.0))
                 .border_radius(BorderRadius::all(8.0));
 
@@ -350,8 +350,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::Center)
-                    .fill_color(Color::new(1.0, 1.0, 1.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::all(4.0));
             });
@@ -362,8 +362,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .height(Extent::Px(80.0))
                     .margin(Margin::all(4.0))
                     .self_alignment(Alignment::Right)
-                    .fill_color(Color::new(1.0, 0.0, 0.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::all(4.0));
             });
@@ -373,8 +373,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::TopRight)
-                    .fill_color(Color::new(1.0, 1.0, 0.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0));
             });
@@ -384,8 +384,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::Top)
-                    .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0));
             });
 
@@ -394,7 +394,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
                     .self_alignment(Alignment::TopLeft)
-                    .border_color(Color::new(1.0, 1.0, 1.0, 0.4))
+                    .border_color(Color::rgba(1.0, 1.0, 1.0, 0.4))
                     .border_thickness(BorderThickness::all(2.0));
 
                 ui.block(|ui, modifiers| {
@@ -402,11 +402,11 @@ fn example_ui(ui: &mut Ui<'_>) {
                         .width(Extent::FillParent)
                         .height(Extent::FillParent)
                         .padding(Padding::all(8.0))
-                        .border_color(Color::new(1.0, 0.0, 0.0, 0.4))
+                        .border_color(Color::rgba(1.0, 0.0, 0.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0));
 
                     ui.block(|_, modifiers| {
-                        modifiers.fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
+                        modifiers.fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4));
                     });
                 });
 
@@ -414,7 +414,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     modifiers
                         .width(Extent::Px(8.0))
                         .height(Extent::Px(64.0))
-                        .border_color(Color::new(0.0, 1.0, 0.0, 0.4))
+                        .border_color(Color::rgba(0.0, 1.0, 0.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0))
                         .self_alignment(Alignment::BottomLeft);
                 });
@@ -423,7 +423,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     modifiers
                         .width(Extent::Px(96.0))
                         .height(Extent::Px(8.0))
-                        .border_color(Color::new(0.0, 0.0, 1.0, 0.4))
+                        .border_color(Color::rgba(0.0, 0.0, 1.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0))
                         .self_alignment(Alignment::TopRight);
                 });
@@ -434,8 +434,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::Left)
-                    .fill_color(Color::new(0.0, 0.0, 0.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::all(4.0));
             });
@@ -445,8 +445,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::BottomLeft)
-                    .fill_color(Color::new(0.0, 0.0, 1.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::all(4.0));
             });
@@ -456,8 +456,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::Bottom)
-                    .fill_color(Color::new(0.0, 1.0, 0.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::all(4.0));
             });
@@ -467,8 +467,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .width(Extent::Px(80.0))
                     .height(Extent::Px(80.0))
                     .self_alignment(Alignment::BottomRight)
-                    .fill_color(Color::new(1.0, 0.0, 1.0, 0.25))
-                    .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                    .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.25))
+                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
                     .border_radius(BorderRadius::all(4.0));
             });
@@ -479,7 +479,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     .height(Extent::FitContent)
                     .padding(Padding::all(8.0))
                     .border_thickness(BorderThickness::all(4.0))
-                    .border_color(Color::new(1.0, 1.0, 1.0, 1.0));
+                    .border_color(Color::rgba(1.0, 1.0, 1.0, 1.0));
 
                 ui.column(|ui, modifiers| {
                     modifiers
@@ -487,13 +487,13 @@ fn example_ui(ui: &mut Ui<'_>) {
                         .height(Extent::FitContent)
                         .padding(Padding::all(16.0))
                         .border_thickness(BorderThickness::all(4.0))
-                        .border_color(Color::new(1.0, 1.0, 1.0, 1.0));
+                        .border_color(Color::rgba(1.0, 1.0, 1.0, 1.0));
 
                     ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::Px(24.0))
-                            .fill_color(Color::new(0.0, 1.0, 1.0, 0.5))
-                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.5))
+                            .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
                             .border_radius(BorderRadius::all(8.0));
                     });
@@ -501,8 +501,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::FillParent)
-                            .fill_color(Color::new(1.0, 0.0, 1.0, 0.5))
-                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.5))
+                            .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
                             .border_radius(BorderRadius::all(8.0));
                     });
@@ -510,8 +510,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::Px(32.0))
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 0.5))
-                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
+                            .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
                             .border_radius(BorderRadius::all(8.0));
                     });
@@ -523,8 +523,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .margin(Margin::all(8.0))
                             .padding(Padding::all(8.0))
                             .self_alignment(Alignment::Center)
-                            .fill_color(Color::new(1.0, 1.0, 0.0, 0.5))
-                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.5))
+                            .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(4.0))
                             .border_radius(BorderRadius::all(8.0));
 
@@ -532,8 +532,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                             modifiers
                                 .width(Extent::FillParent)
                                 .height(Extent::FillParent)
-                                .fill_color(Color::new(1.0, 1.0, 1.0, 0.5))
-                                .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                                .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.5))
+                                .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                 .border_thickness(BorderThickness::all(1.0))
                                 .border_radius(BorderRadius::all(8.0));
                         });
@@ -542,8 +542,8 @@ fn example_ui(ui: &mut Ui<'_>) {
                     ui.block(|_, modifiers| {
                         modifiers
                             .height(Extent::Px(32.0))
-                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.5))
-                            .border_color(Color::new(0.1, 0.1, 0.1, 0.9))
+                            .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
+                            .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
                             .border_radius(BorderRadius::all(8.0));
                     });
@@ -553,26 +553,26 @@ fn example_ui(ui: &mut Ui<'_>) {
                     modifiers
                         .width(Extent::Px(64.0))
                         .height(Extent::FillParent)
-                        .fill_color(Color::new(0.25, 0.25, 1.0, 0.5));
+                        .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.5));
                 });
 
                 ui.block(|_, modifiers| {
                     modifiers
                         .width(Extent::Px(64.0))
                         .height(Extent::Px(32.0))
-                        .fill_color(Color::new(0.25, 0.25, 1.0, 0.25));
+                        .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.25));
                 });
 
                 ui.block(|ui, modifiers| {
                     modifiers
                         .width(Extent::FillParent)
                         .height(Extent::FillParent)
-                        .fill_color(Color::new(0.25, 1.0, 0.25, 0.5));
+                        .fill_color(Color::rgba(0.25, 1.0, 0.25, 0.5));
 
                     ui.text(
                         "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee.",
                         |_, props, modifiers| {
-                            props.text_color = Color::ONE;
+                            props.text_color = Color::WHITE;
                             props.font_family = "jetbrains mono".to_string();
                             props.font_size = 24.0;
                             props.line_height = 24.0 * 1.5;
@@ -589,21 +589,21 @@ fn example_ui(ui: &mut Ui<'_>) {
                     modifiers
                         .height(Extent::Px(0.0))
                         .weight(1.0)
-                        .fill_color(Color::new(1.0, 0.0, 0.0, 0.4));
+                        .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.4));
                 });
 
                 ui.block(|_, modifiers| {
                     modifiers
                         .height(Extent::Px(0.0))
                         .weight(2.0)
-                        .fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
+                        .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4));
                 });
 
                 ui.block(|_, modifiers| {
                     modifiers
                         .height(Extent::Px(0.0))
                         .weight(1.0)
-                        .fill_color(Color::new(0.0, 0.0, 1.0, 0.4));
+                        .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4));
                 });
             });
 
@@ -617,24 +617,24 @@ fn example_ui(ui: &mut Ui<'_>) {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
-                            .fill_color(Color::new(1.0, 0.0, 0.0, 0.4));
+                            .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.4));
                     });
 
                     ui.block(|_, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(2.0)
-                            .fill_color(Color::new(0.0, 1.0, 0.0, 0.4));
+                            .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4));
                     });
 
                     ui.block(|ui, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
-                            .fill_color(Color::new(0.0, 0.0, 1.0, 0.4));
+                            .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4));
 
                         ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |_, props, modifiers| {
-                            props.text_color = Color::ONE;
+                            props.text_color = Color::WHITE;
                             props.font_family = "Segoe UI Emoji".to_string();
                             props.font_size = 24.0;
                             props.line_height = 24.0;
@@ -645,7 +645,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                                 .height(Extent::FitContent)
                                 .max_height(Extent::Px(512.0))
                                 .padding(Padding::all(64.0))
-                                .fill_color(Color::new(0.0, 1.0, 0.0, 0.5));
+                                .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5));
                         });
                     });
                 });
@@ -657,21 +657,21 @@ fn example_ui(ui: &mut Ui<'_>) {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(2.0)
-                            .fill_color(Color::new(1.0, 1.0, 0.0, 0.4));
+                            .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.4));
                     });
 
                     ui.block(|_, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(1.0)
-                            .fill_color(Color::new(0.0, 1.0, 1.0, 0.4));
+                            .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.4));
                     });
 
                     ui.block(|ui, modifiers| {
                         modifiers
                             .width(Extent::Px(0.0))
                             .weight(3.0)
-                            .fill_color(Color::new(1.0, 0.0, 1.0, 0.4));
+                            .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.4));
 
                         let (text, set_text) = ui.use_state(|| String::new());
 
@@ -685,15 +685,15 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                                 modifiers
                                     .min_width(Extent::Px(64.0))
-                                    .fill_color(Color::new(0.25, 0.25, 0.25, 1.0))
+                                    .fill_color(Color::rgba(0.25, 0.25, 0.25, 1.0))
                                     .border_radius(BorderRadius::all(8.0))
                                     .padding(Padding::all(8.0))
                                     .border_thickness(BorderThickness::all(2.0));
 
                                 if input.is_focused() {
-                                    modifiers.border_color(Color::new(0.0, 0.0, 1.0, 1.0));
+                                    modifiers.border_color(Color::rgba(0.0, 0.0, 1.0, 1.0));
                                 } else {
-                                    modifiers.border_color(Color::new(0.25, 0.25, 0.25, 1.0));
+                                    modifiers.border_color(Color::rgba(0.25, 0.25, 0.25, 1.0));
                                 }
                             },
                         );
@@ -713,7 +713,7 @@ fn example_ui(ui: &mut Ui<'_>) {
                     ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |ui, props, modifiers| {
                         let input = ui.use_input();
 
-                        props.text_color = Color::new(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
+                        props.text_color = Color::rgba(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
                         props.font_family = "tangerine".to_string();
                         props.font_size = i as f32;
                         props.line_height = i as f32;
@@ -724,15 +724,15 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .no_max_width()
                             .self_alignment(Alignment::Left)
                             .fill_color(if input.is_pressed() {
-                                Color::new(0.0, 0.0, 1.0, 1.0)
+                                Color::rgba(0.0, 0.0, 1.0, 1.0)
                             } else if input.on_hover() {
-                                Color::new(1.0, 1.0, 1.0, 1.0)
+                                Color::rgba(1.0, 1.0, 1.0, 1.0)
                             } else if input.on_unhover() {
-                                Color::new(0.0, 0.0, 0.0, 1.0)
+                                Color::rgba(0.0, 0.0, 0.0, 1.0)
                             } else if i % 2 == 0 {
-                                Color::new(1.0, 0.0, 0.0, 0.5)
+                                Color::rgba(1.0, 0.0, 0.0, 0.5)
                             } else {
-                                Color::new(0.0, 1.0, 0.0, 0.5)
+                                Color::rgba(0.0, 1.0, 0.0, 0.5)
                             });
 
                         if input.on_press() {
@@ -764,10 +764,10 @@ fn test_rectangle_ui(ui: &mut Ui) {
                 .height(Extent::Px(0.0))
                 .weight(1.0)
                 .margin(Margin::all(8.0))
-                .fill_color(Color::new(1.0, 0.0, 0.0, 1.0))
-                .border_color(Color::new(0.0, 1.0, 0.0, 1.0))
-                .border_thickness(BorderThickness::new(80.0, 96.0, 16.0, 16.0))
-                .border_radius(BorderRadius::new(320.0, br, 32.0, 160.0));
+                .fill_color(Color::rgba(1.0, 0.0, 0.0, 1.0))
+                .border_color(Color::rgba(0.0, 1.0, 0.0, 1.0))
+                .border_thickness(BorderThickness::new(0.0, 96.0, 16.0, 16.0))
+                .border_radius(BorderRadius::new(320.0, br, 32.0, 0.0));
         });
     });
 }
