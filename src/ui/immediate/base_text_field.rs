@@ -42,7 +42,7 @@ impl BaseTextField for Ui<'_> {
                 props.cursor_position = Some(TextPosition::from_text_index(&props.text, internal_state.cursor_index));
             }
 
-            if input.on_release() {
+            if input.on_press() {
                 internal_state.cursor_blink_start = Instant::now();
             }
 
