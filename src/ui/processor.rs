@@ -2,19 +2,18 @@ use core::f32;
 use std::u64;
 
 use super::border_thickness::BorderThickness;
-use super::color_mesh_builder::ColorMeshBuilder;
 use super::draw_element::DrawElement;
 use super::margin::Margin;
 use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
-use super::{border_radius::BorderRadius, UiNode};
+use super::UiNode;
 use super::{Axis, HashNode, LayoutNode, Measurements};
 use glam::Vec2;
 
 use crate::is_integer::IsInteger;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
-use crate::{color::Color, font::font_engine::FontEngine, rectangle::Rectangle};
+use crate::{font::font_engine::FontEngine, rectangle::Rectangle};
 
 pub struct UiNodeProcessor<'a> {
     measurements_cache: MeasurementsCache,
