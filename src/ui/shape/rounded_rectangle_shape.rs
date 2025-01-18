@@ -206,8 +206,7 @@ fn emit_rectangle_corners(
 }
 
 fn compute_corner_depth(corner_radius: f32) -> u32 {
-    const MAGIC: f32 = 0.5;
-    (MAGIC * corner_radius.log2()).round() as u32
+    corner_radius.sqrt().log2().round() as u32
 }
 
 fn emit_rectangle_corners_rec(
