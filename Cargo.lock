@@ -444,6 +444,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
+name = "dyn-clone"
+version = "1.0.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
+
+[[package]]
+name = "dyn-hash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a650a461c6a8ff1ef205ed9a2ad56579309853fecefc2423f73dced342f92258"
+
+[[package]]
 name = "dyn_partial_eq"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -965,6 +977,8 @@ dependencies = [
  "bincode",
  "bitflags 2.6.0",
  "bytemuck",
+ "dyn-clone",
+ "dyn-hash",
  "dyn_partial_eq",
  "dyn_partial_eq_derive",
  "env_logger",

@@ -11,6 +11,7 @@ pub mod mesh;
 mod node;
 pub mod padding;
 mod processor;
+pub mod shape;
 
 use core::f32;
 
@@ -22,6 +23,7 @@ use margin::Margin;
 use node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNode};
 use padding::Padding;
 use processor::UiNodeProcessor;
+use shape::{rounded_rectangle_shape::RoundedRectangleShape, Shape};
 
 use crate::{color::Color, font::font_engine::FontEngine};
 
@@ -30,7 +32,7 @@ enum Axis {
     Y,
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Modifiers {
     width: Extent,
     height: Extent,
@@ -44,6 +46,7 @@ pub struct Modifiers {
     border_color: Color,
     border_thickness: BorderThickness,
     border_radius: BorderRadius,
+    shape: Box<dyn Shape>,
     self_alignment: Alignment,
     weight: f32,
     mask: Mask,
@@ -136,6 +139,11 @@ impl Modifiers {
         self
     }
 
+    pub fn shape(&mut self, shape: impl Shape) -> &mut Self {
+        self.shape = Box::new(shape);
+        self
+    }
+
     pub fn self_alignment(&mut self, self_alignment: Alignment) -> &mut Self {
         self.self_alignment = self_alignment;
         self
@@ -162,6 +170,30 @@ impl Modifiers {
 
     pub fn overflow_hidden(&mut self) -> &mut Self {
         self.children_mask(Mask::InheritOpParent(LogicalOperator::And))
+    }
+}
+
+impl Default for Modifiers {
+    fn default() -> Self {
+        Self {
+            width: Default::default(),
+            height: Default::default(),
+            max_width: Default::default(),
+            max_height: Default::default(),
+            min_width: Default::default(),
+            min_height: Default::default(),
+            margin: Default::default(),
+            padding: Default::default(),
+            fill_color: Default::default(),
+            border_color: Default::default(),
+            border_thickness: Default::default(),
+            border_radius: Default::default(),
+            shape: Box::new(RoundedRectangleShape),
+            self_alignment: Default::default(),
+            weight: Default::default(),
+            mask: Default::default(),
+            children_mask: Default::default(),
+        }
     }
 }
 
