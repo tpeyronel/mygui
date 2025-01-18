@@ -49,8 +49,7 @@ pub struct Modifiers {
     shape: Box<dyn Shape>,
     self_alignment: Alignment,
     weight: f32,
-    mask: Mask,
-    children_mask: Mask,
+    clip: Clip,
 }
 
 #[allow(unused)]
@@ -154,22 +153,17 @@ impl Modifiers {
         self
     }
 
-    pub fn mask(&mut self, mask: Mask) -> &mut Self {
-        self.mask = mask;
-        self
-    }
-
-    pub fn children_mask(&mut self, children_mask: Mask) -> &mut Self {
-        self.children_mask = children_mask;
+    pub fn clip(&mut self, clip: Clip) -> &mut Self {
+        self.clip = clip;
         self
     }
 
     pub fn overflow_visible(&mut self) -> &mut Self {
-        self.children_mask(Mask::Inherit)
+        self.clip(Clip::Inherit)
     }
 
     pub fn overflow_hidden(&mut self) -> &mut Self {
-        self.children_mask(Mask::InheritOpParent(LogicalOperator::And))
+        self.clip(Clip::And(Box::new(Clip::Inherit), Box::new(Clip::Shape)))
     }
 }
 
@@ -191,8 +185,7 @@ impl Default for Modifiers {
             shape: Box::new(RoundedRectangleShape),
             self_alignment: Default::default(),
             weight: Default::default(),
-            mask: Default::default(),
-            children_mask: Default::default(),
+            clip: Default::default(),
         }
     }
 }
@@ -377,29 +370,24 @@ impl Measurements {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Mask {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Clip {
     Inherit,
     None,
-    Parent,
-    InheritOpParent(LogicalOperator),
+    Shape,
+    Not(Box<Clip>),
+    And(Box<Clip>, Box<Clip>),
+    Nand(Box<Clip>, Box<Clip>),
+    Or(Box<Clip>, Box<Clip>),
+    Nor(Box<Clip>, Box<Clip>),
+    Eq(Box<Clip>, Box<Clip>), // Same as XNOR
+    Ne(Box<Clip>, Box<Clip>), // Same as XOR
 }
 
-impl Default for Mask {
+impl Default for Clip {
     fn default() -> Self {
         Self::Inherit
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LogicalOperator {
-    Not,
-    And,
-    Nand,
-    Or,
-    Nor,
-    Eq, // Same as XNOR
-    Ne, // Same as XOR
 }
 
 #[allow(unused)]
