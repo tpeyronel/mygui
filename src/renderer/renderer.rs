@@ -56,7 +56,7 @@ pub struct Renderer {
     multisampled_depthbuffer_view: wgpu::TextureView,
     target_framebuffer_view: wgpu::TextureView,
     target_framebuffer_sampler: wgpu::Sampler,
-    box_pipeline: wgpu::RenderPipeline,
+    color_pipeline: wgpu::RenderPipeline,
     text_grayscale_pipeline: wgpu::RenderPipeline,
     text_subpixel_pipeline: wgpu::RenderPipeline,
     texture_pipeline: wgpu::RenderPipeline,
@@ -120,9 +120,9 @@ impl Renderer {
         ))
         .expect("Failed to create device");
 
-        let box_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("box shader"),
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/box_shader.wgsl"))),
+        let color_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("color shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/color_shader.wgsl"))),
         });
 
         let text_grayscale_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -238,7 +238,7 @@ impl Renderer {
             ],
         });
 
-        let box_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let color_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[
                 &global_uniform_bind_group_layout,
@@ -344,11 +344,11 @@ impl Renderer {
             },
         });
 
-        let box_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("box pipeline"),
-            layout: Some(&box_pipeline_layout),
+        let color_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("color pipeline"),
+            layout: Some(&color_pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &box_shader,
+                module: &color_shader,
                 entry_point: Some("vs_main"),
                 buffers: &[
                     vec2_vertex_buffer_layout!(0), // Positions
@@ -357,7 +357,7 @@ impl Renderer {
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
-                module: &box_shader,
+                module: &color_shader,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
@@ -585,7 +585,7 @@ impl Renderer {
             multisampled_depthbuffer_view,
             target_framebuffer_view,
             target_framebuffer_sampler,
-            box_pipeline,
+            color_pipeline,
             text_grayscale_pipeline,
             text_subpixel_pipeline,
             texture_pipeline,
@@ -858,7 +858,7 @@ impl Renderer {
                         first_index,
                         index_count,
                     } => {
-                        rpass.set_pipeline(&self.box_pipeline);
+                        rpass.set_pipeline(&self.color_pipeline);
                         rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
                         rpass.set_bind_group(1, &self.rectangle_data_uniform_bind_group, &[]);
                         rpass.set_vertex_buffer(
