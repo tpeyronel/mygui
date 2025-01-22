@@ -18,6 +18,7 @@ const MAX_RECTANGLES: u64 = 2048 * 10;
 const MAX_VERTICES: u64 = 4 * MAX_RECTANGLES;
 const MAX_INDICES: u64 = 6 * MAX_RECTANGLES;
 const MSAA_SAMPLE_COUNT: u32 = 8;
+const DEPTH_STENCIL_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24PlusStencil8;
 
 macro_rules! vec2_vertex_buffer_layout {
     ($shader_location:expr) => {
@@ -52,6 +53,7 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     multisampled_framebuffer_view: wgpu::TextureView,
+    multisampled_depthbuffer_view: wgpu::TextureView,
     target_framebuffer_view: wgpu::TextureView,
     target_framebuffer_sampler: wgpu::Sampler,
     box_pipeline: wgpu::RenderPipeline,
@@ -272,6 +274,9 @@ impl Renderer {
         let multisampled_framebuffer_view =
             Self::create_msaa_framebuffer(&device, window_size.width, window_size.height, swapchain_format);
 
+        let multisampled_depthbuffer_view =
+            Self::create_msaa_depthbuffer(&device, window_size.width, window_size.height);
+
         let target_framebuffer_view =
             Self::create_target_framebuffer(&device, window_size.width, window_size.height, swapchain_format);
 
@@ -319,6 +324,26 @@ impl Renderer {
             mapped_at_creation: false,
         });
 
+        let stencil_state = wgpu::StencilFaceState {
+            compare: wgpu::CompareFunction::Equal,
+            fail_op: wgpu::StencilOperation::Keep,
+            depth_fail_op: wgpu::StencilOperation::Keep,
+            pass_op: wgpu::StencilOperation::Keep,
+        };
+
+        let depth_stencil_state: Option<wgpu::DepthStencilState> = Some(wgpu::DepthStencilState {
+            format: DEPTH_STENCIL_FORMAT,
+            depth_write_enabled: false,
+            depth_compare: wgpu::CompareFunction::Always,
+            bias: wgpu::DepthBiasState::default(),
+            stencil: wgpu::StencilState {
+                front: stencil_state,
+                back: stencil_state,
+                read_mask: 0xff,
+                write_mask: 0xff,
+            },
+        });
+
         let box_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("box pipeline"),
             layout: Some(&box_pipeline_layout),
@@ -352,7 +377,7 @@ impl Renderer {
                 // polygon_mode: wgpu::PolygonMode::Line,
                 ..Default::default()
             },
-            depth_stencil: None,
+            depth_stencil: depth_stencil_state.clone(),
             multisample: wgpu::MultisampleState {
                 count: MSAA_SAMPLE_COUNT,
                 ..Default::default()
@@ -391,7 +416,7 @@ impl Renderer {
                 })],
             }),
             primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
+            depth_stencil: depth_stencil_state.clone(),
             multisample: wgpu::MultisampleState {
                 count: MSAA_SAMPLE_COUNT,
                 ..Default::default()
@@ -430,7 +455,7 @@ impl Renderer {
                 })],
             }),
             primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
+            depth_stencil: depth_stencil_state.clone(),
             multisample: wgpu::MultisampleState {
                 count: MSAA_SAMPLE_COUNT,
                 ..Default::default()
@@ -469,7 +494,7 @@ impl Renderer {
                 })],
             }),
             primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
+            depth_stencil: depth_stencil_state.clone(),
             multisample: wgpu::MultisampleState {
                 count: MSAA_SAMPLE_COUNT,
                 ..Default::default()
@@ -557,6 +582,7 @@ impl Renderer {
             device,
             queue,
             multisampled_framebuffer_view,
+            multisampled_depthbuffer_view,
             target_framebuffer_view,
             target_framebuffer_sampler,
             box_pipeline,
@@ -588,6 +614,8 @@ impl Renderer {
         self.surface.configure(&self.device, &self.config);
         self.multisampled_framebuffer_view =
             Self::create_msaa_framebuffer(&self.device, self.config.width, self.config.height, self.config.format);
+        self.multisampled_depthbuffer_view =
+            Self::create_msaa_depthbuffer(&self.device, self.config.width, self.config.height);
         self.target_framebuffer_view =
             Self::create_target_framebuffer(&self.device, self.config.width, self.config.height, self.config.format);
         self.postprocess_bind_group = Self::create_postprocess_bind_group(
@@ -809,7 +837,14 @@ impl Renderer {
                         store: wgpu::StoreOp::Store,
                     },
                 })],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.multisampled_depthbuffer_view,
+                    depth_ops: None,
+                    stencil_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(0),
+                        store: wgpu::StoreOp::Discard,
+                    }),
+                }),
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
@@ -836,6 +871,7 @@ impl Renderer {
                             self.vertex_buffers[&VertexAttribute::Color]
                                 .slice(buffer_offsets[&VertexAttribute::Color] as u64..),
                         );
+                        rpass.set_stencil_reference(0);
                         rpass.draw_indexed(*first_index..*first_index + *index_count, 0, 0..1);
                     }
                     ProcessedMesh::TextGlyph {
@@ -869,6 +905,7 @@ impl Renderer {
                             self.vertex_buffers[&VertexAttribute::Uv]
                                 .slice(buffer_offsets[&VertexAttribute::Uv] as u64..),
                         );
+                        rpass.set_stencil_reference(0);
                         rpass.draw_indexed(*first_index..*first_index + 6, 0, 0..1);
                     }
                 }
@@ -914,7 +951,7 @@ impl Renderer {
     ) -> wgpu::TextureView {
         device
             .create_texture(&wgpu::TextureDescriptor {
-                label: Some("multisampled framebuffer"),
+                label: Some("msaa framebuffer"),
                 size: Extent3d {
                     width,
                     height,
@@ -924,6 +961,25 @@ impl Renderer {
                 sample_count: MSAA_SAMPLE_COUNT,
                 dimension: wgpu::TextureDimension::D2,
                 format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
+    fn create_msaa_depthbuffer(device: &wgpu::Device, width: u32, height: u32) -> wgpu::TextureView {
+        device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("msaa depthbuffer"),
+                size: Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: MSAA_SAMPLE_COUNT,
+                dimension: wgpu::TextureDimension::D2,
+                format: DEPTH_STENCIL_FORMAT,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                 view_formats: &[],
             })
