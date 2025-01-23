@@ -3,11 +3,19 @@ use glam::Vec2;
 
 use crate::{
     color::Color,
-    font::font_engine::TextLayoutOptions,
+    font::{
+        font_engine::{LaidOutGlyph, TextLayoutOptions},
+        font_face::GlyphPixelMode,
+    },
+    mesh::mesh::Mesh,
     rectangle::Rectangle,
     text::text_position::TextPosition,
     ui::{
-        color_mesh_builder::ColorMeshBuilder, draw_element::DrawElement, processor::UiNodeProcessor, Layout, Modifiers,
+        color_mesh_builder::ColorMeshBuilder,
+        draw_command::{DrawCommand, Shader},
+        processor::UiNodeProcessor,
+        texture_mesh_builder::TextureMeshBuilder,
+        Layout, Modifiers,
     },
 };
 
@@ -96,17 +104,27 @@ impl UiNodeProps for TextProps {
         };
 
         let text_layout = processor.font_engine.lay_out_text(text, &options);
+        let mut text_mesh_builder = TextMeshBuilder::new();
 
         for glyph in &text_layout.glyphs {
-            let texture = DrawElement::TextGlyph {
-                bounds: Rectangle::from_position_size(origin + glyph.position, glyph.size),
-                uv_rectangle: glyph.atlas_uv_rectangle,
-                text_color: *text_color,
-                image_id: glyph.image_id,
-                pixel_mode: glyph.pixel_mode,
+            text_mesh_builder.add_glyph(origin, *text_color, glyph);
+        }
+
+        let meshes = text_mesh_builder.build();
+        let mesh_ids: Vec<_> = meshes
+            .into_iter()
+            .map(|(pm, m)| (pm, processor.mesh_manager.register_mesh(m)))
+            .collect();
+
+        for (pixel_mode, mesh_id) in mesh_ids {
+            let shader = match pixel_mode {
+                GlyphPixelMode::Grayscale => Shader::TextGrayscale,
+                GlyphPixelMode::Subpixel => Shader::TextSubpixel,
+                GlyphPixelMode::Color => Shader::Texture,
             };
 
-            processor.draw_data.push(texture);
+            processor.command_list.push(DrawCommand::BindShader(shader));
+            processor.command_list.push(DrawCommand::DrawMesh(mesh_id));
         }
 
         if let Some(cursor_position) = cursor_position {
@@ -127,7 +145,72 @@ impl UiNodeProps for TextProps {
             mesh_builder.add_triangle(0, 1, 2);
             mesh_builder.add_triangle(0, 2, 3);
 
-            processor.draw_data.push(DrawElement::Mesh(mesh_builder.build()));
+            processor.command_list.push(DrawCommand::BindShader(Shader::Shape));
+            processor.command_list.push(DrawCommand::DrawMesh(
+                processor.mesh_manager.register_mesh(mesh_builder.build()),
+            ));
         }
+    }
+}
+
+struct TextMeshBuilder {
+    grayscale_builder: TextureMeshBuilder,
+    subpixel_builder: TextureMeshBuilder,
+    color_builder: TextureMeshBuilder,
+}
+
+impl TextMeshBuilder {
+    fn new() -> Self {
+        Self {
+            grayscale_builder: TextureMeshBuilder::new(),
+            subpixel_builder: TextureMeshBuilder::new(),
+            color_builder: TextureMeshBuilder::new(),
+        }
+    }
+
+    fn add_glyph(&mut self, position: Vec2, text_color: Color, glyph: &LaidOutGlyph) {
+        let bounds = Rectangle::from_position_size(position + glyph.position, glyph.size);
+        let uv_rectangle = glyph.atlas_uv_rectangle;
+
+        let builder = match glyph.pixel_mode {
+            GlyphPixelMode::Grayscale => &mut self.grayscale_builder,
+            GlyphPixelMode::Subpixel => &mut self.subpixel_builder,
+            GlyphPixelMode::Color => &mut self.color_builder,
+        };
+
+        let bl = builder.add_vertex(bounds.bottom_left(), uv_rectangle.bottom_left(), text_color);
+        let br = builder.add_vertex(bounds.bottom_right(), uv_rectangle.bottom_right(), text_color);
+        let tr = builder.add_vertex(bounds.top_right(), uv_rectangle.top_right(), text_color);
+        let tl = builder.add_vertex(bounds.top_left(), uv_rectangle.top_left(), text_color);
+
+        builder.add_quad(bl, br, tr, tl);
+
+        if let Some(image_id) = builder.image_id {
+            assert_eq!(image_id, glyph.image_id);
+        } else {
+            builder.image_id = Some(glyph.image_id);
+        }
+    }
+
+    fn build(self) -> Vec<(GlyphPixelMode, Mesh)> {
+        let mut meshes = vec![];
+
+        let grayscale_mesh = self.grayscale_builder.build();
+        let subpixel_mesh = self.subpixel_builder.build();
+        let color_mesh = self.color_builder.build();
+
+        if grayscale_mesh.vertex_count > 0 {
+            meshes.push((GlyphPixelMode::Grayscale, grayscale_mesh));
+        }
+
+        if subpixel_mesh.vertex_count > 0 {
+            meshes.push((GlyphPixelMode::Subpixel, subpixel_mesh));
+        }
+
+        if color_mesh.vertex_count > 0 {
+            meshes.push((GlyphPixelMode::Color, color_mesh));
+        }
+
+        meshes
     }
 }

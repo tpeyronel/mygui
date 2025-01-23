@@ -8,15 +8,13 @@ use crate::{
     color::Color,
     font::font_face::GlyphPixelMode,
     image::image_manager::{ImageId, ImageManager},
-    rectangle::Rectangle,
-    ui::{draw_element::DrawElement, mesh::VertexAttribute},
+    mesh::{
+        mesh::{Mesh, MeshId, VertexAttribute},
+        mesh_manager::MeshManager,
+    },
+    ui::{self, draw_command::DrawCommand},
 };
 
-use super::mesh::Mesh;
-
-const MAX_RECTANGLES: u64 = 2048 * 10;
-const MAX_VERTICES: u64 = 4 * MAX_RECTANGLES;
-const MAX_INDICES: u64 = 6 * MAX_RECTANGLES;
 const MSAA_SAMPLE_COUNT: u32 = 8;
 const DEPTH_STENCIL_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24PlusStencil8;
 
@@ -62,18 +60,13 @@ pub struct Renderer {
     texture_pipeline: wgpu::RenderPipeline,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     textures: HashMap<ImageId, Texture>,
-    vertex_buffers: HashMap<VertexAttribute, wgpu::Buffer>,
-    index_buffer: wgpu::Buffer,
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
-    rectangle_data_uniform_buffer: wgpu::Buffer,
-    rectangle_data_uniform_bind_group: wgpu::BindGroup,
     postprocess_bind_group_layout: wgpu::BindGroupLayout,
     postprocess_bind_group: wgpu::BindGroup,
     postprocess_pipeline: wgpu::RenderPipeline,
     config: wgpu::SurfaceConfiguration,
-    processed_meshes: Vec<ProcessedMesh>,
 }
 
 impl Renderer {
@@ -185,37 +178,6 @@ impl Renderer {
             }],
         });
 
-        let rectangle_data_uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: "rectangle data uniform buffer".into(),
-            size: MAX_RECTANGLES * std::mem::size_of::<Rectangle>() as u64,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        let rectangle_data_uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("rectangle data uniform group layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-
-        let rectangle_data_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("rectangle data uniform group"),
-            layout: &rectangle_data_uniform_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: rectangle_data_uniform_buffer.as_entire_binding(),
-            }],
-        });
-
         let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("texture bind group layout"),
             entries: &[
@@ -240,32 +202,20 @@ impl Renderer {
 
         let color_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[
-                &global_uniform_bind_group_layout,
-                &rectangle_data_uniform_bind_group_layout,
-            ],
-            push_constant_ranges: &[wgpu::PushConstantRange {
-                stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                range: 0..4,
-            }],
+            bind_group_layouts: &[&global_uniform_bind_group_layout],
+            push_constant_ranges: &[],
         });
 
         let text_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("text pipeline layout"),
             bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
-            push_constant_ranges: &[wgpu::PushConstantRange {
-                stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                range: 0..16,
-            }],
+            push_constant_ranges: &[],
         });
 
         let texture_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("texture pipeline layout"),
             bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
-            push_constant_ranges: &[wgpu::PushConstantRange {
-                stages: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                range: 0..16,
-            }],
+            push_constant_ranges: &[],
         });
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
@@ -289,39 +239,6 @@ impl Renderer {
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
-        });
-
-        let vertex_positions_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: "vertex positions buffer".into(),
-            size: MAX_VERTICES * std::mem::size_of::<Vec2>() as u64,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        let vertex_colors_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: "vertex colors buffer".into(),
-            size: MAX_VERTICES * std::mem::size_of::<Vec4>() as u64,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        let vertex_uvs_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: "vertex uvs buffer".into(),
-            size: MAX_VERTICES * std::mem::size_of::<Vec2>() as u64,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        let mut vertex_buffers = HashMap::new();
-        vertex_buffers.insert(VertexAttribute::Position, vertex_positions_buffer);
-        vertex_buffers.insert(VertexAttribute::Color, vertex_colors_buffer);
-        vertex_buffers.insert(VertexAttribute::Uv, vertex_uvs_buffer);
-
-        let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: "index buffer".into(),
-            size: MAX_INDICES * std::mem::size_of::<u32>() as u64,
-            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
         });
 
         let stencil_state = wgpu::StencilFaceState {
@@ -395,6 +312,7 @@ impl Renderer {
                 buffers: &[
                     vec2_vertex_buffer_layout!(0), // Positions
                     vec2_vertex_buffer_layout!(1), // UVs
+                    vec4_vertex_buffer_layout!(2), // Colors
                 ],
                 compilation_options: Default::default(),
             },
@@ -434,6 +352,7 @@ impl Renderer {
                 buffers: &[
                     vec2_vertex_buffer_layout!(0), // Positions
                     vec2_vertex_buffer_layout!(1), // UVs
+                    vec4_vertex_buffer_layout!(2), // Colors
                 ],
                 compilation_options: Default::default(),
             },
@@ -591,18 +510,13 @@ impl Renderer {
             texture_pipeline,
             texture_bind_group_layout,
             textures: HashMap::new(),
-            vertex_buffers,
-            index_buffer,
             global_uniform,
             global_uniform_buffer,
             global_uniform_bind_group,
-            rectangle_data_uniform_buffer,
-            rectangle_data_uniform_bind_group,
             postprocess_bind_group_layout,
             postprocess_bind_group,
             postprocess_pipeline,
             config,
-            processed_meshes: Vec::new(),
         }
     }
 
@@ -705,105 +619,45 @@ impl Renderer {
         self.textures.insert(image_id, texture);
     }
 
-    pub fn update_draw_data(&mut self, rectangles: &[DrawElement]) {
-        let meshes: Vec<Mesh> = rectangles.iter().map(|e| Mesh::from_draw_element(e)).collect();
+    fn create_mesh(&self, mesh_id: MeshId, mesh: &Mesh) -> MeshData {
+        let mut vertex_buffers = HashMap::new();
 
-        let mut all_positions: Vec<u8> = vec![];
-        let mut all_colors: Vec<u8> = vec![];
-        let mut all_uvs: Vec<u8> = vec![];
-        let mut all_indices: Vec<u32> = vec![];
+        for (attrib, data) in &mesh.vertex_attributes {
+            let vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(&format!("{:?} {:?} buffer", mesh_id, attrib)),
+                contents: data,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
 
-        let processed_meshes = meshes
-            .into_iter()
-            .map(|m| {
-                let first_index = all_indices.len() as u32;
-
-                match m {
-                    Mesh::TextGlyph {
-                        mesh,
-                        text_color,
-                        image_id,
-                        pixel_mode,
-                    } => {
-                        let mut buffer_offsets = HashMap::new();
-
-                        for (attr, data) in mesh.vertex_attributes {
-                            match attr {
-                                VertexAttribute::Position => {
-                                    buffer_offsets.insert(VertexAttribute::Position, all_positions.len() as u64);
-                                    all_positions.extend_from_slice(&data);
-                                }
-                                VertexAttribute::Color => {
-                                    buffer_offsets.insert(VertexAttribute::Color, all_colors.len() as u64);
-                                    all_colors.extend_from_slice(&data);
-                                }
-                                VertexAttribute::Uv => {
-                                    buffer_offsets.insert(VertexAttribute::Uv, all_uvs.len() as u64);
-                                    all_uvs.extend_from_slice(&data);
-                                }
-                            }
-                        }
-
-                        all_indices.extend(mesh.indices);
-
-                        ProcessedMesh::TextGlyph {
-                            buffer_offsets,
-                            first_index,
-                            text_color,
-                            image_id,
-                            pixel_mode,
-                        }
-                    }
-                    Mesh::Mesh(mesh) => {
-                        let mut buffer_offsets = HashMap::new();
-
-                        for (attr, data) in mesh.vertex_attributes {
-                            match attr {
-                                VertexAttribute::Position => {
-                                    buffer_offsets.insert(VertexAttribute::Position, all_positions.len() as u64);
-                                    all_positions.extend_from_slice(&data);
-                                }
-                                VertexAttribute::Color => {
-                                    buffer_offsets.insert(VertexAttribute::Color, all_colors.len() as u64);
-                                    all_colors.extend_from_slice(&data);
-                                }
-                                VertexAttribute::Uv => {
-                                    buffer_offsets.insert(VertexAttribute::Uv, all_uvs.len() as u64);
-                                    all_uvs.extend_from_slice(&data);
-                                }
-                            }
-                        }
-
-                        let index_count = mesh.indices.len() as u32;
-
-                        all_indices.extend(mesh.indices);
-
-                        ProcessedMesh::Rectangle {
-                            buffer_offsets,
-                            first_index,
-                            index_count,
-                        }
-                    }
-                }
-            })
-            .collect();
-
-        for (attr, buffer) in &self.vertex_buffers {
-            let data = match attr {
-                VertexAttribute::Position => &all_positions,
-                VertexAttribute::Color => &all_colors,
-                VertexAttribute::Uv => &all_uvs,
-            };
-
-            self.queue.write_buffer(buffer, 0, data);
+            vertex_buffers.insert(*attrib, vertex_buffer);
         }
 
-        self.queue
-            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&all_indices));
-        self.processed_meshes = processed_meshes;
+        let index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some(&format!("{:?} index buffer", mesh_id)),
+            contents: bytemuck::cast_slice(&mesh.indices),
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let index_count = mesh.indices.len() as u32;
+
+        let mesh_data = MeshData {
+            vertex_buffers,
+            index_buffer,
+            index_count,
+            image_id: mesh.image_id,
+        };
+
+        mesh_data
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, mesh_manager: &MeshManager, command_list: &[DrawCommand]) {
+        let mesh_data: Vec<_> = mesh_manager
+            .meshes()
+            .iter()
+            .enumerate()
+            .map(|(idx, mesh)| self.create_mesh(MeshId(idx), mesh))
+            .collect();
+
         self.queue.write_buffer(
             &self.global_uniform_buffer,
             0,
@@ -849,64 +703,63 @@ impl Renderer {
                 occlusion_query_set: None,
             });
 
-            rpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+            rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
 
-            for mesh in &self.processed_meshes {
-                match mesh {
-                    ProcessedMesh::Rectangle {
-                        buffer_offsets,
-                        first_index,
-                        index_count,
-                    } => {
-                        rpass.set_pipeline(&self.color_pipeline);
-                        rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
-                        rpass.set_bind_group(1, &self.rectangle_data_uniform_bind_group, &[]);
-                        rpass.set_vertex_buffer(
-                            0,
-                            self.vertex_buffers[&VertexAttribute::Position]
-                                .slice(buffer_offsets[&VertexAttribute::Position] as u64..),
-                        );
-                        rpass.set_vertex_buffer(
-                            1,
-                            self.vertex_buffers[&VertexAttribute::Color]
-                                .slice(buffer_offsets[&VertexAttribute::Color] as u64..),
-                        );
-                        rpass.set_stencil_reference(0);
-                        rpass.draw_indexed(*first_index..*first_index + *index_count, 0, 0..1);
+            let mut current_shader = None;
+
+            for cmd in command_list {
+                match cmd {
+                    &DrawCommand::BindShader(shader) => {
+                        match shader {
+                            ui::draw_command::Shader::Shape => {
+                                rpass.set_pipeline(&self.color_pipeline);
+                            }
+                            ui::draw_command::Shader::ShapeClip => todo!(),
+                            ui::draw_command::Shader::Texture => {
+                                rpass.set_pipeline(&self.texture_pipeline);
+                            }
+                            ui::draw_command::Shader::TextGrayscale => {
+                                rpass.set_pipeline(&self.text_grayscale_pipeline);
+                            }
+                            ui::draw_command::Shader::TextSubpixel => {
+                                rpass.set_pipeline(&self.text_subpixel_pipeline);
+                            }
+                        }
+
+                        current_shader = Some(shader);
                     }
-                    ProcessedMesh::TextGlyph {
-                        buffer_offsets,
-                        first_index,
-                        text_color,
-                        image_id,
-                        pixel_mode,
-                    } => {
-                        let pipeline = match pixel_mode {
-                            GlyphPixelMode::Grayscale => &self.text_grayscale_pipeline,
-                            GlyphPixelMode::Subpixel => &self.text_subpixel_pipeline,
-                            GlyphPixelMode::Color => &self.texture_pipeline,
-                        };
-                        rpass.set_pipeline(pipeline);
-                        rpass.set_push_constants(
-                            wgpu::ShaderStages::VERTEX_FRAGMENT,
-                            0,
-                            bytemuck::cast_slice(std::slice::from_ref(text_color)),
-                        );
-                        rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
-                        let texture = self.textures.get(&image_id).expect("TODO");
-                        rpass.set_bind_group(1, &texture.bind_group, &[]);
-                        rpass.set_vertex_buffer(
-                            0,
-                            self.vertex_buffers[&VertexAttribute::Position]
-                                .slice(buffer_offsets[&VertexAttribute::Position] as u64..),
-                        );
-                        rpass.set_vertex_buffer(
-                            1,
-                            self.vertex_buffers[&VertexAttribute::Uv]
-                                .slice(buffer_offsets[&VertexAttribute::Uv] as u64..),
-                        );
+                    DrawCommand::DrawMesh(mesh_id) => {
+                        let mesh_data = &mesh_data[mesh_id.0];
+
+                        match current_shader.expect("invalid DrawMesh without a previous BindShader") {
+                            ui::draw_command::Shader::Shape => {
+                                rpass.set_vertex_buffer(
+                                    0,
+                                    mesh_data.vertex_buffers[&VertexAttribute::Position].slice(..),
+                                );
+                                rpass.set_vertex_buffer(1, mesh_data.vertex_buffers[&VertexAttribute::Color].slice(..));
+                            }
+                            ui::draw_command::Shader::ShapeClip => todo!(),
+                            ui::draw_command::Shader::Texture
+                            | ui::draw_command::Shader::TextGrayscale
+                            | ui::draw_command::Shader::TextSubpixel => {
+                                rpass.set_vertex_buffer(
+                                    0,
+                                    mesh_data.vertex_buffers[&VertexAttribute::Position].slice(..),
+                                );
+                                rpass.set_vertex_buffer(1, mesh_data.vertex_buffers[&VertexAttribute::Uv].slice(..));
+                                rpass.set_vertex_buffer(2, mesh_data.vertex_buffers[&VertexAttribute::Color].slice(..));
+
+                                if let Some(texture_id) = mesh_data.image_id {
+                                    let texture = self.textures.get(&texture_id).expect("TODO");
+                                    rpass.set_bind_group(1, &texture.bind_group, &[]);
+                                }
+                            }
+                        }
+
                         rpass.set_stencil_reference(0);
-                        rpass.draw_indexed(*first_index..*first_index + 6, 0, 0..1);
+                        rpass.set_index_buffer(mesh_data.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                        rpass.draw_indexed(0..mesh_data.index_count, 0, 0..1);
                     }
                 }
             }
@@ -1066,4 +919,11 @@ enum ProcessedMesh {
         image_id: ImageId,
         pixel_mode: GlyphPixelMode,
     },
+}
+
+struct MeshData {
+    vertex_buffers: HashMap<VertexAttribute, wgpu::Buffer>,
+    index_buffer: wgpu::Buffer,
+    index_count: u32,
+    image_id: Option<ImageId>,
 }

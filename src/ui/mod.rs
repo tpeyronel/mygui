@@ -1,23 +1,24 @@
 pub mod border_radius;
 pub mod border_thickness;
 pub mod color_mesh_builder;
-pub mod draw_element;
+pub mod draw_command;
 pub mod immediate;
 #[cfg(test)]
 mod layout_tests;
 pub mod margin;
 mod measurements_cache;
-pub mod mesh;
+pub mod mesh_builder;
 mod node;
 pub mod padding;
 mod processor;
 pub mod shape;
+pub mod texture_mesh_builder;
 
 use core::f32;
 
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
-use draw_element::DrawElement;
+use draw_command::DrawCommand;
 use glam::Vec2;
 use margin::Margin;
 use node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNode};
@@ -25,7 +26,7 @@ use padding::Padding;
 use processor::UiNodeProcessor;
 use shape::{rounded_rectangle_shape::RoundedRectangleShape, Shape};
 
-use crate::{color::Color, font::font_engine::FontEngine};
+use crate::{color::Color, font::font_engine::FontEngine, mesh::mesh_manager::MeshManager};
 
 enum Axis {
     X,
@@ -234,8 +235,9 @@ pub fn to_draw_data_no_hashes(
     ui_nodes: Vec<UiNode>,
     boundary_pos: Vec2,
     boundary_size: Vec2,
+    mesh_manager: &mut MeshManager,
     font_engine: &mut Box<dyn FontEngine>,
-    draw_elements: &mut Vec<DrawElement>,
+    command_list: &mut Vec<DrawCommand>,
 ) {
     let hash_nodes = create_mock_hash_tree_rec(&ui_nodes);
     let mut bounding_boxes = vec![];
@@ -244,8 +246,9 @@ pub fn to_draw_data_no_hashes(
         hash_nodes,
         boundary_pos,
         boundary_size,
+        mesh_manager,
         font_engine,
-        draw_elements,
+        command_list,
         &mut bounding_boxes,
     );
 }

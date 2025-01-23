@@ -5,8 +5,9 @@ use glam::Vec2;
 use crate::{
     font::font_engine::FontEngine,
     input::{ElementState, InputEvent, MouseButton, TextEvent},
+    mesh::mesh_manager::MeshManager,
     rectangle::Rectangle,
-    ui::{draw_element::DrawElement, processor::UiNodeProcessor},
+    ui::{draw_command::DrawCommand, processor::UiNodeProcessor},
 };
 
 use super::{set_state::set_state_channel, ui::Ui};
@@ -47,9 +48,10 @@ impl UiContext {
     pub fn build_ui(
         &mut self,
         window_size: Vec2,
+        mesh_manager: &mut MeshManager,
         font_engine: &mut Box<dyn FontEngine>,
         f: impl FnOnce(&mut Ui),
-    ) -> Vec<DrawElement> {
+    ) -> Vec<DrawCommand> {
         let (set_state_tx, set_state_rx) = set_state_channel();
 
         let mut root_ui = Ui::new(&self.input_state, &self.states, &set_state_tx, &mut self.refs);
@@ -63,6 +65,7 @@ impl UiContext {
             children_path_hash_nodes,
             Vec2::ZERO,
             window_size,
+            mesh_manager,
             font_engine,
             &mut draw_data,
             &mut self.bounding_boxes,

@@ -2,7 +2,7 @@ use core::f32;
 use std::u64;
 
 use super::border_thickness::BorderThickness;
-use super::draw_element::DrawElement;
+use super::draw_command::DrawCommand;
 use super::margin::Margin;
 use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
@@ -11,14 +11,17 @@ use super::{Axis, HashNode, LayoutNode, Measurements};
 use glam::Vec2;
 
 use crate::is_integer::IsInteger;
+use crate::mesh::mesh_manager::MeshManager;
+use crate::ui::draw_command::Shader;
 use crate::ui::node::block::BlockProps;
 use crate::ui::{Extent, Layout, Modifiers};
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle};
 
 pub struct UiNodeProcessor<'a> {
     measurements_cache: MeasurementsCache,
+    pub mesh_manager: &'a mut MeshManager,
     pub font_engine: &'a mut Box<dyn FontEngine>,
-    pub draw_data: &'a mut Vec<DrawElement>,
+    pub command_list: &'a mut Vec<DrawCommand>,
     bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
 }
 
@@ -28,11 +31,12 @@ impl<'a> UiNodeProcessor<'a> {
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
         boundary_size: Vec2,
+        mesh_manager: &'a mut MeshManager,
         font_engine: &'a mut Box<dyn FontEngine>,
-        draw_data: &'a mut Vec<DrawElement>,
+        command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) {
-        let mut s = Self::new(font_engine, draw_data, bounding_boxes);
+        let mut s = Self::new(mesh_manager, font_engine, command_list, bounding_boxes);
         s.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
     }
 
@@ -41,24 +45,27 @@ impl<'a> UiNodeProcessor<'a> {
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
         boundary_size: Vec2,
+        mesh_manager: &'a mut MeshManager,
         font_engine: &'a mut Box<dyn FontEngine>,
-        draw_data: &'a mut Vec<DrawElement>,
+        command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) -> LayoutNode {
-        let mut s = Self::new(font_engine, draw_data, bounding_boxes);
+        let mut s = Self::new(mesh_manager, font_engine, command_list, bounding_boxes);
         let (_, _, layout_node) = s.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         layout_node
     }
 
     fn new(
+        mesh_manager: &'a mut MeshManager,
         font_engine: &'a mut Box<dyn FontEngine>,
-        draw_data: &'a mut Vec<DrawElement>,
+        command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) -> Self {
         Self {
             measurements_cache: MeasurementsCache::new(),
+            mesh_manager,
             font_engine,
-            draw_data,
+            command_list,
             bounding_boxes,
         }
     }
@@ -111,7 +118,6 @@ impl<'a> UiNodeProcessor<'a> {
         let (root_node, root_hash_node, root_layout_node) =
             self.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         self.to_draw_data_rec(&root_node, &root_hash_node, &root_layout_node);
-        self.draw_data.remove(0); // TODO: remove. This is mainly done to simplify testing (the first rectangle is completely transparent).
     }
 
     fn to_draw_data_rec(&mut self, ui_node: &UiNode, hash_node: &HashNode, layout_node: &LayoutNode) {
@@ -121,8 +127,13 @@ impl<'a> UiNodeProcessor<'a> {
         let layout = &layout_node.layout;
 
         let shape_mesh = modifiers.shape.to_shape_data(layout, modifiers);
-        self.draw_data.push(DrawElement::Mesh(shape_mesh.background_mesh));
-        self.draw_data.push(DrawElement::Mesh(shape_mesh.foreground_mesh));
+
+        let bg_mesh = self.mesh_manager.register_mesh(shape_mesh.background_mesh);
+        let fg_mesh = self.mesh_manager.register_mesh(shape_mesh.foreground_mesh);
+
+        self.command_list.push(DrawCommand::BindShader(Shader::Shape));
+        self.command_list.push(DrawCommand::DrawMesh(bg_mesh));
+        self.command_list.push(DrawCommand::DrawMesh(fg_mesh));
 
         self.bounding_boxes.push((
             hash_node.hash,

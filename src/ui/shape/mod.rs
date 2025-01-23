@@ -6,7 +6,9 @@ use dyn_clone::DynClone;
 use dyn_hash::DynHash;
 use dyn_partial_eq::dyn_partial_eq;
 
-use super::{mesh::Mesh, Layout, Modifiers};
+use crate::mesh::mesh::Mesh;
+
+use super::{Layout, Modifiers};
 
 #[dyn_partial_eq]
 pub trait Shape: Any + Debug + DynClone + DynHash {

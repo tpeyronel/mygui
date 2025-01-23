@@ -3,20 +3,7 @@ struct GlobalUniform {
     viewport_height: f32,
 }
 
-struct RectangleData {
-    left: f32,
-    bottom: f32,
-    right: f32,
-    top: f32,
-    fill_color: vec4<f32>,
-    border_color: vec4<f32>,
-    border_radius: vec4<f32>,
-    border_width: vec4<f32>, // left, bottom, right, top
-}
-
 @group(0) @binding(0) var<uniform> global_uniform: GlobalUniform;
-@group(1) @binding(0) var<storage, read> rectangle_data: array<RectangleData>;
-var<push_constant> rectangle_idx: u32;
 
 struct VertexIn {
     @location(0) pos: vec2<f32>,

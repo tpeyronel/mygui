@@ -9,11 +9,12 @@ use font::{font_engine::FontEngine, freetype_font_engine::FreetypeFontEngine};
 use glam::Vec2;
 use image::image_manager::{ImageManager, ImageManagerEvent};
 use input::{ElementState, InputEvent, MouseButton, TextCommand, TextEvent};
+use mesh::mesh_manager::MeshManager;
 use renderer::renderer::Renderer;
 use ui::{
     border_radius::BorderRadius,
     border_thickness::BorderThickness,
-    draw_element::DrawElement,
+    draw_command::DrawCommand,
     immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
     margin::Margin,
     padding::Padding,
@@ -33,6 +34,7 @@ mod font;
 mod image;
 mod input;
 mod is_integer;
+mod mesh;
 mod rectangle;
 mod renderer;
 mod text;
@@ -45,8 +47,9 @@ struct App {
 struct AppState {
     #[allow(dead_code)]
     window: Arc<Window>,
-    draw_data: Vec<DrawElement>,
+    draw_data: Vec<DrawCommand>,
     image_manager: ImageManager,
+    mesh_manager: MeshManager,
     font_engine: Box<dyn FontEngine>,
     ui_context: UiContext,
     renderer: Renderer,
@@ -84,18 +87,24 @@ impl ApplicationHandler for App {
         );
 
         let mut image_manager = ImageManager::new();
+
+        let mesh_manager = MeshManager::new();
+
         let font_engine = Box::new(FreetypeFontEngine::new(
             "./assets/fonts/",
             "./cache/fonts/",
             &mut image_manager,
         ));
+
         let ui_context = UiContext::new();
+
         let renderer = Renderer::new(Arc::clone(&window));
 
         self.state = Some(AppState {
             window,
             draw_data: vec![],
             image_manager,
+            mesh_manager,
             font_engine,
             ui_context,
             renderer,
@@ -136,12 +145,16 @@ impl ApplicationHandler for App {
 
                 let window_size = state.window.inner_size();
                 let window_size = Vec2::new(window_size.width as f32, window_size.height as f32);
-                state.draw_data = state.ui_context.build_ui(window_size, &mut state.font_engine, |ui| {
-                    // example_ui(ui);
-                    test_rectangle_ui(ui);
-                });
-                state.renderer.update_draw_data(&state.draw_data);
-                state.renderer.render();
+                state.draw_data =
+                    state
+                        .ui_context
+                        .build_ui(window_size, &mut state.mesh_manager, &mut state.font_engine, |ui| {
+                            example_ui(ui);
+                            // test_rectangle_ui(ui);
+                            // test_overflow(ui);
+                        });
+                state.renderer.render(&state.mesh_manager, &state.draw_data);
+                state.mesh_manager.clear();
 
                 state.window.request_redraw();
             }
@@ -758,7 +771,7 @@ fn test_rectangle_ui(ui: &mut Ui) {
                 .cos()
                 .add(1.0)
                 .mul(0.5)
-                .mul(320.0);
+                .mul(3650.0);
 
             modifiers
                 .height(Extent::Px(0.0))
@@ -768,6 +781,24 @@ fn test_rectangle_ui(ui: &mut Ui) {
                 .border_color(Color::rgba(0.0, 1.0, 0.0, 1.0))
                 .border_thickness(BorderThickness::new(0.0, 96.0, 16.0, 16.0))
                 .border_radius(BorderRadius::new(320.0, br, 32.0, 0.0));
+        });
+    });
+}
+
+fn test_overflow(ui: &mut Ui) {
+    ui.column(|ui, modifiers| {
+        modifiers
+            .height(Extent::Px(128.0))
+            .border_color(Color::RED)
+            .border_thickness(BorderThickness::all(8.0))
+            .overflow_hidden();
+
+        ui.block(|_, modifiers| {
+            modifiers.fill_color(Color::GREEN);
+        });
+
+        ui.block(|_, modifiers| {
+            modifiers.fill_color(Color::BLUE);
         });
     });
 }
