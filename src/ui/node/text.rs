@@ -12,8 +12,8 @@ use crate::{
     text::text_position::TextPosition,
     ui::{
         color_mesh_builder::ColorMeshBuilder,
-        draw_command::{DrawCommand, Shader},
-        processor::UiNodeProcessor,
+        draw_command::Shader,
+        processor::{MeshWithShader, UiNodeProcessor},
         texture_mesh_builder::TextureMeshBuilder,
         Layout, Modifiers,
     },
@@ -111,20 +111,15 @@ impl UiNodeProps for TextProps {
         }
 
         let meshes = text_mesh_builder.build();
-        let mesh_ids: Vec<_> = meshes
-            .into_iter()
-            .map(|(pm, m)| (pm, processor.mesh_manager.register_mesh(m)))
-            .collect();
 
-        for (pixel_mode, mesh_id) in mesh_ids {
+        for (pixel_mode, mesh) in meshes {
             let shader = match pixel_mode {
                 GlyphPixelMode::Grayscale => Shader::TextGrayscale,
                 GlyphPixelMode::Subpixel => Shader::TextSubpixel,
                 GlyphPixelMode::Color => Shader::Texture,
             };
 
-            processor.command_list.push(DrawCommand::BindShader(shader));
-            processor.command_list.push(DrawCommand::DrawMesh(mesh_id));
+            processor.draw_elements.push(MeshWithShader(mesh, shader));
         }
 
         if let Some(cursor_position) = cursor_position {
@@ -145,10 +140,9 @@ impl UiNodeProps for TextProps {
             mesh_builder.add_triangle(0, 1, 2);
             mesh_builder.add_triangle(0, 2, 3);
 
-            processor.command_list.push(DrawCommand::BindShader(Shader::Shape));
-            processor.command_list.push(DrawCommand::DrawMesh(
-                processor.mesh_manager.register_mesh(mesh_builder.build()),
-            ));
+            processor
+                .draw_elements
+                .push(MeshWithShader(mesh_builder.build(), Shader::Shape));
         }
     }
 }

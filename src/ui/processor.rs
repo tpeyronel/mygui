@@ -11,6 +11,7 @@ use super::{Axis, HashNode, LayoutNode, Measurements};
 use glam::Vec2;
 
 use crate::is_integer::IsInteger;
+use crate::mesh::mesh::Mesh;
 use crate::mesh::mesh_manager::MeshManager;
 use crate::ui::draw_command::Shader;
 use crate::ui::node::block::BlockProps;
@@ -21,7 +22,8 @@ pub struct UiNodeProcessor<'a> {
     measurements_cache: MeasurementsCache,
     pub mesh_manager: &'a mut MeshManager,
     pub font_engine: &'a mut Box<dyn FontEngine>,
-    pub command_list: &'a mut Vec<DrawCommand>,
+    pub draw_elements: Vec<MeshWithShader>,
+    command_list: &'a mut Vec<DrawCommand>,
     bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
 }
 
@@ -67,6 +69,7 @@ impl<'a> UiNodeProcessor<'a> {
             font_engine,
             command_list,
             bounding_boxes,
+            draw_elements: Vec::new(),
         }
     }
 
@@ -118,6 +121,12 @@ impl<'a> UiNodeProcessor<'a> {
         let (root_node, root_hash_node, root_layout_node) =
             self.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         self.to_draw_data_rec(&root_node, &root_hash_node, &root_layout_node);
+
+        let draw_elements = std::mem::replace(&mut self.draw_elements, vec![]);
+        let draw_elements = batch_draw_elements(draw_elements);
+
+        self.command_list.clear();
+        draw_elements_to_command_list(draw_elements, self.mesh_manager, &mut self.command_list);
     }
 
     fn to_draw_data_rec(&mut self, ui_node: &UiNode, hash_node: &HashNode, layout_node: &LayoutNode) {
@@ -128,18 +137,13 @@ impl<'a> UiNodeProcessor<'a> {
 
         let shape_mesh = modifiers.shape.to_shape_data(layout, modifiers);
 
-        let bg_mesh = self.mesh_manager.register_mesh(shape_mesh.background_mesh);
-        let fg_mesh = self.mesh_manager.register_mesh(shape_mesh.foreground_mesh);
-
-        self.command_list.push(DrawCommand::BindShader(Shader::Shape));
-        self.command_list.push(DrawCommand::DrawMesh(bg_mesh));
-        self.command_list.push(DrawCommand::DrawMesh(fg_mesh));
-
         self.bounding_boxes.push((
             hash_node.hash,
             Rectangle::from_position_size(layout.border_position(), layout.border_size()),
         ));
 
+        self.draw_elements
+            .push(MeshWithShader(shape_mesh.background_mesh, Shader::Shape));
         ui_node.props.emit_draw_data(self, layout);
 
         debug_assert_eq!(children.len(), hash_node.children.len());
@@ -147,6 +151,9 @@ impl<'a> UiNodeProcessor<'a> {
         for (i, c) in children.iter().enumerate() {
             self.to_draw_data_rec(c, &hash_node.children[i], &layout_node.children[i]);
         }
+
+        self.draw_elements
+            .push(MeshWithShader(shape_mesh.foreground_mesh, Shader::Shape));
     }
 
     fn compute_layout_rec(&mut self, ui_node: &UiNode, layout: Layout) -> LayoutNode {
@@ -452,5 +459,52 @@ impl IntoIterator for ChildrenMeasurements {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+pub struct MeshWithShader(pub Mesh, pub Shader);
+
+fn batch_draw_elements(meshes: Vec<MeshWithShader>) -> Vec<MeshWithShader> {
+    if meshes.is_empty() {
+        return vec![];
+    }
+
+    let mut meshes = meshes.into_iter();
+    let mut curr_batch = meshes.next().unwrap();
+    let mut batches = vec![];
+
+    for MeshWithShader(mesh, shader) in meshes {
+        let MeshWithShader(curr_mesh, curr_shader) = &mut curr_batch;
+
+        if *curr_shader == shader && curr_mesh.image_id == mesh.image_id {
+            assert_eq!(curr_mesh.vertex_attributes.len(), mesh.vertex_attributes.len());
+            for (attrib, data) in &mut curr_mesh.vertex_attributes {
+                data.extend(&mesh.vertex_attributes[attrib]);
+            }
+
+            let base_index = curr_mesh.vertex_count;
+            curr_mesh.indices.extend(mesh.indices.iter().map(|i| base_index + i));
+
+            curr_mesh.vertex_count += mesh.vertex_count;
+        } else {
+            batches.push(std::mem::replace(&mut curr_batch, MeshWithShader(mesh, shader)));
+        }
+    }
+
+    batches.push(curr_batch);
+
+    batches
+}
+
+fn draw_elements_to_command_list(
+    meshes: Vec<MeshWithShader>,
+    mesh_manager: &mut MeshManager,
+    command_list: &mut Vec<DrawCommand>,
+) {
+    for MeshWithShader(mesh, shader) in meshes {
+        let mesh_id = mesh_manager.register_mesh(mesh);
+
+        command_list.push(DrawCommand::BindShader(shader));
+        command_list.push(DrawCommand::DrawMesh(mesh_id));
     }
 }

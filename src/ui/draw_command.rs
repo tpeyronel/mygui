@@ -6,7 +6,7 @@ pub enum DrawCommand {
     DrawMesh(MeshId),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Shader {
     Shape,
     ShapeClip,
