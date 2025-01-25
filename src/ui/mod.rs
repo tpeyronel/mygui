@@ -164,7 +164,7 @@ impl Modifiers {
     }
 
     pub fn overflow_hidden(&mut self) -> &mut Self {
-        self.clip(Clip::And(Box::new(Clip::Inherit), Box::new(Clip::Shape)))
+        self.clip(Clip::InheritAndShape)
     }
 }
 
@@ -378,13 +378,7 @@ pub enum Clip {
     Inherit,
     None,
     Shape,
-    Not(Box<Clip>),
-    And(Box<Clip>, Box<Clip>),
-    Nand(Box<Clip>, Box<Clip>),
-    Or(Box<Clip>, Box<Clip>),
-    Nor(Box<Clip>, Box<Clip>),
-    Eq(Box<Clip>, Box<Clip>), // Same as XNOR
-    Ne(Box<Clip>, Box<Clip>), // Same as XOR
+    InheritAndShape,
 }
 
 impl Default for Clip {

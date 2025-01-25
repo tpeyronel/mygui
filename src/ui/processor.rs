@@ -15,14 +15,13 @@ use crate::mesh::mesh::Mesh;
 use crate::mesh::mesh_manager::MeshManager;
 use crate::ui::draw_command::Shader;
 use crate::ui::node::block::BlockProps;
-use crate::ui::{Extent, Layout, Modifiers};
+use crate::ui::{Clip, Extent, Layout, Modifiers};
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle};
 
 pub struct UiNodeProcessor<'a> {
     measurements_cache: MeasurementsCache,
-    pub mesh_manager: &'a mut MeshManager,
     pub font_engine: &'a mut Box<dyn FontEngine>,
-    pub draw_elements: Vec<MeshWithShader>,
+    pub command_list_builder: CommandListBuilder<'a>,
     command_list: &'a mut Vec<DrawCommand>,
     bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
 }
@@ -38,7 +37,7 @@ impl<'a> UiNodeProcessor<'a> {
         command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) {
-        let mut s = Self::new(mesh_manager, font_engine, command_list, bounding_boxes);
+        let s = Self::new(mesh_manager, font_engine, command_list, bounding_boxes);
         s.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
     }
 
@@ -65,11 +64,10 @@ impl<'a> UiNodeProcessor<'a> {
     ) -> Self {
         Self {
             measurements_cache: MeasurementsCache::new(),
-            mesh_manager,
             font_engine,
             command_list,
             bounding_boxes,
-            draw_elements: Vec::new(),
+            command_list_builder: CommandListBuilder::new(mesh_manager),
         }
     }
 
@@ -112,7 +110,7 @@ impl<'a> UiNodeProcessor<'a> {
     }
 
     fn to_draw_data(
-        &mut self,
+        mut self,
         ui_nodes: Vec<UiNode>,
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
@@ -122,11 +120,8 @@ impl<'a> UiNodeProcessor<'a> {
             self.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         self.to_draw_data_rec(&root_node, &root_hash_node, &root_layout_node);
 
-        let draw_elements = std::mem::replace(&mut self.draw_elements, vec![]);
-        let draw_elements = batch_draw_elements(draw_elements);
-
         self.command_list.clear();
-        draw_elements_to_command_list(draw_elements, self.mesh_manager, &mut self.command_list);
+        self.command_list.extend(self.command_list_builder.build());
     }
 
     fn to_draw_data_rec(&mut self, ui_node: &UiNode, hash_node: &HashNode, layout_node: &LayoutNode) {
@@ -135,15 +130,27 @@ impl<'a> UiNodeProcessor<'a> {
 
         let layout = &layout_node.layout;
 
-        let shape_mesh = modifiers.shape.to_shape_data(layout, modifiers);
-
         self.bounding_boxes.push((
             hash_node.hash,
             Rectangle::from_position_size(layout.border_position(), layout.border_size()),
         ));
 
-        self.draw_elements
-            .push(MeshWithShader(shape_mesh.background_mesh, Shader::Shape));
+        let shape_mesh = modifiers.shape.to_shape_data(layout, modifiers);
+
+        match &modifiers.clip {
+            Clip::InheritAndShape => {
+                self.command_list_builder
+                    .draw_mesh(shape_mesh.background_mesh.clone(), Shader::ShapeClip);
+                self.command_list_builder.inc_stencil_reference();
+            }
+            Clip::Inherit => {}
+            Clip::None => todo!(),
+            Clip::Shape => todo!(),
+        }
+
+        self.command_list_builder
+            .draw_mesh(shape_mesh.background_mesh.clone(), Shader::Shape);
+
         ui_node.props.emit_draw_data(self, layout);
 
         debug_assert_eq!(children.len(), hash_node.children.len());
@@ -152,8 +159,19 @@ impl<'a> UiNodeProcessor<'a> {
             self.to_draw_data_rec(c, &hash_node.children[i], &layout_node.children[i]);
         }
 
-        self.draw_elements
-            .push(MeshWithShader(shape_mesh.foreground_mesh, Shader::Shape));
+        match &modifiers.clip {
+            Clip::InheritAndShape => {
+                self.command_list_builder
+                    .draw_mesh(shape_mesh.background_mesh, Shader::ShapeClipRevert);
+                self.command_list_builder.dec_stencil_reference();
+            }
+            Clip::Inherit => {}
+            Clip::None => todo!(),
+            Clip::Shape => todo!(),
+        }
+
+        self.command_list_builder
+            .draw_mesh(shape_mesh.foreground_mesh, Shader::Shape);
     }
 
     fn compute_layout_rec(&mut self, ui_node: &UiNode, layout: Layout) -> LayoutNode {
@@ -506,5 +524,70 @@ fn draw_elements_to_command_list(
 
         command_list.push(DrawCommand::BindShader(shader));
         command_list.push(DrawCommand::DrawMesh(mesh_id));
+    }
+}
+
+pub struct CommandListBuilder<'a> {
+    commands: Vec<DrawCommand>,
+    current_batch: Option<MeshWithShader>,
+    mesh_manager: &'a mut MeshManager,
+    stencil_reference: u32,
+}
+
+impl<'a> CommandListBuilder<'a> {
+    fn new(mesh_manager: &'a mut MeshManager) -> Self {
+        Self {
+            commands: Vec::new(),
+            current_batch: None,
+            mesh_manager,
+            stencil_reference: 0,
+        }
+    }
+
+    pub fn draw_mesh(&mut self, mesh: Mesh, shader: Shader) {
+        if let Some(current_batch) = self.current_batch.as_mut() {
+            let MeshWithShader(current_mesh, current_shader) = current_batch;
+
+            if *current_shader == shader && current_mesh.image_id == mesh.image_id {
+                assert_eq!(current_mesh.vertex_attributes.len(), mesh.vertex_attributes.len());
+                for (attrib, data) in &mut current_mesh.vertex_attributes {
+                    data.extend(&mesh.vertex_attributes[attrib]);
+                }
+
+                let base_index = current_mesh.vertex_count;
+                current_mesh.indices.extend(mesh.indices.iter().map(|i| base_index + i));
+
+                current_mesh.vertex_count += mesh.vertex_count;
+            } else {
+                let completed_batch = self.current_batch.replace(MeshWithShader(mesh, shader)).unwrap();
+                let mesh_id = self.mesh_manager.register_mesh(completed_batch.0);
+                self.commands.push(DrawCommand::BindShader(completed_batch.1));
+                self.commands.push(DrawCommand::DrawMesh(mesh_id));
+            }
+        } else {
+            self.current_batch = Some(MeshWithShader(mesh, shader));
+        }
+    }
+
+    pub fn inc_stencil_reference(&mut self) {
+        self.stencil_reference += 1;
+        self.commands
+            .push(DrawCommand::SetStencilReference(self.stencil_reference));
+    }
+
+    pub fn dec_stencil_reference(&mut self) {
+        self.stencil_reference -= 1;
+        self.commands
+            .push(DrawCommand::SetStencilReference(self.stencil_reference));
+    }
+
+    pub fn build(mut self) -> Vec<DrawCommand> {
+        if let Some(last_batch) = self.current_batch {
+            let mesh_id = self.mesh_manager.register_mesh(last_batch.0);
+            self.commands.push(DrawCommand::BindShader(last_batch.1));
+            self.commands.push(DrawCommand::DrawMesh(mesh_id));
+        }
+
+        self.commands
     }
 }

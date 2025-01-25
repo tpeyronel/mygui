@@ -119,7 +119,7 @@ impl UiNodeProps for TextProps {
                 GlyphPixelMode::Color => Shader::Texture,
             };
 
-            processor.draw_elements.push(MeshWithShader(mesh, shader));
+            processor.command_list_builder.draw_mesh(mesh, shader);
         }
 
         if let Some(cursor_position) = cursor_position {
@@ -141,8 +141,8 @@ impl UiNodeProps for TextProps {
             mesh_builder.add_triangle(0, 2, 3);
 
             processor
-                .draw_elements
-                .push(MeshWithShader(mesh_builder.build(), Shader::Shape));
+                .command_list_builder
+                .draw_mesh(mesh_builder.build(), Shader::Shape);
         }
     }
 }

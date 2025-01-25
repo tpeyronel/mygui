@@ -55,6 +55,8 @@ pub struct Renderer {
     target_framebuffer_view: wgpu::TextureView,
     target_framebuffer_sampler: wgpu::Sampler,
     color_pipeline: wgpu::RenderPipeline,
+    clip_inc_pipeline: wgpu::RenderPipeline,
+    clip_dec_pipeline: wgpu::RenderPipeline,
     text_grayscale_pipeline: wgpu::RenderPipeline,
     text_subpixel_pipeline: wgpu::RenderPipeline,
     texture_pipeline: wgpu::RenderPipeline,
@@ -116,6 +118,11 @@ impl Renderer {
         let color_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("color shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/color_shader.wgsl"))),
+        });
+
+        let clip_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("clip shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../assets/shaders/clip_shader.wgsl"))),
         });
 
         let text_grayscale_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -206,6 +213,12 @@ impl Renderer {
             push_constant_ranges: &[],
         });
 
+        let clip_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[&global_uniform_bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
         let text_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("text pipeline layout"),
             bind_group_layouts: &[&global_uniform_bind_group_layout, &texture_bind_group_layout],
@@ -241,9 +254,23 @@ impl Renderer {
             ..Default::default()
         });
 
-        let stencil_state = wgpu::StencilFaceState {
+        let stencil_face_state = wgpu::StencilFaceState {
             compare: wgpu::CompareFunction::Equal,
             fail_op: wgpu::StencilOperation::Keep,
+            depth_fail_op: wgpu::StencilOperation::Keep,
+            pass_op: wgpu::StencilOperation::Keep,
+        };
+
+        let clip_inc_stencil_face_state = wgpu::StencilFaceState {
+            compare: wgpu::CompareFunction::Never,
+            fail_op: wgpu::StencilOperation::IncrementClamp,
+            depth_fail_op: wgpu::StencilOperation::Keep,
+            pass_op: wgpu::StencilOperation::Keep,
+        };
+
+        let clip_dec_stencil_face_state = wgpu::StencilFaceState {
+            compare: wgpu::CompareFunction::Never,
+            fail_op: wgpu::StencilOperation::DecrementClamp,
             depth_fail_op: wgpu::StencilOperation::Keep,
             pass_op: wgpu::StencilOperation::Keep,
         };
@@ -254,8 +281,8 @@ impl Renderer {
             depth_compare: wgpu::CompareFunction::Always,
             bias: wgpu::DepthBiasState::default(),
             stencil: wgpu::StencilState {
-                front: stencil_state,
-                back: stencil_state,
+                front: stencil_face_state,
+                back: stencil_face_state,
                 read_mask: 0xff,
                 write_mask: 0xff,
             },
@@ -301,6 +328,74 @@ impl Renderer {
             },
             multiview: None,
             cache: None,
+        });
+
+        let clip_pipeline_targets = [Some(wgpu::ColorTargetState {
+            format: swapchain_format,
+            blend: Some(wgpu::BlendState {
+                color: wgpu::BlendComponent {
+                    src_factor: wgpu::BlendFactor::Zero,
+                    dst_factor: wgpu::BlendFactor::One,
+                    operation: wgpu::BlendOperation::Add,
+                },
+                alpha: wgpu::BlendComponent::OVER,
+            }),
+            write_mask: wgpu::ColorWrites::ALL,
+        })];
+
+        let clip_pipeline_descriptor = wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&clip_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &clip_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[
+                    vec2_vertex_buffer_layout!(0), // Positions
+                ],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &clip_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &clip_pipeline_targets,
+            }),
+            primitive: Default::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: MSAA_SAMPLE_COUNT,
+                ..Default::default()
+            },
+            multiview: None,
+            cache: None,
+        };
+
+        let clip_inc_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("clip increment pipeline"),
+            depth_stencil: Some(wgpu::DepthStencilState {
+                stencil: wgpu::StencilState {
+                    front: clip_inc_stencil_face_state,
+                    back: clip_inc_stencil_face_state,
+                    read_mask: 0xFF,
+                    write_mask: 0xFF,
+                },
+                ..depth_stencil_state.clone().unwrap()
+            }),
+            ..clip_pipeline_descriptor.clone()
+        });
+
+        let clip_dec_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("clip decrement pipeline"),
+            depth_stencil: Some(wgpu::DepthStencilState {
+                stencil: wgpu::StencilState {
+                    front: clip_dec_stencil_face_state,
+                    back: clip_dec_stencil_face_state,
+                    read_mask: 0xFF,
+                    write_mask: 0xFF,
+                },
+                ..depth_stencil_state.clone().unwrap()
+            }),
+            ..clip_pipeline_descriptor
         });
 
         let text_grayscale_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -505,6 +600,8 @@ impl Renderer {
             target_framebuffer_view,
             target_framebuffer_sampler,
             color_pipeline,
+            clip_inc_pipeline,
+            clip_dec_pipeline,
             text_grayscale_pipeline,
             text_subpixel_pipeline,
             texture_pipeline,
@@ -714,7 +811,12 @@ impl Renderer {
                             ui::draw_command::Shader::Shape => {
                                 rpass.set_pipeline(&self.color_pipeline);
                             }
-                            ui::draw_command::Shader::ShapeClip => todo!(),
+                            ui::draw_command::Shader::ShapeClip => {
+                                rpass.set_pipeline(&self.clip_inc_pipeline);
+                            }
+                            ui::draw_command::Shader::ShapeClipRevert => {
+                                rpass.set_pipeline(&self.clip_dec_pipeline);
+                            }
                             ui::draw_command::Shader::Texture => {
                                 rpass.set_pipeline(&self.texture_pipeline);
                             }
@@ -739,7 +841,12 @@ impl Renderer {
                                 );
                                 rpass.set_vertex_buffer(1, mesh_data.vertex_buffers[&VertexAttribute::Color].slice(..));
                             }
-                            ui::draw_command::Shader::ShapeClip => todo!(),
+                            ui::draw_command::Shader::ShapeClip | ui::draw_command::Shader::ShapeClipRevert => {
+                                rpass.set_vertex_buffer(
+                                    0,
+                                    mesh_data.vertex_buffers[&VertexAttribute::Position].slice(..),
+                                );
+                            }
                             ui::draw_command::Shader::Texture
                             | ui::draw_command::Shader::TextGrayscale
                             | ui::draw_command::Shader::TextSubpixel => {
@@ -757,9 +864,11 @@ impl Renderer {
                             }
                         }
 
-                        rpass.set_stencil_reference(0);
                         rpass.set_index_buffer(mesh_data.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                         rpass.draw_indexed(0..mesh_data.index_count, 0, 0..1);
+                    }
+                    DrawCommand::SetStencilReference(reference) => {
+                        rpass.set_stencil_reference(*reference);
                     }
                 }
             }
