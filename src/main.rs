@@ -791,6 +791,7 @@ fn test_overflow(ui: &mut Ui) {
             .height(Extent::Px(128.0))
             .border_color(Color::RED)
             .border_thickness(BorderThickness::all(8.0))
+            .border_radius(BorderRadius::all(64.0))
             .overflow_hidden();
 
         ui.block(|_, modifiers| {
