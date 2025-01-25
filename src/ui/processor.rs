@@ -2,7 +2,7 @@ use core::f32;
 use std::u64;
 
 use super::border_thickness::BorderThickness;
-use super::draw_command::DrawCommand;
+use super::draw_command::{DrawCommand, ScissorRectangle};
 use super::margin::Margin;
 use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
@@ -130,15 +130,16 @@ impl<'a> UiNodeProcessor<'a> {
 
         let layout = &layout_node.layout;
 
-        self.bounding_boxes.push((
-            hash_node.hash,
-            Rectangle::from_position_size(layout.border_position(), layout.border_size()),
-        ));
+        let border_rectangle = Rectangle::from_position_size(layout.border_position(), layout.border_size());
+
+        self.bounding_boxes.push((hash_node.hash, border_rectangle));
 
         let shape_mesh = modifiers.shape.to_shape_data(layout, modifiers);
 
         match &modifiers.clip {
             Clip::InheritAndShape => {
+                self.command_list_builder
+                    .push_scissor_rectangle(&ScissorRectangle::from_rectangle(&border_rectangle));
                 self.command_list_builder
                     .draw_mesh(shape_mesh.background_mesh.clone(), Shader::ShapeClip);
                 self.command_list_builder.inc_stencil_reference();
@@ -164,6 +165,7 @@ impl<'a> UiNodeProcessor<'a> {
                 self.command_list_builder
                     .draw_mesh(shape_mesh.background_mesh, Shader::ShapeClipRevert);
                 self.command_list_builder.dec_stencil_reference();
+                self.command_list_builder.pop_scissor_rectangle();
             }
             Clip::Inherit => {}
             Clip::None => todo!(),
@@ -532,6 +534,7 @@ pub struct CommandListBuilder<'a> {
     current_batch: Option<MeshWithShader>,
     mesh_manager: &'a mut MeshManager,
     stencil_reference: u32,
+    scissor_stack: Vec<ScissorRectangle>,
 }
 
 impl<'a> CommandListBuilder<'a> {
@@ -541,6 +544,7 @@ impl<'a> CommandListBuilder<'a> {
             current_batch: None,
             mesh_manager,
             stencil_reference: 0,
+            scissor_stack: Vec::new(),
         }
     }
 
@@ -567,6 +571,26 @@ impl<'a> CommandListBuilder<'a> {
         } else {
             self.current_batch = Some(MeshWithShader(mesh, shader));
         }
+    }
+
+    pub fn push_scissor_rectangle(&mut self, rectangle: &ScissorRectangle) {
+        let new_scissor = if let Some(prev_rect) = self.scissor_stack.last() {
+            prev_rect.intersect(rectangle)
+        } else {
+            *rectangle
+        };
+        self.scissor_stack.push(new_scissor);
+        self.commands.push(DrawCommand::SetScissor(new_scissor));
+    }
+
+    pub fn pop_scissor_rectangle(&mut self) {
+        self.scissor_stack.pop();
+        self.commands.push(DrawCommand::SetScissor(
+            self.scissor_stack
+                .last()
+                .cloned()
+                .unwrap_or(ScissorRectangle::NO_SCISSOR),
+        ));
     }
 
     pub fn inc_stencil_reference(&mut self) {

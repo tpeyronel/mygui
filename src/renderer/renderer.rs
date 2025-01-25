@@ -806,8 +806,8 @@ impl Renderer {
 
             for cmd in command_list {
                 match cmd {
-                    &DrawCommand::BindShader(shader) => {
-                        match shader {
+                    DrawCommand::BindShader(shader) => {
+                        match *shader {
                             ui::draw_command::Shader::Shape => {
                                 rpass.set_pipeline(&self.color_pipeline);
                             }
@@ -828,7 +828,7 @@ impl Renderer {
                             }
                         }
 
-                        current_shader = Some(shader);
+                        current_shader = Some(*shader);
                     }
                     DrawCommand::DrawMesh(mesh_id) => {
                         let mesh_data = &mesh_data[mesh_id.0];
@@ -869,6 +869,24 @@ impl Renderer {
                     }
                     DrawCommand::SetStencilReference(reference) => {
                         rpass.set_stencil_reference(*reference);
+                    }
+                    DrawCommand::SetScissor(rectangle) => {
+                        let x = rectangle.x();
+                        let y = rectangle.y();
+                        let width = rectangle.width();
+                        let height = rectangle.height();
+
+                        // Flip Y coordinate, as scissor (0, 0) is top-left.
+                        let y = self.config.height.saturating_sub(y).saturating_sub(height);
+
+                        let x = x.min(self.config.width);
+
+                        let max_width = self.config.width - x;
+                        let max_height = self.config.height - y;
+                        let width = width.min(max_width);
+                        let height = height.min(max_height);
+
+                        rpass.set_scissor_rect(x, y, width, height);
                     }
                 }
             }
