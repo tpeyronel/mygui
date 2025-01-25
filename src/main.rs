@@ -149,9 +149,9 @@ impl ApplicationHandler for App {
                     state
                         .ui_context
                         .build_ui(window_size, &mut state.mesh_manager, &mut state.font_engine, |ui| {
-                            example_ui(ui);
+                            // example_ui(ui);
                             // test_rectangle_ui(ui);
-                            // test_overflow(ui);
+                            test_overflow(ui);
                         });
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
                 state.mesh_manager.clear();
@@ -794,11 +794,11 @@ fn test_overflow(ui: &mut Ui) {
             .overflow_hidden();
 
         ui.block(|_, modifiers| {
-            modifiers.fill_color(Color::GREEN);
+            modifiers.height(Extent::Px(80.0)).fill_color(Color::GREEN);
         });
 
         ui.block(|_, modifiers| {
-            modifiers.fill_color(Color::BLUE);
+            modifiers.height(Extent::Px(80.0)).fill_color(Color::BLUE);
         });
     });
 }
