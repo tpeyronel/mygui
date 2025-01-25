@@ -789,17 +789,23 @@ fn test_overflow(ui: &mut Ui) {
     ui.column(|ui, modifiers| {
         modifiers
             .height(Extent::Px(128.0))
-            .border_color(Color::RED)
-            .border_thickness(BorderThickness::all(8.0))
+            .border_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
             .border_radius(BorderRadius::all(64.0))
-            .overflow_hidden();
+            .overflow_visible()
+            .overflow_hidden()
+            .border_thickness(BorderThickness::all(8.0));
 
         ui.block(|_, modifiers| {
             modifiers.height(Extent::Px(80.0)).fill_color(Color::GREEN);
         });
 
-        ui.block(|_, modifiers| {
+        ui.block(|ui, modifiers| {
             modifiers.height(Extent::Px(80.0)).fill_color(Color::BLUE);
+
+            ui.text("yeahhhhhhh", |_, props, modifiers| {
+                modifiers.width(Extent::Px(0.0));
+                props.font_family = "jetbrains mono".into();
+            });
         });
     });
 }
