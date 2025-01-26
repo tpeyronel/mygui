@@ -12,6 +12,7 @@ fn compute_layout_nodes(position: Vec2, size: Vec2, ui: UiNode) -> Vec<LayoutNod
     let root_ui_nodes = vec![ui];
     let root_hash_nodes = create_mock_hash_tree_rec(&root_ui_nodes);
 
+    let scale_factor = 1.0;
     let mut mesh_manager = MeshManager::new();
     let mut font_engine: Box<dyn FontEngine> = Box::new(MockFontEngine::new());
     let mut draw_data = vec![];
@@ -22,6 +23,7 @@ fn compute_layout_nodes(position: Vec2, size: Vec2, ui: UiNode) -> Vec<LayoutNod
         root_hash_nodes,
         position,
         size,
+        scale_factor,
         &mut mesh_manager,
         &mut font_engine,
         &mut draw_data,

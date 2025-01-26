@@ -148,15 +148,19 @@ impl ApplicationHandler for App {
 
                 let window_size = state.window.inner_size();
                 let window_size = Vec2::new(window_size.width as f32, window_size.height as f32);
-                state.draw_data =
-                    state
-                        .ui_context
-                        .build_ui(window_size, &mut state.mesh_manager, &mut state.font_engine, |ui| {
-                            // example_ui(ui);
-                            // test_rectangle_ui(ui);
-                            // test_overflow(ui);
-                            test_border_color(ui);
-                        });
+                let scale_factor = state.window.scale_factor() as f32;
+                state.draw_data = state.ui_context.build_ui(
+                    window_size,
+                    scale_factor,
+                    &mut state.mesh_manager,
+                    &mut state.font_engine,
+                    |ui| {
+                        // example_ui(ui);
+                        // test_rectangle_ui(ui);
+                        // test_overflow(ui);
+                        test_border_color(ui);
+                    },
+                );
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
                 state.mesh_manager.clear();
 
@@ -832,6 +836,7 @@ fn test_overflow(ui: &mut Ui<BlockProps>) {
 fn test_border_color(ui: &mut Ui<BlockProps>) {
     ui.column(|ui| {
         ui.modifiers()
+            .width(1024.dp())
             .margin(Margin::all(32.0))
             .border_color(BorderColor::new(Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW))
             .corner_radius(CornerRadius::all(256.0))

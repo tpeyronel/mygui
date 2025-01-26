@@ -231,12 +231,14 @@ pub fn to_draw_data_no_hashes(
     command_list: &mut Vec<DrawCommand>,
 ) {
     let hash_nodes = create_mock_hash_tree_rec(&ui_nodes);
+    let scale_factor = 1.0;
     let mut bounding_boxes = vec![];
     UiNodeProcessor::process_ui(
         ui_nodes,
         hash_nodes,
         boundary_pos,
         boundary_size,
+        scale_factor,
         mesh_manager,
         font_engine,
         command_list,

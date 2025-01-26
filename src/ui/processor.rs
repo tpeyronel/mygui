@@ -19,6 +19,7 @@ use crate::ui::{Clip, Extent, Layout, Modifiers};
 use crate::{font::font_engine::FontEngine, rectangle::Rectangle};
 
 pub struct UiNodeProcessor<'a> {
+    scale_factor: f32,
     measurements_cache: MeasurementsCache,
     pub font_engine: &'a mut Box<dyn FontEngine>,
     pub command_list_builder: CommandListBuilder<'a>,
@@ -32,12 +33,13 @@ impl<'a> UiNodeProcessor<'a> {
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
         boundary_size: Vec2,
+        scale_factor: f32,
         mesh_manager: &'a mut MeshManager,
         font_engine: &'a mut Box<dyn FontEngine>,
         command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) {
-        let s = Self::new(mesh_manager, font_engine, command_list, bounding_boxes);
+        let s = Self::new(scale_factor, mesh_manager, font_engine, command_list, bounding_boxes);
         s.to_draw_data(ui_nodes, hash_nodes, boundary_pos, boundary_size);
     }
 
@@ -46,23 +48,26 @@ impl<'a> UiNodeProcessor<'a> {
         hash_nodes: Vec<HashNode>,
         boundary_pos: Vec2,
         boundary_size: Vec2,
+        scale_factor: f32,
         mesh_manager: &'a mut MeshManager,
         font_engine: &'a mut Box<dyn FontEngine>,
         command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) -> LayoutNode {
-        let mut s = Self::new(mesh_manager, font_engine, command_list, bounding_boxes);
+        let mut s = Self::new(scale_factor, mesh_manager, font_engine, command_list, bounding_boxes);
         let (_, _, layout_node) = s.wrap_and_compute_layout_tree(ui_nodes, hash_nodes, boundary_pos, boundary_size);
         layout_node
     }
 
     fn new(
+        scale_factor: f32,
         mesh_manager: &'a mut MeshManager,
         font_engine: &'a mut Box<dyn FontEngine>,
         command_list: &'a mut Vec<DrawCommand>,
         bounding_boxes: &'a mut Vec<(u64, Rectangle)>,
     ) -> Self {
         Self {
+            scale_factor,
             measurements_cache: MeasurementsCache::new(),
             font_engine,
             command_list,
@@ -284,12 +289,14 @@ impl<'a> UiNodeProcessor<'a> {
         let margin_width = match width {
             Extent::FillParent => Some(boundary_size.x),
             Extent::Px(px) => Some(px.round() + modifiers.margin.delta_size().x),
+            Extent::Dp(dp) => Some(self.dp_to_px(dp).round() + modifiers.margin.delta_size().x),
             Extent::FitContent => None,
         };
 
         let margin_height = match height {
             Extent::FillParent => Some(boundary_size.y),
             Extent::Px(px) => Some(px.round() + modifiers.margin.delta_size().y),
+            Extent::Dp(dp) => Some(self.dp_to_px(dp).round() + modifiers.margin.delta_size().y),
             Extent::FitContent => None,
         };
 
@@ -440,6 +447,10 @@ impl<'a> UiNodeProcessor<'a> {
 
     pub fn measure_children(&mut self, parent_size: Vec2, children: &[UiNode]) -> ChildrenMeasurements {
         return ChildrenMeasurements(children.iter().map(|c| self.measure(c, parent_size)).collect());
+    }
+
+    fn dp_to_px(&self, dp: f32) -> f32 {
+        self.scale_factor * dp
     }
 }
 

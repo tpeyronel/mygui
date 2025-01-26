@@ -48,6 +48,7 @@ impl UiContext {
     pub fn build_ui(
         &mut self,
         window_size: Vec2,
+        scale_factor: f32,
         mesh_manager: &mut MeshManager,
         font_engine: &mut Box<dyn FontEngine>,
         f: impl FnOnce(&mut Ui<BlockProps>),
@@ -71,6 +72,7 @@ impl UiContext {
             children_path_hash_nodes,
             Vec2::ZERO,
             window_size,
+            scale_factor,
             mesh_manager,
             font_engine,
             &mut draw_data,
