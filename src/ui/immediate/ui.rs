@@ -72,9 +72,9 @@ impl<'a, P: UiNodeProps> Ui<'a, P> {
         &mut self.props
     }
 
-    fn node<Q: UiNodeProps>(&mut self, initial_props: Q, make_props: impl FnOnce(&mut Ui<Q>, &mut Modifiers)) {
-        let node_type = UiNodeType(TypeId::of::<Q>());
-        let child_path_hasher = self.compute_child_path_hasher(node_type);
+    pub fn node<Q: UiNodeProps>(&mut self, initial_props: Q, make_props: impl FnOnce(&mut Ui<Q>, &mut Modifiers)) {
+        let child_node_type = UiNodeType(TypeId::of::<Q>());
+        let child_path_hasher = self.compute_child_path_hasher(child_node_type);
         let child_path_hash = child_path_hasher.finish();
 
         let mut ui = Ui {
@@ -104,13 +104,11 @@ impl<'a, P: UiNodeProps> Ui<'a, P> {
             children: ui.children_path_hash_nodes,
         };
 
-        assert_eq!(ui_node.node_type(), node_type);
-
         self.children.push(ui_node);
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
-    fn leaf_node<Q: UiNodeProps>(&mut self, initial_props: Q, make_props: impl FnOnce(&mut Ui<Q>, &mut Modifiers)) {
+    pub fn leaf_node<Q: UiNodeProps>(&mut self, initial_props: Q, make_props: impl FnOnce(&mut Ui<Q>, &mut Modifiers)) {
         self.node(initial_props, |ui, modifiers| {
             make_props(ui, modifiers);
             assert!(ui.children.is_empty(), "leaf node may not have children!");
