@@ -31,7 +31,8 @@ impl UiNode {
     }
 }
 
-pub struct Ui<'a> {
+pub struct Ui<'a, P: UiNodeProps> {
+    props: P,
     input_state: &'a InputState,
     state_map: &'a HashMap<u64, Vec<u8>>,
     set_state_tx: &'a SetStateSender,
@@ -42,14 +43,16 @@ pub struct Ui<'a> {
     children_path_hash_nodes: Vec<HashNode>,
 }
 
-impl<'a> Ui<'a> {
+impl<'a, P: UiNodeProps> Ui<'a, P> {
     pub fn new(
+        props: P,
         input_state: &'a InputState,
         state_map: &'a HashMap<u64, Vec<u8>>,
         set_state_tx: &'a SetStateSender,
         ref_map: &'a mut HashMap<u64, Rc<dyn Any>>,
     ) -> Self {
         Self {
+            props,
             input_state,
             state_map,
             set_state_tx,
@@ -65,12 +68,17 @@ impl<'a> Ui<'a> {
         (self.children, self.children_path_hash_nodes)
     }
 
-    fn node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Ui, &mut Modifiers) -> P) {
-        let node_type = UiNodeType(TypeId::of::<P>());
+    pub fn props(&mut self) -> &mut P {
+        &mut self.props
+    }
+
+    fn node<Q: UiNodeProps>(&mut self, initial_props: Q, make_props: impl FnOnce(&mut Ui<Q>, &mut Modifiers)) {
+        let node_type = UiNodeType(TypeId::of::<Q>());
         let child_path_hasher = self.compute_child_path_hasher(node_type);
         let child_path_hash = child_path_hasher.finish();
 
         let mut ui = Ui {
+            props: initial_props,
             input_state: self.input_state,
             state_map: self.state_map,
             set_state_tx: self.set_state_tx,
@@ -83,10 +91,10 @@ impl<'a> Ui<'a> {
 
         let mut modifiers = Modifiers::new();
 
-        let props = make_props(&mut ui, &mut modifiers);
+        make_props(&mut ui, &mut modifiers);
 
         let ui_node = UiNode {
-            props: Box::new(props),
+            props: Box::new(ui.props),
             modifiers,
             children: ui.children,
         };
@@ -102,57 +110,48 @@ impl<'a> Ui<'a> {
         self.children_path_hash_nodes.push(path_hash_node);
     }
 
-    fn leaf_node<P: UiNodeProps>(&mut self, make_props: impl FnOnce(&mut Ui, &mut Modifiers) -> P) {
-        self.node(|ui, modifiers| {
-            let props = make_props(ui, modifiers);
+    fn leaf_node<Q: UiNodeProps>(&mut self, initial_props: Q, make_props: impl FnOnce(&mut Ui<Q>, &mut Modifiers)) {
+        self.node(initial_props, |ui, modifiers| {
+            make_props(ui, modifiers);
             assert!(ui.children.is_empty(), "leaf node may not have children!");
-            props
         });
     }
 
-    pub fn block(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
-        self.node(|ui, modifiers| {
+    pub fn block(&mut self, f: impl FnOnce(&mut Ui<BlockProps>, &mut Modifiers)) {
+        self.node(BlockProps, |ui, modifiers| {
             f(ui, modifiers);
-
-            BlockProps
         });
     }
 
-    pub fn column(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
-        self.node(|ui, modifiers| {
+    pub fn column(&mut self, f: impl FnOnce(&mut Ui<ColumnProps>, &mut Modifiers)) {
+        self.node(ColumnProps, |ui, modifiers| {
             f(ui, modifiers);
-
-            ColumnProps
         });
     }
 
-    pub fn row(&mut self, f: impl FnOnce(&mut Ui, &mut Modifiers)) {
-        self.node(|ui, modifiers| {
+    pub fn row(&mut self, f: impl FnOnce(&mut Ui<RowProps>, &mut Modifiers)) {
+        self.node(RowProps, |ui, modifiers| {
             f(ui, modifiers);
-
-            RowProps
         });
     }
 
-    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut Ui, &mut TextProps, &mut Modifiers)) {
-        self.leaf_node(|ui, modifiers| {
+    pub fn text(&mut self, text: impl Into<String>, f: impl FnOnce(&mut Ui<TextProps>, &mut Modifiers)) {
+        let props = TextProps {
+            text: text.into(),
+            text_color: Color::WHITE,
+            font_family: String::new(),
+            font_size: DEFAULT_FONT_SIZE,
+            line_height: DEFAULT_LINE_HEIGHT,
+            cursor_position: None,
+        };
+
+        self.leaf_node(props, |ui, modifiers| {
             modifiers
                 .width(Extent::FitContent)
                 .max_width(Extent::FillParent)
                 .height(Extent::FitContent);
 
-            let mut props = TextProps {
-                text: text.into(),
-                text_color: Color::WHITE,
-                font_family: String::new(),
-                font_size: DEFAULT_FONT_SIZE,
-                line_height: DEFAULT_LINE_HEIGHT,
-                cursor_position: None,
-            };
-
-            f(ui, &mut props, modifiers);
-
-            props
+            f(ui, modifiers);
         });
     }
 
@@ -259,13 +258,13 @@ impl<'a> Ui<'a> {
 }
 
 #[allow(unused)]
-pub fn mock_ui(f: impl FnOnce(&mut Ui<'_>)) -> UiNode {
+pub fn mock_ui(f: impl FnOnce(&mut Ui<BlockProps>)) -> UiNode {
     let input_state = InputState::new();
     let state_map = HashMap::new();
     let (set_state_tx, _) = set_state_channel();
     let mut ref_map = HashMap::new();
 
-    let mut ui = Ui::new(&input_state, &state_map, &set_state_tx, &mut ref_map);
+    let mut ui = Ui::new(BlockProps, &input_state, &state_map, &set_state_tx, &mut ref_map);
     f(&mut ui);
     let (children, _) = ui.finish();
 

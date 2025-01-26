@@ -3,7 +3,10 @@ use std::time::Instant;
 use crate::{
     input::{TextCommand, TextEvent},
     text::text_position::TextPosition,
-    ui::{node::text::TextProps, Modifiers},
+    ui::{
+        node::{text::TextProps, UiNodeProps},
+        Modifiers,
+    },
 };
 
 use super::{context::NodeInputEvent, ui::Ui};
@@ -15,20 +18,20 @@ pub trait BaseTextField {
         &mut self,
         text: impl Into<String>,
         on_text_change: impl FnOnce(String),
-        f: impl FnOnce(&mut Ui, &mut TextProps, &mut Modifiers),
+        f: impl FnOnce(&mut Ui<TextProps>, &mut Modifiers),
     );
 }
 
-impl BaseTextField for Ui<'_> {
+impl<P: UiNodeProps> BaseTextField for Ui<'_, P> {
     fn base_text_field(
         &mut self,
         text: impl Into<String>,
         on_text_change: impl FnOnce(String),
-        f: impl FnOnce(&mut Ui, &mut TextProps, &mut Modifiers),
+        f: impl FnOnce(&mut Ui<TextProps>, &mut Modifiers),
     ) {
         let ui = self;
 
-        ui.text("", |ui, props, modifiers| {
+        ui.text("", |ui, modifiers| {
             let input = ui.use_input();
 
             let internal_state = ui.use_ref(|| BaseTextFieldInternalState {
@@ -36,6 +39,8 @@ impl BaseTextField for Ui<'_> {
                 cursor_index: 0,
             });
             let mut internal_state = internal_state.borrow_mut();
+
+            let props = ui.props();
 
             props.text = text.into();
             if input.is_focused() && internal_state.is_cursor_visible() {
@@ -48,7 +53,7 @@ impl BaseTextField for Ui<'_> {
 
             process_input_events(&props.text, on_text_change, &mut internal_state, input.events());
 
-            f(ui, props, modifiers);
+            f(ui, modifiers);
         });
     }
 }

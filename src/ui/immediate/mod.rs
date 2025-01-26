@@ -28,7 +28,7 @@ mod tests {
 
     use super::{ui::Ui, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT};
 
-    fn immediate_test(f: impl FnOnce(&mut Ui), expected: Vec<UiNode>) {
+    fn immediate_test(f: impl FnOnce(&mut Ui<BlockProps>), expected: Vec<UiNode>) {
         let ui_node = mock_ui(f);
 
         assert_eq!(
@@ -138,7 +138,7 @@ mod tests {
     fn single_text() {
         immediate_test(
             |ui| {
-                ui.text("Hello", |_, _, _| {});
+                ui.text("Hello", |_, _| {});
             },
             vec![UiNode::new(
                 TextProps {

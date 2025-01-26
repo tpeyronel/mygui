@@ -8,7 +8,7 @@ mod layout_tests;
 pub mod margin;
 mod measurements_cache;
 pub mod mesh_builder;
-mod node;
+pub mod node;
 pub mod padding;
 mod processor;
 pub mod shape;

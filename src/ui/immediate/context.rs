@@ -7,7 +7,7 @@ use crate::{
     input::{ElementState, InputEvent, MouseButton, TextEvent},
     mesh::mesh_manager::MeshManager,
     rectangle::Rectangle,
-    ui::{draw_command::DrawCommand, processor::UiNodeProcessor},
+    ui::{draw_command::DrawCommand, node::block::BlockProps, processor::UiNodeProcessor},
 };
 
 use super::{set_state::set_state_channel, ui::Ui};
@@ -50,11 +50,17 @@ impl UiContext {
         window_size: Vec2,
         mesh_manager: &mut MeshManager,
         font_engine: &mut Box<dyn FontEngine>,
-        f: impl FnOnce(&mut Ui),
+        f: impl FnOnce(&mut Ui<BlockProps>),
     ) -> Vec<DrawCommand> {
         let (set_state_tx, set_state_rx) = set_state_channel();
 
-        let mut root_ui = Ui::new(&self.input_state, &self.states, &set_state_tx, &mut self.refs);
+        let mut root_ui = Ui::new(
+            BlockProps,
+            &self.input_state,
+            &self.states,
+            &set_state_tx,
+            &mut self.refs,
+        );
         f(&mut root_ui);
         let (children, children_path_hash_nodes) = root_ui.finish();
 

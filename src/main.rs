@@ -17,6 +17,7 @@ use ui::{
     draw_command::DrawCommand,
     immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
     margin::Margin,
+    node::block::BlockProps,
     padding::Padding,
     Alignment, Extent,
 };
@@ -149,9 +150,9 @@ impl ApplicationHandler for App {
                     state
                         .ui_context
                         .build_ui(window_size, &mut state.mesh_manager, &mut state.font_engine, |ui| {
-                            // example_ui(ui);
+                            example_ui(ui);
                             // test_rectangle_ui(ui);
-                            test_overflow(ui);
+                            // test_overflow(ui);
                         });
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
                 state.mesh_manager.clear();
@@ -282,7 +283,7 @@ impl ApplicationHandler for App {
 }
 
 #[allow(unused)]
-fn simple_ui(ui: &mut Ui<'_>) {
+fn simple_ui(ui: &mut Ui<BlockProps>) {
     ui.column(|ui, _| {
         (0..3).for_each(|_| {
             ui.row(|ui, attr| {
@@ -308,12 +309,12 @@ fn simple_ui(ui: &mut Ui<'_>) {
 
                 ui.text(
                     "Yeahhhdqwdqwdqwdqwdqwdqwddqwdh\nqiwdhqqwdqwdqwdqwdw",
-                    |ui, props, modifiers| {
+                    |ui, modifiers| {
                         let input = ui.use_input();
 
-                        props.font_family = "Jetbrains Mono".into();
-                        props.font_size = 64.0;
-                        props.line_height = 64.0;
+                        ui.props().font_family = "Jetbrains Mono".into();
+                        ui.props().font_size = 64.0;
+                        ui.props().line_height = 64.0;
 
                         modifiers
                             .width(Extent::Px(0.0))
@@ -338,7 +339,7 @@ fn simple_ui(ui: &mut Ui<'_>) {
     });
 }
 
-fn example_ui(ui: &mut Ui<'_>) {
+fn example_ui(ui: &mut Ui<BlockProps>) {
     ui.block(|ui, modifiers| {
         modifiers
             .width(Extent::FillParent)
@@ -584,12 +585,15 @@ fn example_ui(ui: &mut Ui<'_>) {
 
                     ui.text(
                         "ÓThis is a text!\nÓWith 😊👍😭three lines\nÓThis is the last lineeeeeeeeee.",
-                        |_, props, modifiers| {
-                            props.text_color = Color::WHITE;
-                            props.font_family = "jetbrains mono".to_string();
-                            props.font_size = 24.0;
-                            props.line_height = 24.0 * 1.5;
-                            modifiers.self_alignment(Alignment::TopLeft);
+                        |ui, modifiers| {
+                            ui.props().text_color = Color::WHITE;
+                            ui.props().font_family = "jetbrains mono".to_string();
+                            ui.props().font_size = 24.0;
+                            ui.props().line_height = 24.0 * 1.5;
+                            modifiers
+                                .self_alignment(Alignment::TopLeft)
+                                .border_thickness(BorderThickness::all(2.0))
+                                .border_color(Color::RED);
                         },
                     );
                 });
@@ -646,11 +650,11 @@ fn example_ui(ui: &mut Ui<'_>) {
                             .weight(1.0)
                             .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4));
 
-                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |_, props, modifiers| {
-                            props.text_color = Color::WHITE;
-                            props.font_family = "Segoe UI Emoji".to_string();
-                            props.font_size = 24.0;
-                            props.line_height = 24.0;
+                        ui.text("HellÓowjdoqi12931289😊👍😭3u!\nYegh", |ui, modifiers| {
+                            ui.props().text_color = Color::WHITE;
+                            ui.props().font_family = "Segoe UI Emoji".to_string();
+                            ui.props().font_size = 24.0;
+                            ui.props().line_height = 24.0;
                             modifiers
                                 .width(Extent::FillParent)
                                 .max_width(Extent::Px(512.0))
@@ -691,10 +695,10 @@ fn example_ui(ui: &mut Ui<'_>) {
                         ui.base_text_field(
                             text,
                             |t| set_text(&t),
-                            |ui, props, modifiers| {
+                            |ui, modifiers| {
                                 let input = ui.use_input();
 
-                                props.font_family = "times new roman".into();
+                                ui.props().font_family = "times new roman".into();
 
                                 modifiers
                                     .min_width(Extent::Px(64.0))
@@ -723,13 +727,14 @@ fn example_ui(ui: &mut Ui<'_>) {
                 let (count, set_count) = ui.use_state(|| 0);
 
                 for i in 5..32 {
-                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |ui, props, modifiers| {
+                    ui.text(format!("{} aAbBcCdDoOÓgfjpq", count), |ui, modifiers| {
                         let input = ui.use_input();
 
-                        props.text_color = Color::rgba(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
-                        props.font_family = "tangerine".to_string();
-                        props.font_size = i as f32;
-                        props.line_height = i as f32;
+                        ui.props().text_color =
+                            Color::rgba(0.0 + (i - 5) as f32 / 31.0, (31 - i) as f32 / (26.0), 1.0, 1.0);
+                        ui.props().font_family = "tangerine".to_string();
+                        ui.props().font_size = i as f32;
+                        ui.props().line_height = i as f32;
 
                         modifiers
                             .width(Extent::FitContent)
@@ -758,7 +763,7 @@ fn example_ui(ui: &mut Ui<'_>) {
     });
 }
 
-fn test_rectangle_ui(ui: &mut Ui) {
+fn test_rectangle_ui(ui: &mut Ui<BlockProps>) {
     ui.column(|ui, _| {
         ui.block(|ui, modifiers| {
             let start = ui.use_ref(|| Instant::now());
@@ -785,27 +790,35 @@ fn test_rectangle_ui(ui: &mut Ui) {
     });
 }
 
-fn test_overflow(ui: &mut Ui) {
-    ui.column(|ui, modifiers| {
-        modifiers
-            .height(Extent::Px(128.0))
-            .border_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
-            .border_radius(BorderRadius::all(64.0))
-            .overflow_visible()
-            .overflow_hidden()
-            .border_thickness(BorderThickness::all(8.0));
+fn test_overflow(ui: &mut Ui<BlockProps>) {
+    ui.column(|ui, _| {
+        ui.column(|ui, modifiers| {
+            modifiers
+                .height(Extent::Px(128.0))
+                .border_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
+                .border_radius(BorderRadius::all(64.0))
+                .overflow_visible()
+                .overflow_hidden()
+                .border_thickness(BorderThickness::all(8.0));
 
-        ui.block(|_, modifiers| {
-            modifiers.height(Extent::Px(80.0)).fill_color(Color::GREEN);
+            ui.block(|_, modifiers| {
+                modifiers.height(Extent::Px(80.0)).fill_color(Color::GREEN);
+            });
+
+            ui.block(|ui, modifiers| {
+                modifiers.height(Extent::Px(80.0)).fill_color(Color::BLUE);
+
+                ui.text("yeahhhhhhh", |ui, modifiers| {
+                    modifiers.width(Extent::Px(0.0));
+                    ui.props().font_family = "jetbrains mono".into();
+                });
+            });
         });
 
-        ui.block(|ui, modifiers| {
-            modifiers.height(Extent::Px(80.0)).fill_color(Color::BLUE);
-
-            ui.text("yeahhhhhhh", |_, props, modifiers| {
-                modifiers.width(Extent::Px(0.0));
-                props.font_family = "jetbrains mono".into();
-            });
+        ui.block(|_, modifiers| {
+            modifiers
+                .height(Extent::Px(64.0))
+                .fill_color(Color::rgba(0.25, 0.25, 0.0, 0.25));
         });
     });
 }
