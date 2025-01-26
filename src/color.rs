@@ -12,6 +12,9 @@ impl Color {
     pub const RED: Self = Self::rgba(1.0, 0.0, 0.0, 1.0);
     pub const GREEN: Self = Self::rgba(0.0, 1.0, 0.0, 1.0);
     pub const BLUE: Self = Self::rgba(0.0, 0.0, 1.0, 1.0);
+    pub const YELLOW: Self = Self::rgba(1.0, 1.0, 0.0, 1.0);
+    pub const CYAN: Self = Self::rgba(0.0, 1.0, 1.0, 1.0);
+    pub const PURPLE: Self = Self::rgba(1.0, 0.0, 1.0, 1.0);
 
     pub const fn rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self(Vec4::new(r * a, g * a, b * a, a))
