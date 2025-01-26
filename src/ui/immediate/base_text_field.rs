@@ -3,10 +3,7 @@ use std::time::Instant;
 use crate::{
     input::{TextCommand, TextEvent},
     text::text_position::TextPosition,
-    ui::{
-        node::{text::TextProps, UiNodeProps},
-        Modifiers,
-    },
+    ui::node::{text::TextProps, UiNodeProps},
 };
 
 use super::{context::NodeInputEvent, ui::Ui};
@@ -18,7 +15,7 @@ pub trait BaseTextField {
         &mut self,
         text: impl Into<String>,
         on_text_change: impl FnOnce(String),
-        f: impl FnOnce(&mut Ui<TextProps>, &mut Modifiers),
+        f: impl FnOnce(&mut Ui<TextProps>),
     );
 }
 
@@ -27,11 +24,11 @@ impl<P: UiNodeProps> BaseTextField for Ui<'_, P> {
         &mut self,
         text: impl Into<String>,
         on_text_change: impl FnOnce(String),
-        f: impl FnOnce(&mut Ui<TextProps>, &mut Modifiers),
+        f: impl FnOnce(&mut Ui<TextProps>),
     ) {
         let ui = self;
 
-        ui.text("", |ui, modifiers| {
+        ui.text("", |ui| {
             let input = ui.use_input();
 
             let internal_state = ui.use_ref(|| BaseTextFieldInternalState {
@@ -53,7 +50,7 @@ impl<P: UiNodeProps> BaseTextField for Ui<'_, P> {
 
             process_input_events(&props.text, on_text_change, &mut internal_state, input.events());
 
-            f(ui, modifiers);
+            f(ui);
         });
     }
 }

@@ -48,7 +48,7 @@ mod tests {
     fn single_block() {
         immediate_test(
             |ui| {
-                ui.block(|_, _| {});
+                ui.block(|_| {});
             },
             vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
         );
@@ -58,9 +58,9 @@ mod tests {
     fn multiple_blocks() {
         immediate_test(
             |ui| {
-                ui.block(|_, _| {});
-                ui.block(|_, _| {});
-                ui.block(|_, _| {});
+                ui.block(|_| {});
+                ui.block(|_| {});
+                ui.block(|_| {});
             },
             vec![
                 UiNode::new(BlockProps, Modifiers::new(), vec![]),
@@ -74,11 +74,11 @@ mod tests {
     fn multiple_blocks_with_custom_attributes() {
         immediate_test(
             |ui| {
-                ui.block(|_, _| {});
-                ui.block(|_, attr| {
-                    attr.border_color(Color::rgba(1.0, 0.0, 0.0, 0.0));
+                ui.block(|_| {});
+                ui.block(|ui| {
+                    ui.modifiers().border_color(Color::rgba(1.0, 0.0, 0.0, 0.0));
                 });
-                ui.block(|_, _| {});
+                ui.block(|_| {});
             },
             vec![
                 UiNode::new(BlockProps, Modifiers::new(), vec![]),
@@ -96,7 +96,7 @@ mod tests {
     fn single_column() {
         immediate_test(
             |ui| {
-                ui.column(|_, _| {});
+                ui.column(|_| {});
             },
             vec![UiNode::new(ColumnProps, Modifiers::new(), vec![])],
         );
@@ -106,7 +106,7 @@ mod tests {
     fn single_row() {
         immediate_test(
             |ui| {
-                ui.row(|_, _| {});
+                ui.row(|_| {});
             },
             vec![UiNode::new(RowProps, Modifiers::new(), vec![])],
         );
@@ -116,9 +116,9 @@ mod tests {
     fn nested_block_column_row() {
         immediate_test(
             |ui| {
-                ui.block(|ui, _| {
-                    ui.column(|ui, _| {
-                        ui.row(|_, _| {});
+                ui.block(|ui| {
+                    ui.column(|ui| {
+                        ui.row(|_| {});
                     });
                 });
             },
@@ -138,7 +138,7 @@ mod tests {
     fn single_text() {
         immediate_test(
             |ui| {
-                ui.text("Hello", |_, _| {});
+                ui.text("Hello", |_| {});
             },
             vec![UiNode::new(
                 TextProps {
