@@ -18,9 +18,9 @@ impl ColorMeshBuilder {
         }
     }
 
-    pub fn add_vertex(&mut self, position: Vec2, color: Color) -> u32 {
+    pub fn add_vertex(&mut self, position: Vec2, color: &Color) -> u32 {
         self.builder
-            .add_vertex([bytemuck::bytes_of(&position), bytemuck::bytes_of(&color)])
+            .add_vertex([bytemuck::bytes_of(&position), bytemuck::bytes_of(color)])
     }
 
     pub fn add_triangle(&mut self, i: u32, j: u32, k: u32) {

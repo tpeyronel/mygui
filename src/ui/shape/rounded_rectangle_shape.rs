@@ -4,8 +4,8 @@ use glam::Vec2;
 use crate::{
     color::Color,
     ui::{
-        border_radius::BorderRadius, border_thickness::BorderThickness, color_mesh_builder::ColorMeshBuilder, Layout,
-        Modifiers,
+        border_color::BorderColor, border_radius::BorderRadius, border_thickness::BorderThickness,
+        color_mesh_builder::ColorMeshBuilder, Layout, Modifiers,
     },
 };
 
@@ -16,10 +16,10 @@ pub struct RoundedRectangleShape;
 
 impl Shape for RoundedRectangleShape {
     fn to_shape_data(&self, layout: &Layout, modifiers: &Modifiers) -> ShapeData {
-        let fill_color = modifiers.fill_color;
-        let border_color = modifiers.border_color;
-        let border_thickness = modifiers.border_thickness;
-        let border_radius = modifiers.border_radius;
+        let fill_color = &modifiers.fill_color;
+        let border_color = &modifiers.border_color;
+        let border_thickness = &modifiers.border_thickness;
+        let border_radius = &modifiers.border_radius;
 
         create_rounded_rectangle(layout, fill_color, border_color, border_thickness, border_radius)
     }
@@ -27,10 +27,10 @@ impl Shape for RoundedRectangleShape {
 
 fn create_rounded_rectangle(
     layout: &Layout,
-    fill_color: Color,
-    border_color: Color,
-    border_thickness: BorderThickness,
-    border_radius: BorderRadius,
+    fill_color: &Color,
+    border_color: &BorderColor,
+    border_thickness: &BorderThickness,
+    border_radius: &BorderRadius,
 ) -> ShapeData {
     let mut bg_builder = ColorMeshBuilder::new();
     let mut fg_builder = ColorMeshBuilder::new();
@@ -41,7 +41,8 @@ fn create_rounded_rectangle(
         Vec2::new(border_thickness.left(), border_thickness.bottom()),
         Vec2::new(1.0, 1.0),
         fill_color,
-        border_color,
+        border_color.left(),
+        border_color.bottom(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -52,7 +53,8 @@ fn create_rounded_rectangle(
         Vec2::new(border_thickness.right(), border_thickness.bottom()),
         Vec2::new(-1.0, 1.0),
         fill_color,
-        border_color,
+        border_color.right(),
+        border_color.bottom(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -63,7 +65,8 @@ fn create_rounded_rectangle(
         Vec2::new(border_thickness.right(), border_thickness.top()),
         Vec2::new(-1.0, -1.0),
         fill_color,
-        border_color,
+        border_color.right(),
+        border_color.top(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -74,7 +77,8 @@ fn create_rounded_rectangle(
         Vec2::new(border_thickness.left(), border_thickness.top()),
         Vec2::new(1.0, -1.0),
         fill_color,
-        border_color,
+        border_color.left(),
+        border_color.top(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -139,7 +143,8 @@ fn create_rounded_rectangle(
         &bl,
         border_radius.bottom_left(),
         &fill_color,
-        &border_color,
+        border_color.left(),
+        border_color.bottom(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -148,7 +153,8 @@ fn create_rounded_rectangle(
         &br,
         border_radius.bottom_right(),
         &fill_color,
-        &border_color,
+        border_color.right(),
+        border_color.bottom(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -157,7 +163,8 @@ fn create_rounded_rectangle(
         &tr,
         border_radius.top_right(),
         &fill_color,
-        &border_color,
+        border_color.right(),
+        border_color.top(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -166,7 +173,8 @@ fn create_rounded_rectangle(
         &tl,
         border_radius.top_left(),
         &fill_color,
-        &border_color,
+        border_color.left(),
+        border_color.top(),
         &mut bg_builder,
         &mut fg_builder,
     );
@@ -181,11 +189,56 @@ fn emit_rectangle_corners(
     v: &CornerVertices,
     corner_radius: f32,
     fill_color: &Color,
-    border_color: &Color,
+    border_color_ver: &Color,
+    border_color_hor: &Color,
     bg_builder: &mut ColorMeshBuilder,
     fg_builder: &mut ColorMeshBuilder,
 ) {
-    if corner_radius > 0.0 {
+    if corner_radius <= 0.0 {
+        return;
+    }
+
+    if border_color_ver != border_color_hor {
+        let (middle_inner_pos, middle_outer_pos) = compute_corner_vertices_positions_at(std::f32::consts::FRAC_PI_4, v);
+        let border_inner_ver_middle_idx = fg_builder.add_vertex(middle_inner_pos, border_color_ver);
+        let border_outer_ver_middle_idx = fg_builder.add_vertex(middle_outer_pos, border_color_ver);
+        let border_inner_hor_middle_idx = fg_builder.add_vertex(middle_inner_pos, border_color_hor);
+        let border_outer_hor_middle_idx = fg_builder.add_vertex(middle_outer_pos, border_color_hor);
+
+        emit_rectangle_corners_rec(
+            v,
+            0.0,
+            v.border_outer_ver.idx,
+            v.border_inner_ver.idx,
+            v.fill_ver.idx,
+            std::f32::consts::FRAC_PI_4,
+            border_outer_ver_middle_idx,
+            border_inner_ver_middle_idx,
+            v.fill_hor.idx,
+            compute_corner_depth(corner_radius),
+            fill_color,
+            border_color_ver,
+            bg_builder,
+            fg_builder,
+        );
+
+        emit_rectangle_corners_rec(
+            v,
+            std::f32::consts::FRAC_PI_4,
+            border_outer_hor_middle_idx,
+            border_inner_hor_middle_idx,
+            v.fill_ver.idx,
+            std::f32::consts::FRAC_PI_2,
+            v.border_outer_hor.idx,
+            v.border_inner_hor.idx,
+            v.fill_hor.idx,
+            compute_corner_depth(corner_radius),
+            fill_color,
+            border_color_hor,
+            bg_builder,
+            fg_builder,
+        );
+    } else {
         emit_rectangle_corners_rec(
             v,
             0.0,
@@ -198,7 +251,7 @@ fn emit_rectangle_corners(
             v.fill_hor.idx,
             compute_corner_depth(corner_radius),
             fill_color,
-            border_color,
+            border_color_ver,
             bg_builder,
             fg_builder,
         );
@@ -226,22 +279,11 @@ fn emit_rectangle_corners_rec(
     fg_builder: &mut ColorMeshBuilder,
 ) {
     let alpha = (left_angle + right_angle) * 0.5;
+    let (inner_pos, outer_pos) = compute_corner_vertices_positions_at(alpha, v);
 
-    let (sin_alpha, cos_alpha) = alpha.sin_cos();
-
-    let outer_pos = Vec2::new(
-        lerp(v.border_outer_hor.pos.x, v.border_outer_ver.pos.x, cos_alpha),
-        lerp(v.border_outer_ver.pos.y, v.border_outer_hor.pos.y, sin_alpha),
-    );
-
-    let inner_pos = Vec2::new(
-        lerp(v.fill_hor.pos.x, v.fill_ver.pos.x, cos_alpha),
-        lerp(v.fill_ver.pos.y, v.fill_hor.pos.y, sin_alpha),
-    );
-
-    let fill_idx = bg_builder.add_vertex(inner_pos, *fill_color);
-    let border_outer_idx = fg_builder.add_vertex(outer_pos, *border_color);
-    let border_inner_idx = fg_builder.add_vertex(inner_pos, *border_color);
+    let fill_idx = bg_builder.add_vertex(inner_pos, fill_color);
+    let border_outer_idx = fg_builder.add_vertex(outer_pos, border_color);
+    let border_inner_idx = fg_builder.add_vertex(inner_pos, border_color);
 
     bg_builder.add_triangle(left_fill_idx, fill_idx, right_fill_idx);
 
@@ -287,6 +329,22 @@ fn emit_rectangle_corners_rec(
     }
 }
 
+fn compute_corner_vertices_positions_at(alpha: f32, v: &CornerVertices) -> (Vec2, Vec2) {
+    let (sin_alpha, cos_alpha) = alpha.sin_cos();
+
+    let inner_pos = Vec2::new(
+        lerp(v.fill_hor.pos.x, v.fill_ver.pos.x, cos_alpha),
+        lerp(v.fill_ver.pos.y, v.fill_hor.pos.y, sin_alpha),
+    );
+
+    let outer_pos = Vec2::new(
+        lerp(v.border_outer_hor.pos.x, v.border_outer_ver.pos.x, cos_alpha),
+        lerp(v.border_outer_ver.pos.y, v.border_outer_hor.pos.y, sin_alpha),
+    );
+
+    (inner_pos, outer_pos)
+}
+
 fn lerp(x: f32, y: f32, a: f32) -> f32 {
     x * (1.0 - a) + y * a
 }
@@ -306,8 +364,9 @@ impl CornerVertices {
         corner_radius: f32,
         corner_thickness: Vec2,
         rotation: Vec2,
-        fill_color: Color,
-        border_color: Color,
+        fill_color: &Color,
+        border_color_ver: &Color,
+        border_color_hor: &Color,
         bg_builder: &mut ColorMeshBuilder,
         fg_builder: &mut ColorMeshBuilder,
     ) -> Self {
@@ -322,28 +381,30 @@ impl CornerVertices {
         };
 
         let border_inner_hor_pos = fill_hor_pos;
-        let border_inner_hor_idx = fg_builder.add_vertex(border_inner_hor_pos, border_color);
-
         let border_inner_ver_pos = fill_ver_pos;
-        let border_inner_ver_idx = if border_inner_ver_pos == border_inner_hor_pos {
-            border_inner_hor_idx
-        } else {
-            fg_builder.add_vertex(border_inner_ver_pos, border_color)
-        };
-
         let border_outer_hor_pos = corner_pos + Vec2::new(corner_radius, 0.0) * rotation;
+        let border_outer_ver_pos = corner_pos + Vec2::new(0.0, corner_radius) * rotation;
+
+        let border_inner_hor_idx = fg_builder.add_vertex(border_inner_hor_pos, border_color_hor);
+        let border_inner_ver_idx =
+            if (border_inner_ver_pos == border_inner_hor_pos) && (border_color_ver == border_color_hor) {
+                border_inner_hor_idx
+            } else {
+                fg_builder.add_vertex(border_inner_ver_pos, border_color_ver)
+            };
+
         let border_outer_hor_idx = if border_outer_hor_pos == border_inner_hor_pos {
             border_inner_hor_idx
         } else {
-            fg_builder.add_vertex(border_outer_hor_pos, border_color)
+            fg_builder.add_vertex(border_outer_hor_pos, border_color_hor)
         };
 
-        let border_outer_ver_pos = corner_pos + Vec2::new(0.0, corner_radius) * rotation;
-        let border_outer_ver_idx = if border_outer_ver_pos == border_outer_hor_pos {
-            border_outer_hor_idx
-        } else {
-            fg_builder.add_vertex(border_outer_ver_pos, border_color)
-        };
+        let border_outer_ver_idx =
+            if (border_outer_ver_pos == border_outer_hor_pos) && (border_color_ver == border_color_hor) {
+                border_outer_hor_idx
+            } else {
+                fg_builder.add_vertex(border_outer_ver_pos, border_color_ver)
+            };
 
         Self {
             fill_hor: CornerVertex {

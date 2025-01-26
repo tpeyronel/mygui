@@ -130,10 +130,10 @@ impl UiNodeProps for TextProps {
             let cursor_color = Color::rgba(1.0, 1.0, 1.0, 1.0);
 
             let mut mesh_builder = ColorMeshBuilder::new();
-            mesh_builder.add_vertex(cursor_rectangle.bottom_left(), cursor_color);
-            mesh_builder.add_vertex(cursor_rectangle.bottom_right(), cursor_color);
-            mesh_builder.add_vertex(cursor_rectangle.top_right(), cursor_color);
-            mesh_builder.add_vertex(cursor_rectangle.top_left(), cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.bottom_left(), &cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.bottom_right(), &cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.top_right(), &cursor_color);
+            mesh_builder.add_vertex(cursor_rectangle.top_left(), &cursor_color);
             mesh_builder.add_triangle(0, 1, 2);
             mesh_builder.add_triangle(0, 2, 3);
 

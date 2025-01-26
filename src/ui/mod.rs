@@ -1,3 +1,4 @@
+pub mod border_color;
 pub mod border_radius;
 pub mod border_thickness;
 pub mod color_mesh_builder;
@@ -16,6 +17,7 @@ pub mod texture_mesh_builder;
 
 use core::f32;
 
+use border_color::BorderColor;
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
 use draw_command::DrawCommand;
@@ -44,7 +46,7 @@ pub struct Modifiers {
     margin: Margin,
     padding: Padding,
     fill_color: Color,
-    border_color: Color,
+    border_color: BorderColor,
     border_thickness: BorderThickness,
     border_radius: BorderRadius,
     shape: Box<dyn Shape>,
@@ -124,8 +126,8 @@ impl Modifiers {
         self
     }
 
-    pub fn border_color(&mut self, border_color: Color) -> &mut Self {
-        self.border_color = border_color;
+    pub fn border_color(&mut self, border_color: impl Into<BorderColor>) -> &mut Self {
+        self.border_color = border_color.into();
         self
     }
 
