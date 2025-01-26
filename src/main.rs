@@ -12,6 +12,7 @@ use input::{ElementState, InputEvent, MouseButton, TextCommand, TextEvent};
 use mesh::mesh_manager::MeshManager;
 use renderer::renderer::Renderer;
 use ui::{
+    border_color::BorderColor,
     border_radius::BorderRadius,
     border_thickness::BorderThickness,
     draw_command::DrawCommand,
@@ -150,9 +151,10 @@ impl ApplicationHandler for App {
                     state
                         .ui_context
                         .build_ui(window_size, &mut state.mesh_manager, &mut state.font_engine, |ui| {
-                            example_ui(ui);
+                            // example_ui(ui);
                             // test_rectangle_ui(ui);
                             // test_overflow(ui);
+                            test_border_color(ui);
                         });
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
                 state.mesh_manager.clear();
@@ -822,6 +824,17 @@ fn test_overflow(ui: &mut Ui<BlockProps>) {
                 .height(Extent::Px(64.0))
                 .fill_color(Color::rgba(0.25, 0.25, 0.0, 0.25));
         });
+    });
+}
+
+#[allow(unused)]
+fn test_border_color(ui: &mut Ui<BlockProps>) {
+    ui.column(|ui| {
+        ui.modifiers()
+            .margin(Margin::all(32.0))
+            .border_color(BorderColor::new(Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW))
+            .border_radius(BorderRadius::all(256.0))
+            .border_thickness(BorderThickness::new(32.0, 128.0, 32.0, 32.0));
     });
 }
 
