@@ -763,6 +763,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
     });
 }
 
+#[allow(unused)]
 fn test_rectangle_ui(ui: &mut Ui<BlockProps>) {
     ui.column(|ui| {
         ui.block(|ui| {
@@ -790,6 +791,7 @@ fn test_rectangle_ui(ui: &mut Ui<BlockProps>) {
     });
 }
 
+#[allow(unused)]
 fn test_overflow(ui: &mut Ui<BlockProps>) {
     ui.column(|ui| {
         ui.column(|ui| {

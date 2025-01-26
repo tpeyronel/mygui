@@ -220,26 +220,31 @@ pub struct NodeInputState {
 }
 
 impl NodeInputState {
+    #[allow(unused)]
     pub fn is_hovered(&self) -> bool {
         self.is_hovered
     }
 
+    #[allow(unused)]
     pub fn is_pressed(&self) -> bool {
         self.is_pressed
     }
 
+    #[allow(unused)]
     pub fn on_hover(&self) -> bool {
         self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent {
             hovered: true,
         }))
     }
 
+    #[allow(unused)]
     pub fn on_unhover(&self) -> bool {
         self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseHoverEvent {
             hovered: false,
         }))
     }
 
+    #[allow(unused)]
     pub fn on_press(&self) -> bool {
         self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
             button: MouseButton::Left,
@@ -247,6 +252,7 @@ impl NodeInputState {
         }))
     }
 
+    #[allow(unused)]
     pub fn on_release(&self) -> bool {
         self.has_event(NodeInputEvent::MouseEvent(MouseEvent::MouseButtonEvent {
             button: MouseButton::Left,
@@ -254,6 +260,7 @@ impl NodeInputState {
         }))
     }
 
+    #[allow(unused)]
     pub fn is_focused(&self) -> bool {
         self.is_focused
     }

@@ -11,11 +11,8 @@ use crate::{
     rectangle::Rectangle,
     text::text_position::TextPosition,
     ui::{
-        color_mesh_builder::ColorMeshBuilder,
-        draw_command::Shader,
-        processor::{MeshWithShader, UiNodeProcessor},
-        texture_mesh_builder::TextureMeshBuilder,
-        Layout, Modifiers,
+        color_mesh_builder::ColorMeshBuilder, draw_command::Shader, processor::UiNodeProcessor,
+        texture_mesh_builder::TextureMeshBuilder, Layout, Modifiers,
     },
 };
 

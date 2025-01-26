@@ -5,8 +5,6 @@ use glam::{Vec2, Vec4};
 use wgpu::{util::DeviceExt, Extent3d};
 
 use crate::{
-    color::Color,
-    font::font_face::GlyphPixelMode,
     image::image_manager::{ImageId, ImageManager},
     mesh::{
         mesh::{Mesh, MeshId, VertexAttribute},
@@ -1031,21 +1029,6 @@ struct Texture {
 struct GlobalUniform {
     viewport_width: f32,
     viewport_height: f32,
-}
-
-enum ProcessedMesh {
-    Rectangle {
-        buffer_offsets: HashMap<VertexAttribute, u64>,
-        first_index: u32,
-        index_count: u32,
-    },
-    TextGlyph {
-        buffer_offsets: HashMap<VertexAttribute, u64>,
-        first_index: u32,
-        text_color: Color,
-        image_id: ImageId,
-        pixel_mode: GlyphPixelMode,
-    },
 }
 
 struct MeshData {

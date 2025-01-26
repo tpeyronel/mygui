@@ -484,51 +484,6 @@ impl IntoIterator for ChildrenMeasurements {
 
 pub struct MeshWithShader(pub Mesh, pub Shader);
 
-fn batch_draw_elements(meshes: Vec<MeshWithShader>) -> Vec<MeshWithShader> {
-    if meshes.is_empty() {
-        return vec![];
-    }
-
-    let mut meshes = meshes.into_iter();
-    let mut curr_batch = meshes.next().unwrap();
-    let mut batches = vec![];
-
-    for MeshWithShader(mesh, shader) in meshes {
-        let MeshWithShader(curr_mesh, curr_shader) = &mut curr_batch;
-
-        if *curr_shader == shader && curr_mesh.image_id == mesh.image_id {
-            assert_eq!(curr_mesh.vertex_attributes.len(), mesh.vertex_attributes.len());
-            for (attrib, data) in &mut curr_mesh.vertex_attributes {
-                data.extend(&mesh.vertex_attributes[attrib]);
-            }
-
-            let base_index = curr_mesh.vertex_count;
-            curr_mesh.indices.extend(mesh.indices.iter().map(|i| base_index + i));
-
-            curr_mesh.vertex_count += mesh.vertex_count;
-        } else {
-            batches.push(std::mem::replace(&mut curr_batch, MeshWithShader(mesh, shader)));
-        }
-    }
-
-    batches.push(curr_batch);
-
-    batches
-}
-
-fn draw_elements_to_command_list(
-    meshes: Vec<MeshWithShader>,
-    mesh_manager: &mut MeshManager,
-    command_list: &mut Vec<DrawCommand>,
-) {
-    for MeshWithShader(mesh, shader) in meshes {
-        let mesh_id = mesh_manager.register_mesh(mesh);
-
-        command_list.push(DrawCommand::BindShader(shader));
-        command_list.push(DrawCommand::DrawMesh(mesh_id));
-    }
-}
-
 pub struct CommandListBuilder<'a> {
     commands: Vec<DrawCommand>,
     current_batch: Option<MeshWithShader>,
