@@ -296,8 +296,8 @@ fn simple_ui(ui: &mut Ui<BlockProps>) {
                     let input = ui.use_input();
 
                     ui.modifiers()
-                        .width(Extent::Px(0.0))
-                        .height(Extent::Px(48.0))
+                        .width(0.px())
+                        .height(48.px())
                         .weight(1.0)
                         .fill_color(if input.is_hovered() {
                             Color::rgba(1.0, 1.0, 0.0, 1.0)
@@ -320,7 +320,7 @@ fn simple_ui(ui: &mut Ui<BlockProps>) {
                     ui.props().line_height = 64.0;
 
                     ui.modifiers()
-                        .width(Extent::Px(0.0))
+                        .width(0.px())
                         .weight(1.0)
                         .height(Extent::FitContent)
                         .fill_color(if input.is_hovered() {
@@ -333,7 +333,7 @@ fn simple_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::Px(0.0))
+                        .width(0.px())
                         .weight(1.0)
                         .fill_color(Color::rgba(0.0, 0.0, 1.0, 1.0));
                 });
@@ -364,8 +364,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::Center)
                     .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -375,8 +375,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .margin(Margin::all(4.0))
                     .self_alignment(Alignment::Right)
                     .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.25))
@@ -387,8 +387,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::TopRight)
                     .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -398,8 +398,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::Top)
                     .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -429,8 +429,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::Px(8.0))
-                        .height(Extent::Px(64.0))
+                        .width(8.px())
+                        .height(64.px())
                         .border_color(Color::rgba(0.0, 1.0, 0.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0))
                         .self_alignment(Alignment::BottomLeft);
@@ -438,8 +438,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::Px(96.0))
-                        .height(Extent::Px(8.0))
+                        .width(96.px())
+                        .height(8.px())
                         .border_color(Color::rgba(0.0, 0.0, 1.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0))
                         .self_alignment(Alignment::TopRight);
@@ -448,8 +448,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::Left)
                     .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -459,8 +459,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::BottomLeft)
                     .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -470,8 +470,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::Bottom)
                     .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -481,8 +481,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
             ui.block(|ui| {
                 ui.modifiers()
-                    .width(Extent::Px(80.0))
-                    .height(Extent::Px(80.0))
+                    .width(80.px())
+                    .height(80.px())
                     .self_alignment(Alignment::BottomRight)
                     .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -500,7 +500,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.column(|ui| {
                     ui.modifiers()
-                        .width(Extent::Px(256.0))
+                        .width(256.px())
                         .height(Extent::FitContent)
                         .padding(Padding::all(16.0))
                         .border_thickness(BorderThickness::all(4.0))
@@ -508,7 +508,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .height(Extent::Px(24.0))
+                            .height(24.px())
                             .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
@@ -526,7 +526,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .height(Extent::Px(32.0))
+                            .height(32.px())
                             .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
@@ -535,8 +535,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(96.0))
-                            .height(Extent::Px(64.0))
+                            .width(96.px())
+                            .height(64.px())
                             .margin(Margin::all(8.0))
                             .padding(Padding::all(8.0))
                             .self_alignment(Alignment::Center)
@@ -558,7 +558,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .height(Extent::Px(32.0))
+                            .height(32.px())
                             .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
@@ -568,15 +568,15 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::Px(64.0))
+                        .width(64.px())
                         .height(Extent::FillParent)
                         .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.5));
                 });
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::Px(64.0))
-                        .height(Extent::Px(32.0))
+                        .width(64.px())
+                        .height(32.px())
                         .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.25));
                 });
 
@@ -603,25 +603,25 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
             });
 
             ui.column(|ui| {
-                ui.modifiers().width(Extent::Px(256.0)).self_alignment(Alignment::Left);
+                ui.modifiers().width(256.px()).self_alignment(Alignment::Left);
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .height(Extent::Px(0.0))
+                        .height(0.px())
                         .weight(1.0)
                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.4));
                 });
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .height(Extent::Px(0.0))
+                        .height(0.px())
                         .weight(2.0)
                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4));
                 });
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .height(Extent::Px(0.0))
+                        .height(0.px())
                         .weight(1.0)
                         .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4));
                 });
@@ -631,25 +631,25 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                 ui.modifiers().height(Extent::FitContent);
 
                 ui.row(|ui| {
-                    ui.modifiers().height(Extent::Px(128.0)).self_alignment(Alignment::Top);
+                    ui.modifiers().height(128.px()).self_alignment(Alignment::Top);
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(0.0))
+                            .width(0.px())
                             .weight(1.0)
                             .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.4));
                     });
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(0.0))
+                            .width(0.px())
                             .weight(2.0)
                             .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4));
                     });
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(0.0))
+                            .width(0.px())
                             .weight(1.0)
                             .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4));
 
@@ -660,10 +660,10 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             ui.props().line_height = 24.0;
                             ui.modifiers()
                                 .width(Extent::FillParent)
-                                .max_width(Extent::Px(512.0))
-                                .min_width(Extent::Px(256.0))
+                                .max_width(512.px())
+                                .min_width(256.px())
                                 .height(Extent::FitContent)
-                                .max_height(Extent::Px(512.0))
+                                .max_height(512.px())
                                 .padding(Padding::all(64.0))
                                 .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5));
                         });
@@ -671,25 +671,25 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                 });
 
                 ui.row(|ui| {
-                    ui.modifiers().height(Extent::Px(128.0)).self_alignment(Alignment::Top);
+                    ui.modifiers().height(128.px()).self_alignment(Alignment::Top);
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(0.0))
+                            .width(0.px())
                             .weight(2.0)
                             .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.4));
                     });
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(0.0))
+                            .width(0.px())
                             .weight(1.0)
                             .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.4));
                     });
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .width(Extent::Px(0.0))
+                            .width(0.px())
                             .weight(3.0)
                             .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.4));
 
@@ -704,7 +704,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                                 ui.props().font_family = "times new roman".into();
 
                                 ui.modifiers()
-                                    .min_width(Extent::Px(64.0))
+                                    .min_width(64.px())
                                     .fill_color(Color::rgba(0.25, 0.25, 0.25, 1.0))
                                     .border_radius(BorderRadius::all(8.0))
                                     .padding(Padding::all(8.0))
@@ -783,7 +783,7 @@ fn test_rectangle_ui(ui: &mut Ui<BlockProps>) {
                 .mul(3650.0);
 
             ui.modifiers()
-                .height(Extent::Px(0.0))
+                .height(0.px())
                 .weight(1.0)
                 .margin(Margin::all(8.0))
                 .fill_color(Color::rgba(1.0, 0.0, 0.0, 1.0))
@@ -799,7 +799,7 @@ fn test_overflow(ui: &mut Ui<BlockProps>) {
     ui.column(|ui| {
         ui.column(|ui| {
             ui.modifiers()
-                .height(Extent::Px(128.0))
+                .height(128.px())
                 .border_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
                 .border_radius(BorderRadius::all(64.0))
                 .overflow_visible()
@@ -807,14 +807,14 @@ fn test_overflow(ui: &mut Ui<BlockProps>) {
                 .border_thickness(BorderThickness::all(8.0));
 
             ui.block(|ui| {
-                ui.modifiers().height(Extent::Px(80.0)).fill_color(Color::GREEN);
+                ui.modifiers().height(80.px()).fill_color(Color::GREEN);
             });
 
             ui.block(|ui| {
-                ui.modifiers().height(Extent::Px(80.0)).fill_color(Color::BLUE);
+                ui.modifiers().height(80.px()).fill_color(Color::BLUE);
 
                 ui.text("yeahhhhhhh", |ui| {
-                    ui.modifiers().width(Extent::Px(0.0));
+                    ui.modifiers().width(0.px());
                     ui.props().font_family = "jetbrains mono".into();
                 });
             });
@@ -822,7 +822,7 @@ fn test_overflow(ui: &mut Ui<BlockProps>) {
 
         ui.block(|ui| {
             ui.modifiers()
-                .height(Extent::Px(64.0))
+                .height(64.px())
                 .fill_color(Color::rgba(0.25, 0.25, 0.0, 0.25));
         });
     });

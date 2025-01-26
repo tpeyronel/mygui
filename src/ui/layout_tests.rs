@@ -178,8 +178,8 @@ fn self_alignment_basic() {
             UiNode::new(
                 BlockProps,
                 Modifiers::new()
-                    .width(Extent::Px(8.0))
-                    .height(Extent::Px(8.0))
+                    .width(8.px())
+                    .height(8.px())
                     .self_alignment(alignment)
                     .clone(),
                 vec![],
@@ -214,7 +214,7 @@ fn subpixel_alignment() {
         15.0,
         UiNode::new(
             BlockProps,
-            Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
+            Modifiers::new().width(8.px()).height(8.px()).clone(),
             vec![],
         ),
         LayoutNode {
@@ -234,7 +234,7 @@ fn subpixel_alignment() {
         // Duplicate ui (.clone() not available)
         UiNode::new(
             BlockProps,
-            Modifiers::new().width(Extent::Px(8.0)).height(Extent::Px(8.0)).clone(),
+            Modifiers::new().width(8.px()).height(8.px()).clone(),
             vec![],
         ),
         LayoutNode {
@@ -262,8 +262,8 @@ fn self_alignment_with_parent_border_thickness() {
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(8.0))
-                        .height(Extent::Px(8.0))
+                        .width(8.px())
+                        .height(8.px())
                         .self_alignment(alignment)
                         .clone(),
                     vec![],
@@ -392,8 +392,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(8.0))
-                            .height(Extent::Px(64.0))
+                            .width(8.px())
+                            .height(64.px())
                             .self_alignment(Alignment::BottomLeft)
                             .clone(),
                         vec![],
@@ -401,8 +401,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(96.0))
-                            .height(Extent::Px(8.0))
+                            .width(96.px())
+                            .height(8.px())
                             .self_alignment(Alignment::TopRight)
                             .clone(),
                         vec![],
@@ -476,8 +476,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(8.0))
-                            .height(Extent::Px(64.0))
+                            .width(8.px())
+                            .height(64.px())
                             .border_thickness(BorderThickness::all(8.0))
                             .self_alignment(Alignment::BottomLeft)
                             .clone(),
@@ -486,8 +486,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(96.0))
-                            .height(Extent::Px(8.0))
+                            .width(96.px())
+                            .height(8.px())
                             .border_thickness(BorderThickness::all(8.0))
                             .self_alignment(Alignment::TopRight)
                             .clone(),
@@ -563,8 +563,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(8.0))
-                            .height(Extent::Px(64.0))
+                            .width(8.px())
+                            .height(64.px())
                             .self_alignment(Alignment::BottomLeft)
                             .clone(),
                         vec![],
@@ -572,8 +572,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(96.0))
-                            .height(Extent::Px(8.0))
+                            .width(96.px())
+                            .height(8.px())
                             .self_alignment(Alignment::TopRight)
                             .clone(),
                         vec![],
@@ -647,8 +647,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(8.0))
-                            .height(Extent::Px(64.0))
+                            .width(8.px())
+                            .height(64.px())
                             .self_alignment(Alignment::BottomLeft)
                             .clone(),
                         vec![],
@@ -656,8 +656,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::Px(96.0))
-                            .height(Extent::Px(8.0))
+                            .width(96.px())
+                            .height(8.px())
                             .self_alignment(Alignment::TopRight)
                             .clone(),
                         vec![],
@@ -720,8 +720,8 @@ mod columns {
                 ColumnProps,
                 Modifiers::new(),
                 vec![
-                    UiNode::new(BlockProps, Modifiers::new().height(Extent::Px(24.0)).clone(), vec![]),
-                    UiNode::new(BlockProps, Modifiers::new().height(Extent::Px(48.0)).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().height(24.px()).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().height(48.px()).clone(), vec![]),
                 ],
             ),
             LayoutNode {
@@ -766,13 +766,10 @@ mod columns {
                 vec![
                     UiNode::new(
                         BlockProps,
-                        Modifiers::new()
-                            .height(Extent::Px(24.0))
-                            .padding(Padding::all(2.0))
-                            .clone(),
+                        Modifiers::new().height(24.px()).padding(Padding::all(2.0)).clone(),
                         vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
                     ),
-                    UiNode::new(BlockProps, Modifiers::new().height(Extent::Px(48.0)).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().height(48.px()).clone(), vec![]),
                 ],
             ),
             LayoutNode {
@@ -825,10 +822,7 @@ mod columns {
                 Modifiers::new(),
                 vec![UiNode::new(
                     BlockProps,
-                    Modifiers::new()
-                        .height(Extent::Px(16.0))
-                        .margin(Margin::all(2.0))
-                        .clone(),
+                    Modifiers::new().height(16.px()).margin(Margin::all(2.0)).clone(),
                     vec![],
                 )],
             ),
@@ -876,10 +870,7 @@ mod columns {
                     ),
                     UiNode::new(
                         BlockProps,
-                        Modifiers::new()
-                            .width(Extent::Px(64.0))
-                            .height(Extent::Px(32.0))
-                            .clone(),
+                        Modifiers::new().width(64.px()).height(32.px()).clone(),
                         vec![],
                     ),
                 ],
@@ -930,7 +921,7 @@ mod columns {
                     .clone(),
                 vec![UiNode::new(
                     BlockProps,
-                    Modifiers::new().height(Extent::Px(32.0)).clone(),
+                    Modifiers::new().height(32.px()).clone(),
                     vec![],
                 )],
             ),
@@ -1049,7 +1040,7 @@ mod columns {
                 Modifiers::new()
                     .self_alignment(Alignment::BottomLeft)
                     .width(Extent::FitContent)
-                    .height(Extent::Px(48.0))
+                    .height(48.px())
                     .clone(),
                 vec![
                     UiNode::new(
@@ -1062,10 +1053,7 @@ mod columns {
                     ),
                     UiNode::new(
                         BlockProps,
-                        Modifiers::new()
-                            .width(Extent::Px(64.0))
-                            .height(Extent::FillParent)
-                            .clone(),
+                        Modifiers::new().width(64.px()).height(Extent::FillParent).clone(),
                         vec![],
                     ),
                 ],
@@ -1130,10 +1118,7 @@ mod rows {
                     ),
                     UiNode::new(
                         BlockProps,
-                        Modifiers::new()
-                            .width(Extent::Px(64.0))
-                            .height(Extent::Px(32.0))
-                            .clone(),
+                        Modifiers::new().width(64.px()).height(32.px()).clone(),
                         vec![],
                     ),
                 ],
@@ -1183,21 +1168,13 @@ mod weight {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(50.0))
-                    .height(Extent::Px(100.0))
+                    .width(50.px())
+                    .height(100.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().height(Extent::Px(20.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().height(Extent::Px(40.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
+                    UiNode::new(BlockProps, Modifiers::new().height(20.px()).weight(1.0).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().height(40.px()).weight(1.0).clone(), vec![]),
                 ],
             ),
             LayoutNode {
@@ -1239,21 +1216,13 @@ mod weight {
             UiNode::new(
                 RowProps,
                 Modifiers::new()
-                    .width(Extent::Px(100.0))
-                    .height(Extent::Px(50.0))
+                    .width(100.px())
+                    .height(50.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().width(Extent::Px(20.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().width(Extent::Px(40.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
+                    UiNode::new(BlockProps, Modifiers::new().width(20.px()).weight(1.0).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().width(40.px()).weight(1.0).clone(), vec![]),
                 ],
             ),
             LayoutNode {
@@ -1295,26 +1264,14 @@ mod weight {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(50.0))
-                    .height(Extent::Px(100.0))
+                    .width(50.px())
+                    .height(100.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().height(Extent::Px(0.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().height(Extent::Px(0.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
-                    UiNode::new(
-                        BlockProps,
-                        Modifiers::new().height(Extent::Px(0.0)).weight(1.0).clone(),
-                        vec![],
-                    ),
+                    UiNode::new(BlockProps, Modifiers::new().height(0.px()).weight(1.0).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().height(0.px()).weight(1.0).clone(), vec![]),
+                    UiNode::new(BlockProps, Modifiers::new().height(0.px()).weight(1.0).clone(), vec![]),
                 ],
             ),
             LayoutNode {
@@ -1365,14 +1322,14 @@ mod weight {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(50.0))
-                    .height(Extent::Px(8.0))
+                    .width(50.px())
+                    .height(8.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .height(Extent::Px(0.0))
+                        .height(0.px())
                         .weight(1.0)
                         .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
                         .clone(),
@@ -1408,14 +1365,14 @@ mod weight {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(50.0))
-                    .height(Extent::Px(8.0))
+                    .width(50.px())
+                    .height(8.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .height(Extent::Px(0.0))
+                        .height(0.px())
                         .weight(1.0)
                         .border_thickness(BorderThickness::all(3.0)) // This border thickness should only allow for a height of the child of 2.0.
                         .clone(),
@@ -1466,14 +1423,14 @@ mod weight {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(50.0))
-                    .height(Extent::Px(8.0))
+                    .width(50.px())
+                    .height(8.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .height(Extent::Px(0.0))
+                        .height(0.px())
                         .weight(1.0)
                         .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
                         .clone(),
@@ -1524,13 +1481,13 @@ mod weight {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(50.0))
-                    .height(Extent::Px(8.0))
+                    .width(50.px())
+                    .height(8.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![UiNode::new(
                     BlockProps,
-                    Modifiers::new().height(Extent::Px(0.0)).weight(1.0).clone(),
+                    Modifiers::new().height(0.px()).weight(1.0).clone(),
                     vec![UiNode::new(
                         BlockProps,
                         Modifiers::new()
@@ -1714,16 +1671,13 @@ mod rounding {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::Px(9.0))
-                    .height(Extent::Px(8.0))
+                    .width(9.px())
+                    .height(8.px())
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![UiNode::new(
                     BlockProps,
-                    Modifiers::new()
-                        .width(Extent::Px(8.0))
-                        .self_alignment(Alignment::Center)
-                        .clone(),
+                    Modifiers::new().width(8.px()).self_alignment(Alignment::Center).clone(),
                     vec![],
                 )],
             ),
@@ -1828,7 +1782,7 @@ mod row_advanced {
 
     use crate::ui::node::{row::RowProps, text::TextProps};
 
-    use super::{test_layout, Alignment, Color, Extent, Layout, LayoutNode, Modifiers, UiNode};
+    use super::{test_layout, Alignment, Color, Extent, ExtentExt, Layout, LayoutNode, Modifiers, UiNode};
 
     /// This test checks that if a row child has non-zero weight, then
     /// when weight is applied, the height of the element is recomputed
@@ -1859,7 +1813,7 @@ mod row_advanced {
                         cursor_position: None,
                     },
                     Modifiers::new()
-                        .width(Extent::Px(0.0))
+                        .width(0.px())
                         .weight(1.0)
                         .height(Extent::FitContent)
                         .self_alignment(Alignment::BottomLeft)

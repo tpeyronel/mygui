@@ -2,8 +2,8 @@ pub mod border_color;
 pub mod border_radius;
 pub mod border_thickness;
 pub mod color_mesh_builder;
-pub mod extent;
 pub mod draw_command;
+pub mod extent;
 pub mod immediate;
 #[cfg(test)]
 mod layout_tests;
@@ -407,8 +407,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::Center)
                         .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -420,8 +420,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .margin(Margin::all(4.0))
                         .self_alignment(Alignment::Right)
                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.25))
@@ -434,8 +434,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::TopRight)
                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -447,8 +447,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::Top)
                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -484,8 +484,8 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::Px(8.0))
-                                .height(Extent::Px(64.0))
+                                .width(8.px())
+                                .height(64.px())
                                 .border_color(Color::rgba(0.0, 1.0, 0.0, 0.4))
                                 .border_thickness(BorderThickness::all(2.0))
                                 .self_alignment(Alignment::BottomLeft)
@@ -495,8 +495,8 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::Px(96.0))
-                                .height(Extent::Px(8.0))
+                                .width(96.px())
+                                .height(8.px())
                                 .border_color(Color::rgba(0.0, 0.0, 1.0, 0.4))
                                 .border_thickness(BorderThickness::all(2.0))
                                 .self_alignment(Alignment::TopRight)
@@ -508,8 +508,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::Left)
                         .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -521,8 +521,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::BottomLeft)
                         .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -534,8 +534,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::Bottom)
                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -547,8 +547,8 @@ pub fn example_ui() -> UiNode {
                 UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::Px(80.0))
-                        .height(Extent::Px(80.0))
+                        .width(80.px())
+                        .height(80.px())
                         .self_alignment(Alignment::BottomRight)
                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
@@ -570,7 +570,7 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             ColumnProps,
                             Modifiers::new()
-                                .width(Extent::Px(256.0))
+                                .width(256.px())
                                 .height(Extent::FitContent)
                                 .padding(Padding::all(16.0))
                                 .border_thickness(BorderThickness::all(4.0))
@@ -580,7 +580,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .height(Extent::Px(24.0))
+                                        .height(24.px())
                                         .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
@@ -602,7 +602,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .height(Extent::Px(32.0))
+                                        .height(32.px())
                                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
@@ -613,8 +613,8 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(96.0))
-                                        .height(Extent::Px(64.0))
+                                        .width(96.px())
+                                        .height(64.px())
                                         .margin(Margin::all(8.0))
                                         .padding(Padding::all(8.0))
                                         .self_alignment(Alignment::Center)
@@ -639,7 +639,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .height(Extent::Px(32.0))
+                                        .height(32.px())
                                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
@@ -652,7 +652,7 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::Px(64.0))
+                                .width(64.px())
                                 .height(Extent::FillParent)
                                 .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.5))
                                 .clone(),
@@ -661,8 +661,8 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::Px(64.0))
-                                .height(Extent::Px(32.0))
+                                .width(64.px())
+                                .height(32.px())
                                 .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.25))
                                 .clone(),
                             vec![],
@@ -692,15 +692,12 @@ pub fn example_ui() -> UiNode {
                 ),
                 UiNode::new(
                     ColumnProps,
-                    Modifiers::new()
-                        .width(Extent::Px(256.0))
-                        .self_alignment(Alignment::Left)
-                        .clone(),
+                    Modifiers::new().width(256.px()).self_alignment(Alignment::Left).clone(),
                     vec![
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .height(Extent::Px(0.0))
+                                .height(0.px())
                                 .weight(1.0)
                                 .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.4))
                                 .clone(),
@@ -709,7 +706,7 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .height(Extent::Px(0.0))
+                                .height(0.px())
                                 .weight(2.0)
                                 .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4))
                                 .clone(),
@@ -718,7 +715,7 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .height(Extent::Px(0.0))
+                                .height(0.px())
                                 .weight(1.0)
                                 .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4))
                                 .clone(),
@@ -732,15 +729,12 @@ pub fn example_ui() -> UiNode {
                     vec![
                         UiNode::new(
                             RowProps,
-                            Modifiers::new()
-                                .height(Extent::Px(128.0))
-                                .self_alignment(Alignment::Top)
-                                .clone(),
+                            Modifiers::new().height(128.px()).self_alignment(Alignment::Top).clone(),
                             vec![
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(0.0))
+                                        .width(0.px())
                                         .weight(1.0)
                                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.4))
                                         .clone(),
@@ -749,7 +743,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(0.0))
+                                        .width(0.px())
                                         .weight(2.0)
                                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.4))
                                         .clone(),
@@ -758,7 +752,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(0.0))
+                                        .width(0.px())
                                         .weight(1.0)
                                         .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.4))
                                         .clone(),
@@ -773,10 +767,10 @@ pub fn example_ui() -> UiNode {
                                         },
                                         Modifiers::new()
                                             .width(Extent::FillParent)
-                                            .max_width(Extent::Px(512.0))
-                                            .min_width(Extent::Px(256.0))
+                                            .max_width(512.px())
+                                            .min_width(256.px())
                                             .height(Extent::FitContent)
-                                            .max_height(Extent::Px(512.0))
+                                            .max_height(512.px())
                                             .padding(Padding::all(64.0))
                                             .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                                             .clone(),
@@ -787,15 +781,12 @@ pub fn example_ui() -> UiNode {
                         ),
                         UiNode::new(
                             RowProps,
-                            Modifiers::new()
-                                .height(Extent::Px(128.0))
-                                .self_alignment(Alignment::Top)
-                                .clone(),
+                            Modifiers::new().height(128.px()).self_alignment(Alignment::Top).clone(),
                             vec![
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(0.0))
+                                        .width(0.px())
                                         .weight(2.0)
                                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.4))
                                         .clone(),
@@ -804,7 +795,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(0.0))
+                                        .width(0.px())
                                         .weight(1.0)
                                         .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.4))
                                         .clone(),
@@ -813,7 +804,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .width(Extent::Px(0.0))
+                                        .width(0.px())
                                         .weight(3.0)
                                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.4))
                                         .clone(),
