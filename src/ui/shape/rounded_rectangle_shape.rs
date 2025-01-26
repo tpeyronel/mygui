@@ -198,12 +198,20 @@ fn emit_rectangle_corners(
         return;
     }
 
+    let depth = compute_corner_depth(corner_radius);
+
     if border_color_ver != border_color_hor {
         let (middle_inner_pos, middle_outer_pos) = compute_corner_vertices_positions_at(std::f32::consts::FRAC_PI_4, v);
+        let fill_middle_idx = bg_builder.add_vertex(middle_inner_pos, fill_color);
         let border_inner_ver_middle_idx = fg_builder.add_vertex(middle_inner_pos, border_color_ver);
         let border_outer_ver_middle_idx = fg_builder.add_vertex(middle_outer_pos, border_color_ver);
         let border_inner_hor_middle_idx = fg_builder.add_vertex(middle_inner_pos, border_color_hor);
         let border_outer_hor_middle_idx = fg_builder.add_vertex(middle_outer_pos, border_color_hor);
+
+        bg_builder.add_triangle(v.fill_ver.idx, fill_middle_idx, v.fill_hor.idx);
+
+        // Subtract one as we have already added one level of depth manually.
+        let depth = depth.saturating_sub(1);
 
         emit_rectangle_corners_rec(
             v,
@@ -214,8 +222,8 @@ fn emit_rectangle_corners(
             std::f32::consts::FRAC_PI_4,
             border_outer_ver_middle_idx,
             border_inner_ver_middle_idx,
-            v.fill_hor.idx,
-            compute_corner_depth(corner_radius),
+            fill_middle_idx,
+            depth,
             fill_color,
             border_color_ver,
             bg_builder,
@@ -227,12 +235,12 @@ fn emit_rectangle_corners(
             std::f32::consts::FRAC_PI_4,
             border_outer_hor_middle_idx,
             border_inner_hor_middle_idx,
-            v.fill_ver.idx,
+            fill_middle_idx,
             std::f32::consts::FRAC_PI_2,
             v.border_outer_hor.idx,
             v.border_inner_hor.idx,
             v.fill_hor.idx,
-            compute_corner_depth(corner_radius),
+            depth,
             fill_color,
             border_color_hor,
             bg_builder,
