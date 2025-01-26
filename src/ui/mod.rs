@@ -2,6 +2,7 @@ pub mod border_color;
 pub mod border_radius;
 pub mod border_thickness;
 pub mod color_mesh_builder;
+pub mod extent;
 pub mod draw_command;
 pub mod immediate;
 #[cfg(test)]
@@ -21,6 +22,7 @@ use border_color::BorderColor;
 use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
 use draw_command::DrawCommand;
+use extent::{Extent, ExtentExt};
 use glam::Vec2;
 use margin::Margin;
 use node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNode};
@@ -190,19 +192,6 @@ impl Default for Modifiers {
             weight: Default::default(),
             clip: Default::default(),
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Extent {
-    FillParent,
-    FitContent,
-    Px(f32),
-}
-
-impl Default for Extent {
-    fn default() -> Self {
-        Self::FillParent
     }
 }
 

@@ -16,11 +16,12 @@ use ui::{
     border_radius::BorderRadius,
     border_thickness::BorderThickness,
     draw_command::DrawCommand,
+    extent::{Extent, ExtentExt},
     immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
     margin::Margin,
     node::block::BlockProps,
     padding::Padding,
-    Alignment, Extent,
+    Alignment,
 };
 use winit::{
     application::ApplicationHandler,
