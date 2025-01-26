@@ -1,14 +1,14 @@
 use glam::Vec4;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct BorderRadius {
+pub struct CornerRadius {
     bottom_left: f32,
     bottom_right: f32,
     top_right: f32,
     top_left: f32,
 }
 
-impl BorderRadius {
+impl CornerRadius {
     pub fn new(bottom_left: f32, bottom_right: f32, top_right: f32, top_left: f32) -> Self {
         Self {
             bottom_left: bottom_left.round(),
@@ -44,7 +44,7 @@ impl BorderRadius {
     }
 }
 
-impl Default for BorderRadius {
+impl Default for CornerRadius {
     fn default() -> Self {
         Self::all(0.0)
     }

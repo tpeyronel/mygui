@@ -1,7 +1,7 @@
 pub mod border_color;
-pub mod border_radius;
 pub mod border_thickness;
 pub mod color_mesh_builder;
+pub mod corner_radius;
 pub mod draw_command;
 pub mod extent;
 pub mod immediate;
@@ -19,8 +19,8 @@ pub mod texture_mesh_builder;
 use core::f32;
 
 use border_color::BorderColor;
-use border_radius::BorderRadius;
 use border_thickness::BorderThickness;
+use corner_radius::CornerRadius;
 use draw_command::DrawCommand;
 use extent::{Extent, ExtentExt};
 use glam::Vec2;
@@ -50,7 +50,7 @@ pub struct Modifiers {
     fill_color: Color,
     border_color: BorderColor,
     border_thickness: BorderThickness,
-    border_radius: BorderRadius,
+    corner_radius: CornerRadius,
     shape: Box<dyn Shape>,
     self_alignment: Alignment,
     weight: f32,
@@ -138,8 +138,8 @@ impl Modifiers {
         self
     }
 
-    pub fn border_radius(&mut self, border_radius: BorderRadius) -> &mut Self {
-        self.border_radius = border_radius;
+    pub fn corner_radius(&mut self, corner_radius: CornerRadius) -> &mut Self {
+        self.corner_radius = corner_radius;
         self
     }
 
@@ -186,7 +186,7 @@ impl Default for Modifiers {
             fill_color: Default::default(),
             border_color: Default::default(),
             border_thickness: Default::default(),
-            border_radius: Default::default(),
+            corner_radius: Default::default(),
             shape: Box::new(RoundedRectangleShape),
             self_alignment: Default::default(),
             weight: Default::default(),
@@ -389,7 +389,7 @@ pub fn example_ui() -> UiNode {
             .margin(Margin::all(8.0))
             .padding(Padding::all(16.0))
             .fill_color(Color::rgba(1.0, 1.0, 0.1, 0.25))
-            .border_radius(BorderRadius::all(16.0))
+            .corner_radius(CornerRadius::all(16.0))
             .padding(Padding::all(16.0))
             .clone(),
         vec![UiNode::new(
@@ -401,7 +401,7 @@ pub fn example_ui() -> UiNode {
                 .fill_color(Color::rgba(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::rgba(1.0, 0.1, 0.1, 0.9))
                 .border_thickness(BorderThickness::all(4.0))
-                .border_radius(BorderRadius::all(8.0))
+                .corner_radius(CornerRadius::all(8.0))
                 .clone(),
             vec![
                 UiNode::new(
@@ -413,7 +413,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
+                        .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
                 ),
@@ -427,7 +427,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
+                        .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
                 ),
@@ -440,7 +440,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0))
+                        .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 24.0))
                         .clone(),
                     vec![],
                 ),
@@ -514,7 +514,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
+                        .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
                 ),
@@ -527,7 +527,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
+                        .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
                 ),
@@ -540,7 +540,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
+                        .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
                 ),
@@ -553,7 +553,7 @@ pub fn example_ui() -> UiNode {
                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(BorderThickness::all(1.0))
-                        .border_radius(BorderRadius::all(4.0))
+                        .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
                 ),
@@ -584,7 +584,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
+                                        .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
                                 ),
@@ -595,7 +595,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
+                                        .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
                                 ),
@@ -606,7 +606,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
+                                        .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
                                 ),
@@ -621,7 +621,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(4.0))
-                                        .border_radius(BorderRadius::all(8.0))
+                                        .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![UiNode::new(
                                         BlockProps,
@@ -631,7 +631,7 @@ pub fn example_ui() -> UiNode {
                                             .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.5))
                                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                             .border_thickness(BorderThickness::all(1.0))
-                                            .border_radius(BorderRadius::all(8.0))
+                                            .corner_radius(CornerRadius::all(8.0))
                                             .clone(),
                                         vec![],
                                     )],
@@ -643,7 +643,7 @@ pub fn example_ui() -> UiNode {
                                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
-                                        .border_radius(BorderRadius::all(8.0))
+                                        .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
                                 ),
@@ -819,7 +819,7 @@ pub fn example_ui() -> UiNode {
                                         },
                                         Modifiers::new()
                                             .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.5))
-                                            .border_radius(BorderRadius::all(8.0))
+                                            .corner_radius(CornerRadius::all(8.0))
                                             .padding(Padding::all(8.0))
                                             .clone(),
                                         vec![],

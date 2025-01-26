@@ -13,8 +13,8 @@ use mesh::mesh_manager::MeshManager;
 use renderer::renderer::Renderer;
 use ui::{
     border_color::BorderColor,
-    border_radius::BorderRadius,
     border_thickness::BorderThickness,
+    corner_radius::CornerRadius,
     draw_command::DrawCommand,
     extent::{Extent, ExtentExt},
     immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
@@ -350,7 +350,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
             .margin(Margin::all(8.0))
             .padding(Padding::all(16.0))
             .fill_color(Color::rgba(1.0, 1.0, 0.1, 0.25))
-            .border_radius(BorderRadius::all(16.0));
+            .corner_radius(CornerRadius::all(16.0));
 
         ui.block(|ui| {
             ui.modifiers()
@@ -360,7 +360,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                 .fill_color(Color::rgba(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::rgba(1.0, 0.1, 0.1, 0.9))
                 .border_thickness(BorderThickness::all(4.0))
-                .border_radius(BorderRadius::all(8.0));
+                .corner_radius(CornerRadius::all(8.0));
 
             ui.block(|ui| {
                 ui.modifiers()
@@ -370,7 +370,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0));
+                    .corner_radius(CornerRadius::all(4.0));
             });
 
             ui.block(|ui| {
@@ -382,7 +382,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0));
+                    .corner_radius(CornerRadius::all(4.0));
             });
 
             ui.block(|ui| {
@@ -393,7 +393,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::new(0.0, 8.0, 16.0, 24.0));
+                    .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 24.0));
             });
 
             ui.block(|ui| {
@@ -454,7 +454,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0));
+                    .corner_radius(CornerRadius::all(4.0));
             });
 
             ui.block(|ui| {
@@ -465,7 +465,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0));
+                    .corner_radius(CornerRadius::all(4.0));
             });
 
             ui.block(|ui| {
@@ -476,7 +476,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0));
+                    .corner_radius(CornerRadius::all(4.0));
             });
 
             ui.block(|ui| {
@@ -487,7 +487,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.25))
                     .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                     .border_thickness(BorderThickness::all(1.0))
-                    .border_radius(BorderRadius::all(4.0));
+                    .corner_radius(CornerRadius::all(4.0));
             });
 
             ui.row(|ui| {
@@ -512,7 +512,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
-                            .border_radius(BorderRadius::all(8.0));
+                            .corner_radius(CornerRadius::all(8.0));
                     });
 
                     ui.block(|ui| {
@@ -521,7 +521,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
-                            .border_radius(BorderRadius::all(8.0));
+                            .corner_radius(CornerRadius::all(8.0));
                     });
 
                     ui.block(|ui| {
@@ -530,7 +530,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
-                            .border_radius(BorderRadius::all(8.0));
+                            .corner_radius(CornerRadius::all(8.0));
                     });
 
                     ui.block(|ui| {
@@ -543,7 +543,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(4.0))
-                            .border_radius(BorderRadius::all(8.0));
+                            .corner_radius(CornerRadius::all(8.0));
 
                         ui.block(|ui| {
                             ui.modifiers()
@@ -552,7 +552,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                                 .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.5))
                                 .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                 .border_thickness(BorderThickness::all(1.0))
-                                .border_radius(BorderRadius::all(8.0));
+                                .corner_radius(CornerRadius::all(8.0));
                         });
                     });
 
@@ -562,7 +562,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
-                            .border_radius(BorderRadius::all(8.0));
+                            .corner_radius(CornerRadius::all(8.0));
                     });
                 });
 
@@ -706,7 +706,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                                 ui.modifiers()
                                     .min_width(64.px())
                                     .fill_color(Color::rgba(0.25, 0.25, 0.25, 1.0))
-                                    .border_radius(BorderRadius::all(8.0))
+                                    .corner_radius(CornerRadius::all(8.0))
                                     .padding(Padding::all(8.0))
                                     .border_thickness(BorderThickness::all(2.0));
 
@@ -789,7 +789,7 @@ fn test_rectangle_ui(ui: &mut Ui<BlockProps>) {
                 .fill_color(Color::rgba(1.0, 0.0, 0.0, 1.0))
                 .border_color(Color::rgba(0.0, 1.0, 0.0, 1.0))
                 .border_thickness(BorderThickness::new(0.0, 96.0, 16.0, 16.0))
-                .border_radius(BorderRadius::new(320.0, br, 32.0, 0.0));
+                .corner_radius(CornerRadius::new(320.0, br, 32.0, 0.0));
         });
     });
 }
@@ -801,7 +801,7 @@ fn test_overflow(ui: &mut Ui<BlockProps>) {
             ui.modifiers()
                 .height(128.px())
                 .border_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
-                .border_radius(BorderRadius::all(64.0))
+                .corner_radius(CornerRadius::all(64.0))
                 .overflow_visible()
                 .overflow_hidden()
                 .border_thickness(BorderThickness::all(8.0));
@@ -834,7 +834,7 @@ fn test_border_color(ui: &mut Ui<BlockProps>) {
         ui.modifiers()
             .margin(Margin::all(32.0))
             .border_color(BorderColor::new(Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW))
-            .border_radius(BorderRadius::all(256.0))
+            .corner_radius(CornerRadius::all(256.0))
             .border_thickness(BorderThickness::new(32.0, 128.0, 32.0, 32.0));
     });
 }

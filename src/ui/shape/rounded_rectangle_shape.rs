@@ -4,8 +4,8 @@ use glam::Vec2;
 use crate::{
     color::Color,
     ui::{
-        border_color::BorderColor, border_radius::BorderRadius, border_thickness::BorderThickness,
-        color_mesh_builder::ColorMeshBuilder, Layout, Modifiers,
+        border_color::BorderColor, border_thickness::BorderThickness, color_mesh_builder::ColorMeshBuilder,
+        corner_radius::CornerRadius, Layout, Modifiers,
     },
 };
 
@@ -19,9 +19,9 @@ impl Shape for RoundedRectangleShape {
         let fill_color = &modifiers.fill_color;
         let border_color = &modifiers.border_color;
         let border_thickness = &modifiers.border_thickness;
-        let border_radius = &modifiers.border_radius;
+        let corner_radius = &modifiers.corner_radius;
 
-        create_rounded_rectangle(layout, fill_color, border_color, border_thickness, border_radius)
+        create_rounded_rectangle(layout, fill_color, border_color, border_thickness, corner_radius)
     }
 }
 
@@ -30,14 +30,14 @@ fn create_rounded_rectangle(
     fill_color: &Color,
     border_color: &BorderColor,
     border_thickness: &BorderThickness,
-    border_radius: &BorderRadius,
+    corner_radius: &CornerRadius,
 ) -> ShapeData {
     let mut bg_builder = ColorMeshBuilder::new();
     let mut fg_builder = ColorMeshBuilder::new();
 
     let bl = CornerVertices::new(
         layout.border_position(),
-        border_radius.bottom_left(),
+        corner_radius.bottom_left(),
         Vec2::new(border_thickness.left(), border_thickness.bottom()),
         Vec2::new(1.0, 1.0),
         fill_color,
@@ -49,7 +49,7 @@ fn create_rounded_rectangle(
 
     let br = CornerVertices::new(
         layout.border_position() + layout.border_size().with_y(0.0),
-        border_radius.bottom_right(),
+        corner_radius.bottom_right(),
         Vec2::new(border_thickness.right(), border_thickness.bottom()),
         Vec2::new(-1.0, 1.0),
         fill_color,
@@ -61,7 +61,7 @@ fn create_rounded_rectangle(
 
     let tr = CornerVertices::new(
         layout.border_position() + layout.border_size(),
-        border_radius.top_right(),
+        corner_radius.top_right(),
         Vec2::new(border_thickness.right(), border_thickness.top()),
         Vec2::new(-1.0, -1.0),
         fill_color,
@@ -73,7 +73,7 @@ fn create_rounded_rectangle(
 
     let tl = CornerVertices::new(
         layout.border_position() + layout.border_size().with_x(0.0),
-        border_radius.top_left(),
+        corner_radius.top_left(),
         Vec2::new(border_thickness.left(), border_thickness.top()),
         Vec2::new(1.0, -1.0),
         fill_color,
@@ -141,7 +141,7 @@ fn create_rounded_rectangle(
 
     emit_rectangle_corners(
         &bl,
-        border_radius.bottom_left(),
+        corner_radius.bottom_left(),
         &fill_color,
         border_color.left(),
         border_color.bottom(),
@@ -151,7 +151,7 @@ fn create_rounded_rectangle(
 
     emit_rectangle_corners(
         &br,
-        border_radius.bottom_right(),
+        corner_radius.bottom_right(),
         &fill_color,
         border_color.right(),
         border_color.bottom(),
@@ -161,7 +161,7 @@ fn create_rounded_rectangle(
 
     emit_rectangle_corners(
         &tr,
-        border_radius.top_right(),
+        corner_radius.top_right(),
         &fill_color,
         border_color.right(),
         border_color.top(),
@@ -171,7 +171,7 @@ fn create_rounded_rectangle(
 
     emit_rectangle_corners(
         &tl,
-        border_radius.top_left(),
+        corner_radius.top_left(),
         &fill_color,
         border_color.left(),
         border_color.top(),
