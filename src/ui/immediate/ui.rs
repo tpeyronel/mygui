@@ -2,7 +2,7 @@ use std::{
     any::{Any, TypeId},
     cell::RefCell,
     collections::{hash_map::Entry, HashMap},
-    hash::{DefaultHasher, Hash, Hasher},
+    hash::{Hash, Hasher},
     rc::Rc,
 };
 
@@ -22,6 +22,8 @@ use super::{
     DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT,
 };
 
+type PathHasher = ahash::AHasher;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct UiNodeType(TypeId);
 
@@ -39,7 +41,7 @@ pub struct Ui<'a, P: UiNodeProps> {
     set_state_tx: &'a SetStateSender,
     ref_map: &'a mut HashMap<u64, Rc<dyn Any>>,
     path_hash: u64,
-    path_hasher: DefaultHasher,
+    path_hasher: PathHasher,
     children: Vec<UiNode>,
     children_path_hash_nodes: Vec<HashNode>,
 }
@@ -59,8 +61,8 @@ impl<'a, P: UiNodeProps> Ui<'a, P> {
             state_map,
             set_state_tx,
             ref_map,
-            path_hash: DefaultHasher::new().finish(),
-            path_hasher: DefaultHasher::new(),
+            path_hash: PathHasher::default().finish(),
+            path_hasher: PathHasher::default(),
             children: vec![],
             children_path_hash_nodes: vec![],
         }
@@ -246,7 +248,7 @@ impl<'a, P: UiNodeProps> Ui<'a, P> {
         self.input_state.get_node_input_state(self.path_hash)
     }
 
-    fn compute_child_path_hasher(&self, child_node_type: UiNodeType) -> DefaultHasher {
+    fn compute_child_path_hasher(&self, child_node_type: UiNodeType) -> PathHasher {
         let mut child_path_hasher = self.path_hasher.clone();
         // TODO: this os O(n^2). Should keep track of counts.
         let position = self

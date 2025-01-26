@@ -974,6 +974,7 @@ dependencies = [
 name = "mygui"
 version = "0.1.0"
 dependencies = [
+ "ahash",
  "bincode",
  "bitflags 2.6.0",
  "bytemuck",
