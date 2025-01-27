@@ -158,7 +158,8 @@ impl ApplicationHandler for App {
                         // example_ui(ui);
                         // test_rectangle_ui(ui);
                         // test_overflow(ui);
-                        test_border_color(ui);
+                        // test_border_color(ui);
+                        test_extent_parent(ui);
                     },
                 );
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
@@ -841,6 +842,31 @@ fn test_border_color(ui: &mut Ui<BlockProps>) {
             .border_color(BorderColor::new(Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW))
             .corner_radius(CornerRadius::all(256.0))
             .border_thickness(BorderThickness::new(32.0, 128.0, 32.0, 32.0));
+    });
+}
+
+#[allow(unused)]
+fn test_extent_parent(ui: &mut Ui<BlockProps>) {
+    ui.block(|ui| {
+        ui.modifiers()
+            .width(256.px())
+            .height(256.px())
+            .border_color(Color::RED)
+            .border_thickness(BorderThickness::all(16.0));
+
+        ui.block(|ui| {
+            ui.modifiers()
+                .height(33.3.percent())
+                .self_alignment(Alignment::Top)
+                .fill_color(Color::GREEN);
+        });
+
+        ui.block(|ui| {
+            ui.modifiers()
+                .height(33.3.percent())
+                .self_alignment(Alignment::Bottom)
+                .fill_color(Color::YELLOW);
+        });
     });
 }
 
