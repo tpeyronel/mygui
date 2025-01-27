@@ -288,15 +288,15 @@ impl<'a> UiNodeProcessor<'a> {
 
         let margin_width = match width {
             Extent::Parent(r) => Some((r.max(0.0) * boundary_size.x).round()),
-            Extent::Px(px) => Some(px.round() + modifiers.margin.delta_size().x),
-            Extent::Dp(dp) => Some(self.dp_to_px(dp).round() + modifiers.margin.delta_size().x),
+            Extent::Px(px) => Some(px.round().max(0.0) + modifiers.margin.delta_size().x),
+            Extent::Dp(dp) => Some(self.dp_to_px(dp).round().max(0.0) + modifiers.margin.delta_size().x),
             Extent::FitContent => None,
         };
 
         let margin_height = match height {
             Extent::Parent(r) => Some((r.max(0.0) * boundary_size.y).round()),
-            Extent::Px(px) => Some(px.round() + modifiers.margin.delta_size().y),
-            Extent::Dp(dp) => Some(self.dp_to_px(dp).round() + modifiers.margin.delta_size().y),
+            Extent::Px(px) => Some(px.round().max(0.0) + modifiers.margin.delta_size().y),
+            Extent::Dp(dp) => Some(self.dp_to_px(dp).round().max(0.0) + modifiers.margin.delta_size().y),
             Extent::FitContent => None,
         };
 

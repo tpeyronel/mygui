@@ -2018,4 +2018,56 @@ mod extent {
             },
         )
     }
+
+    #[test]
+    fn extent_px_negative() {
+        test_layout(
+            32.0,
+            32.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width((-100).px())
+                    .height((-100).px())
+                    .self_alignment(Alignment::BottomLeft)
+                    .clone(),
+                vec![],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(0.0, 0.0),
+                    children_boundary_size: Vec2::new(0.0, 0.0),
+                    ..Default::default()
+                },
+                children: vec![],
+            },
+        )
+    }
+
+    #[test]
+    fn extent_dp_negative() {
+        test_layout(
+            32.0,
+            32.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width((-100).dp())
+                    .height((-100).dp())
+                    .self_alignment(Alignment::BottomLeft)
+                    .clone(),
+                vec![],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(0.0, 0.0),
+                    children_boundary_size: Vec2::new(0.0, 0.0),
+                    ..Default::default()
+                },
+                children: vec![],
+            },
+        )
+    }
 }
