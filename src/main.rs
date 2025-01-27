@@ -349,8 +349,8 @@ fn simple_ui(ui: &mut Ui<BlockProps>) {
 fn example_ui(ui: &mut Ui<BlockProps>) {
     ui.block(|ui| {
         ui.modifiers()
-            .width(Extent::FillParent)
-            .height(Extent::FillParent)
+            .width(Extent::fill_parent())
+            .height(Extent::fill_parent())
             .margin(Margin::all(8.0))
             .padding(Padding::all(16.0))
             .fill_color(Color::rgba(1.0, 1.0, 0.1, 0.25))
@@ -358,8 +358,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
         ui.block(|ui| {
             ui.modifiers()
-                .width(Extent::FillParent)
-                .height(Extent::FillParent)
+                .width(Extent::fill_parent())
+                .height(Extent::fill_parent())
                 .padding(Padding::all(0.0))
                 .fill_color(Color::rgba(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::rgba(1.0, 0.1, 0.1, 0.9))
@@ -420,8 +420,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::FillParent)
-                        .height(Extent::FillParent)
+                        .width(Extent::fill_parent())
+                        .height(Extent::fill_parent())
                         .padding(Padding::all(8.0))
                         .border_color(Color::rgba(1.0, 0.0, 0.0, 0.4))
                         .border_thickness(BorderThickness::all(2.0));
@@ -521,7 +521,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                     ui.block(|ui| {
                         ui.modifiers()
-                            .height(Extent::FillParent)
+                            .height(Extent::fill_parent())
                             .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.5))
                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                             .border_thickness(BorderThickness::all(1.0))
@@ -551,8 +551,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                         ui.block(|ui| {
                             ui.modifiers()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
+                                .width(Extent::fill_parent())
+                                .height(Extent::fill_parent())
                                 .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.5))
                                 .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                 .border_thickness(BorderThickness::all(1.0))
@@ -573,7 +573,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                 ui.block(|ui| {
                     ui.modifiers()
                         .width(64.px())
-                        .height(Extent::FillParent)
+                        .height(Extent::fill_parent())
                         .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.5));
                 });
 
@@ -586,8 +586,8 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
 
                 ui.block(|ui| {
                     ui.modifiers()
-                        .width(Extent::FillParent)
-                        .height(Extent::FillParent)
+                        .width(Extent::fill_parent())
+                        .height(Extent::fill_parent())
                         .fill_color(Color::rgba(0.25, 1.0, 0.25, 0.5));
 
                     ui.text(
@@ -663,7 +663,7 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                             ui.props().font_size = 24.0;
                             ui.props().line_height = 24.0;
                             ui.modifiers()
-                                .width(Extent::FillParent)
+                                .width(Extent::fill_parent())
                                 .max_width(512.px())
                                 .min_width(256.px())
                                 .height(Extent::FitContent)

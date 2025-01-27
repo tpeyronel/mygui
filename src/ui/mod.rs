@@ -385,8 +385,8 @@ pub fn example_ui() -> UiNode {
     return UiNode::new(
         BlockProps,
         Modifiers::new()
-            .width(Extent::FillParent)
-            .height(Extent::FillParent)
+            .width(Extent::fill_parent())
+            .height(Extent::fill_parent())
             .fill_color(Color::rgba(0.1, 0.1, 1.0, 1.0))
             .margin(Margin::all(8.0))
             .padding(Padding::all(16.0))
@@ -397,8 +397,8 @@ pub fn example_ui() -> UiNode {
         vec![UiNode::new(
             BlockProps,
             Modifiers::new()
-                .width(Extent::FillParent)
-                .height(Extent::FillParent)
+                .width(Extent::fill_parent())
+                .height(Extent::fill_parent())
                 .padding(Padding::all(0.0))
                 .fill_color(Color::rgba(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::rgba(1.0, 0.1, 0.1, 0.9))
@@ -471,8 +471,8 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
+                                .width(Extent::fill_parent())
+                                .height(Extent::fill_parent())
                                 .padding(Padding::all(8.0))
                                 .border_color(Color::rgba(1.0, 0.0, 0.0, 0.4))
                                 .border_thickness(BorderThickness::all(2.0))
@@ -593,7 +593,7 @@ pub fn example_ui() -> UiNode {
                                 UiNode::new(
                                     BlockProps,
                                     Modifiers::new()
-                                        .height(Extent::FillParent)
+                                        .height(Extent::fill_parent())
                                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                         .border_thickness(BorderThickness::all(1.0))
@@ -628,8 +628,8 @@ pub fn example_ui() -> UiNode {
                                     vec![UiNode::new(
                                         BlockProps,
                                         Modifiers::new()
-                                            .width(Extent::FillParent)
-                                            .height(Extent::FillParent)
+                                            .width(Extent::fill_parent())
+                                            .height(Extent::fill_parent())
                                             .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.5))
                                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                                             .border_thickness(BorderThickness::all(1.0))
@@ -655,7 +655,7 @@ pub fn example_ui() -> UiNode {
                             BlockProps,
                             Modifiers::new()
                                 .width(64.px())
-                                .height(Extent::FillParent)
+                                .height(Extent::fill_parent())
                                 .fill_color(Color::rgba(0.25, 0.25, 1.0, 0.5))
                                 .clone(),
                             vec![],
@@ -672,8 +672,8 @@ pub fn example_ui() -> UiNode {
                         UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
+                                .width(Extent::fill_parent())
+                                .height(Extent::fill_parent())
                                 .fill_color(Color::rgba(0.25, 1.0, 0.25, 0.5))
                                 .clone(),
                             vec![UiNode::new(
@@ -768,7 +768,7 @@ pub fn example_ui() -> UiNode {
                                             cursor_position: None,
                                         },
                                         Modifiers::new()
-                                            .width(Extent::FillParent)
+                                            .width(Extent::fill_parent())
                                             .max_width(512.px())
                                             .min_width(256.px())
                                             .height(Extent::FitContent)

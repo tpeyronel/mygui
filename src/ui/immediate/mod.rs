@@ -36,8 +36,8 @@ mod tests {
             UiNode::new(
                 BlockProps,
                 Modifiers::new()
-                    .width(Extent::FillParent)
-                    .height(Extent::FillParent)
+                    .width(Extent::fill_parent())
+                    .height(Extent::fill_parent())
                     .clone(),
                 expected,
             )
@@ -152,7 +152,7 @@ mod tests {
                 Modifiers::new()
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
-                    .max_width(Extent::FillParent)
+                    .max_width(Extent::fill_parent())
                     .clone(),
                 vec![],
             )],

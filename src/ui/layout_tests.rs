@@ -386,8 +386,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     ),
@@ -469,8 +469,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .border_thickness(BorderThickness::all(8.0))
                             .clone(),
                         vec![],
@@ -557,8 +557,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     ),
@@ -641,8 +641,8 @@ mod blocks {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     ),
@@ -865,8 +865,8 @@ mod columns {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     ),
@@ -916,7 +916,7 @@ mod columns {
             UiNode::new(
                 ColumnProps,
                 Modifiers::new()
-                    .width(Extent::FillParent)
+                    .width(Extent::fill_parent())
                     .height(Extent::FitContent)
                     .padding(Padding::all(8.0))
                     .self_alignment(Alignment::BottomLeft)
@@ -963,8 +963,8 @@ mod columns {
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::FillParent)
-                        .height(Extent::FillParent)
+                        .width(Extent::fill_parent())
+                        .height(Extent::fill_parent())
                         .clone(),
                     vec![],
                 )],
@@ -1004,8 +1004,8 @@ mod columns {
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
-                        .width(Extent::FillParent)
-                        .height(Extent::FillParent)
+                        .width(Extent::fill_parent())
+                        .height(Extent::fill_parent())
                         .margin(Margin::all(4.0))
                         .clone(),
                     vec![],
@@ -1048,14 +1048,14 @@ mod columns {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     ),
                     UiNode::new(
                         BlockProps,
-                        Modifiers::new().width(64.px()).height(Extent::FillParent).clone(),
+                        Modifiers::new().width(64.px()).height(Extent::fill_parent()).clone(),
                         vec![],
                     ),
                 ],
@@ -1113,8 +1113,8 @@ mod rows {
                     UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     ),
@@ -1381,8 +1381,8 @@ mod weight {
                     vec![UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     )],
@@ -1439,8 +1439,8 @@ mod weight {
                     vec![UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![],
                     )],
@@ -1493,14 +1493,14 @@ mod weight {
                     vec![UiNode::new(
                         BlockProps,
                         Modifiers::new()
-                            .width(Extent::FillParent)
-                            .height(Extent::FillParent)
+                            .width(Extent::fill_parent())
+                            .height(Extent::fill_parent())
                             .clone(),
                         vec![UiNode::new(
                             BlockProps,
                             Modifiers::new()
-                                .width(Extent::FillParent)
-                                .height(Extent::FillParent)
+                                .width(Extent::fill_parent())
+                                .height(Extent::fill_parent())
                                 .clone(),
                             vec![],
                         )],
@@ -1760,7 +1760,7 @@ mod text {
                 },
                 Modifiers::new()
                     .width(Extent::FitContent)
-                    .max_width(Extent::FillParent)
+                    .max_width(Extent::fill_parent())
                     .height(Extent::FitContent)
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
@@ -1793,7 +1793,7 @@ mod row_advanced {
     /// size of the text is Px(0.0), the initially computed height of the text
     /// would be very big, as it would try to spread it vertically. But because
     /// we use weight(1.0), it should be equivalent to having specified the size
-    /// of the text to be Px(32.0) / FillParent.
+    /// of the text to be Px(32.0) / fill_parent().
     #[test]
     fn row_with_text_extent_0_weight_1() {
         test_layout(
@@ -1835,6 +1835,182 @@ mod row_advanced {
                         margin_position: Vec2::ZERO,
                         margin_size: Vec2::new(32.0, 16.0 * 3.0),
                         children_boundary_size: Vec2::ZERO,
+                        ..Default::default()
+                    },
+                    children: vec![],
+                }],
+            },
+        )
+    }
+}
+
+mod extent {
+    use glam::Vec2;
+
+    use crate::ui::Alignment;
+
+    use super::{test_layout, BlockProps, ExtentExt, Layout, LayoutNode, Modifiers, UiNode};
+
+    #[test]
+    fn extent_parent_100_percent() {
+        test_layout(
+            32.0,
+            32.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width(100.px())
+                    .height(100.px())
+                    .self_alignment(Alignment::BottomLeft)
+                    .clone(),
+                vec![UiNode::new(
+                    BlockProps,
+                    Modifiers::new()
+                        .width(100.percent())
+                        .height(100.percent())
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
+                    vec![],
+                )],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(100.0, 100.0),
+                    children_boundary_size: Vec2::new(100.0, 100.0),
+                    ..Default::default()
+                },
+                children: vec![LayoutNode {
+                    layout: Layout {
+                        margin_position: Vec2::ZERO,
+                        margin_size: Vec2::new(100.0, 100.0),
+                        children_boundary_size: Vec2::new(100.0, 100.0),
+                        ..Default::default()
+                    },
+                    children: vec![],
+                }],
+            },
+        )
+    }
+
+    #[test]
+    fn extent_parent_50_percent() {
+        test_layout(
+            32.0,
+            32.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width(100.px())
+                    .height(100.px())
+                    .self_alignment(Alignment::BottomLeft)
+                    .clone(),
+                vec![UiNode::new(
+                    BlockProps,
+                    Modifiers::new()
+                        .width(50.percent())
+                        .height(50.percent())
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
+                    vec![],
+                )],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(100.0, 100.0),
+                    children_boundary_size: Vec2::new(100.0, 100.0),
+                    ..Default::default()
+                },
+                children: vec![LayoutNode {
+                    layout: Layout {
+                        margin_position: Vec2::ZERO,
+                        margin_size: Vec2::new(50.0, 50.0),
+                        children_boundary_size: Vec2::new(50.0, 50.0),
+                        ..Default::default()
+                    },
+                    children: vec![],
+                }],
+            },
+        )
+    }
+
+    #[test]
+    fn extent_parent_rounding() {
+        test_layout(
+            32.0,
+            32.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width(100.px())
+                    .height(100.px())
+                    .self_alignment(Alignment::BottomLeft)
+                    .clone(),
+                vec![UiNode::new(
+                    BlockProps,
+                    Modifiers::new()
+                        .width((100.0 / 3.0).percent())
+                        .height((100.0 / 3.0).percent())
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
+                    vec![],
+                )],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(100.0, 100.0),
+                    children_boundary_size: Vec2::new(100.0, 100.0),
+                    ..Default::default()
+                },
+                children: vec![LayoutNode {
+                    layout: Layout {
+                        margin_position: Vec2::ZERO,
+                        margin_size: Vec2::new(33.0, 33.0),
+                        children_boundary_size: Vec2::new(33.0, 33.0),
+                        ..Default::default()
+                    },
+                    children: vec![],
+                }],
+            },
+        )
+    }
+
+    #[test]
+    fn extent_parent_negative() {
+        test_layout(
+            32.0,
+            32.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .width(100.px())
+                    .height(100.px())
+                    .self_alignment(Alignment::BottomLeft)
+                    .clone(),
+                vec![UiNode::new(
+                    BlockProps,
+                    Modifiers::new()
+                        .width((-100.0).percent()) // Should get clamped to 0.0
+                        .height((-100.0).percent()) // Should get clamped to 0.0
+                        .self_alignment(Alignment::BottomLeft)
+                        .clone(),
+                    vec![],
+                )],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(100.0, 100.0),
+                    children_boundary_size: Vec2::new(100.0, 100.0),
+                    ..Default::default()
+                },
+                children: vec![LayoutNode {
+                    layout: Layout {
+                        margin_position: Vec2::ZERO,
+                        margin_size: Vec2::new(0.0, 0.0),
+                        children_boundary_size: Vec2::new(0.0, 0.0),
                         ..Default::default()
                     },
                     children: vec![],

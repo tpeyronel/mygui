@@ -153,7 +153,7 @@ impl<'a, P: UiNodeProps> Ui<'a, P> {
         self.leaf_node(props, |ui| {
             ui.modifiers()
                 .width(Extent::FitContent)
-                .max_width(Extent::FillParent)
+                .max_width(Extent::fill_parent())
                 .height(Extent::FitContent);
 
             f(ui);
@@ -276,8 +276,8 @@ pub fn mock_ui(f: impl FnOnce(&mut Ui<BlockProps>)) -> UiNode {
     let ui_node = UiNode {
         props: Box::new(BlockProps),
         modifiers: Modifiers::new()
-            .width(Extent::FillParent)
-            .height(Extent::FillParent)
+            .width(Extent::fill_parent())
+            .height(Extent::fill_parent())
             .clone(),
         children,
     };
