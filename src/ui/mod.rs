@@ -5,6 +5,7 @@ pub mod corner_radius;
 pub mod draw_command;
 pub mod extent;
 pub mod immediate;
+mod inset;
 #[cfg(test)]
 mod layout_tests;
 pub mod margin;
@@ -24,6 +25,7 @@ use corner_radius::CornerRadius;
 use draw_command::DrawCommand;
 use extent::{Extent, ExtentExt};
 use glam::Vec2;
+use inset::Inset;
 use margin::Margin;
 use node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNode};
 use padding::Padding;
@@ -63,53 +65,33 @@ impl Modifiers {
         Self::default()
     }
 
-    pub fn width(&mut self, width: Extent) -> &mut Self {
-        self.width = width;
+    pub fn width(&mut self, width: impl Into<Extent>) -> &mut Self {
+        self.width = width.into();
         self
     }
 
-    pub fn height(&mut self, height: Extent) -> &mut Self {
-        self.height = height;
+    pub fn height(&mut self, height: impl Into<Extent>) -> &mut Self {
+        self.height = height.into();
         self
     }
 
-    pub fn max_width(&mut self, max_width: Extent) -> &mut Self {
-        self.max_width = Some(max_width);
+    pub fn max_width(&mut self, max_width: impl Into<Option<Extent>>) -> &mut Self {
+        self.max_width = max_width.into();
         self
     }
 
-    pub fn max_height(&mut self, max_height: Extent) -> &mut Self {
-        self.max_height = Some(max_height);
+    pub fn max_height(&mut self, max_height: impl Into<Option<Extent>>) -> &mut Self {
+        self.max_height = max_height.into();
         self
     }
 
-    pub fn no_max_width(&mut self) -> &mut Self {
-        self.max_width = None;
+    pub fn min_width(&mut self, min_width: impl Into<Option<Extent>>) -> &mut Self {
+        self.min_width = min_width.into();
         self
     }
 
-    pub fn no_max_height(&mut self) -> &mut Self {
-        self.max_height = None;
-        self
-    }
-
-    pub fn min_width(&mut self, min_width: Extent) -> &mut Self {
-        self.min_width = Some(min_width);
-        self
-    }
-
-    pub fn min_height(&mut self, min_height: Extent) -> &mut Self {
-        self.min_height = Some(min_height);
-        self
-    }
-
-    pub fn no_min_width(&mut self) -> &mut Self {
-        self.min_width = None;
-        self
-    }
-
-    pub fn no_min_height(&mut self) -> &mut Self {
-        self.min_height = None;
+    pub fn min_height(&mut self, min_height: impl Into<Option<Extent>>) -> &mut Self {
+        self.min_height = min_height.into();
         self
     }
 
@@ -267,9 +249,9 @@ pub struct Layout {
     margin_position: Vec2,
     margin_size: Vec2,
     children_boundary_size: Vec2,
-    margin: Margin,
-    border_thickness: BorderThickness,
-    padding: Padding,
+    margin: Inset,
+    border_thickness: Inset,
+    padding: Inset,
 }
 
 impl Layout {
@@ -331,10 +313,10 @@ impl Layout {
 #[derive(Debug, Clone)]
 pub struct Measurements {
     margin_size: Vec2,
-    margin: Margin,
-    border_thickness: BorderThickness,
-    padding: Padding,
     children_boundary_size: Vec2,
+    margin: Inset,
+    border_thickness: Inset,
+    padding: Inset,
 }
 
 impl Measurements {
@@ -364,6 +346,10 @@ impl Measurements {
         (self.margin_size - self.margin.delta_size() - self.border_thickness.delta_size() - self.padding.delta_size())
             .max(Vec2::ZERO)
     }
+
+    fn total_delta_size(&self) -> Vec2 {
+        self.margin.delta_size() + self.border_thickness.delta_size() + self.padding.delta_size()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -388,21 +374,21 @@ pub fn example_ui() -> UiNode {
             .width(Extent::fill_parent())
             .height(Extent::fill_parent())
             .fill_color(Color::rgba(0.1, 0.1, 1.0, 1.0))
-            .margin(Margin::all(8.0))
-            .padding(Padding::all(16.0))
+            .margin(Margin::all(8.px()))
+            .padding(Padding::all(16.px()))
             .fill_color(Color::rgba(1.0, 1.0, 0.1, 0.25))
             .corner_radius(CornerRadius::all(16.0))
-            .padding(Padding::all(16.0))
+            .padding(Padding::all(16.px()))
             .clone(),
         vec![UiNode::new(
             BlockProps,
             Modifiers::new()
                 .width(Extent::fill_parent())
                 .height(Extent::fill_parent())
-                .padding(Padding::all(0.0))
+                .padding(Padding::all(0.px()))
                 .fill_color(Color::rgba(1.0, 0.1, 0.1, 0.25))
                 .border_color(Color::rgba(1.0, 0.1, 0.1, 0.9))
-                .border_thickness(BorderThickness::all(4.0))
+                .border_thickness(BorderThickness::all(4.px()))
                 .corner_radius(CornerRadius::all(8.0))
                 .clone(),
             vec![
@@ -414,7 +400,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::Center)
                         .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
@@ -424,11 +410,11 @@ pub fn example_ui() -> UiNode {
                     Modifiers::new()
                         .width(80.px())
                         .height(80.px())
-                        .margin(Margin::all(4.0))
+                        .margin(Margin::all(4.px()))
                         .self_alignment(Alignment::Right)
                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
@@ -441,7 +427,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::TopRight)
                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 24.0))
                         .clone(),
                     vec![],
@@ -454,7 +440,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::Top)
                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::new(4.0, 8.0, 12.0, 16.0))
+                        .border_thickness(BorderThickness::new(4.px(), 8.px(), 12.px(), 16.px()))
                         .clone(),
                     vec![],
                 ),
@@ -465,7 +451,7 @@ pub fn example_ui() -> UiNode {
                         .height(Extent::FitContent)
                         .self_alignment(Alignment::TopLeft)
                         .border_color(Color::rgba(1.0, 1.0, 1.0, 0.4))
-                        .border_thickness(BorderThickness::all(2.0))
+                        .border_thickness(BorderThickness::all(2.px()))
                         .clone(),
                     vec![
                         UiNode::new(
@@ -473,9 +459,9 @@ pub fn example_ui() -> UiNode {
                             Modifiers::new()
                                 .width(Extent::fill_parent())
                                 .height(Extent::fill_parent())
-                                .padding(Padding::all(8.0))
+                                .padding(Padding::all(8.px()))
                                 .border_color(Color::rgba(1.0, 0.0, 0.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0))
+                                .border_thickness(BorderThickness::all(2.px()))
                                 .clone(),
                             vec![UiNode::new(
                                 BlockProps,
@@ -489,7 +475,7 @@ pub fn example_ui() -> UiNode {
                                 .width(8.px())
                                 .height(64.px())
                                 .border_color(Color::rgba(0.0, 1.0, 0.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0))
+                                .border_thickness(BorderThickness::all(2.px()))
                                 .self_alignment(Alignment::BottomLeft)
                                 .clone(),
                             vec![],
@@ -500,7 +486,7 @@ pub fn example_ui() -> UiNode {
                                 .width(96.px())
                                 .height(8.px())
                                 .border_color(Color::rgba(0.0, 0.0, 1.0, 0.4))
-                                .border_thickness(BorderThickness::all(2.0))
+                                .border_thickness(BorderThickness::all(2.px()))
                                 .self_alignment(Alignment::TopRight)
                                 .clone(),
                             vec![],
@@ -515,7 +501,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::Left)
                         .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
@@ -528,7 +514,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::BottomLeft)
                         .fill_color(Color::rgba(0.0, 0.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
@@ -541,7 +527,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::Bottom)
                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
@@ -554,7 +540,7 @@ pub fn example_ui() -> UiNode {
                         .self_alignment(Alignment::BottomRight)
                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                        .border_thickness(BorderThickness::all(1.0))
+                        .border_thickness(BorderThickness::all(1.px()))
                         .corner_radius(CornerRadius::all(4.0))
                         .clone(),
                     vec![],
@@ -564,8 +550,8 @@ pub fn example_ui() -> UiNode {
                     Modifiers::new()
                         .width(Extent::FitContent)
                         .height(Extent::FitContent)
-                        .padding(Padding::all(8.0))
-                        .border_thickness(BorderThickness::all(4.0))
+                        .padding(Padding::all(8.px()))
+                        .border_thickness(BorderThickness::all(4.px()))
                         .border_color(Color::rgba(1.0, 1.0, 1.0, 1.0))
                         .clone(),
                     vec![
@@ -574,8 +560,8 @@ pub fn example_ui() -> UiNode {
                             Modifiers::new()
                                 .width(256.px())
                                 .height(Extent::FitContent)
-                                .padding(Padding::all(16.0))
-                                .border_thickness(BorderThickness::all(4.0))
+                                .padding(Padding::all(16.px()))
+                                .border_thickness(BorderThickness::all(4.px()))
                                 .border_color(Color::rgba(1.0, 1.0, 1.0, 1.0))
                                 .clone(),
                             vec![
@@ -585,7 +571,7 @@ pub fn example_ui() -> UiNode {
                                         .height(24.px())
                                         .fill_color(Color::rgba(0.0, 1.0, 1.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
+                                        .border_thickness(BorderThickness::all(1.px()))
                                         .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
@@ -596,7 +582,7 @@ pub fn example_ui() -> UiNode {
                                         .height(Extent::fill_parent())
                                         .fill_color(Color::rgba(1.0, 0.0, 1.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
+                                        .border_thickness(BorderThickness::all(1.px()))
                                         .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
@@ -607,7 +593,7 @@ pub fn example_ui() -> UiNode {
                                         .height(32.px())
                                         .fill_color(Color::rgba(1.0, 0.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
+                                        .border_thickness(BorderThickness::all(1.px()))
                                         .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
@@ -617,12 +603,12 @@ pub fn example_ui() -> UiNode {
                                     Modifiers::new()
                                         .width(96.px())
                                         .height(64.px())
-                                        .margin(Margin::all(8.0))
-                                        .padding(Padding::all(8.0))
+                                        .margin(Margin::all(8.px()))
+                                        .padding(Padding::all(8.px()))
                                         .self_alignment(Alignment::Center)
                                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(4.0))
+                                        .border_thickness(BorderThickness::all(4.px()))
                                         .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![UiNode::new(
@@ -632,7 +618,7 @@ pub fn example_ui() -> UiNode {
                                             .height(Extent::fill_parent())
                                             .fill_color(Color::rgba(1.0, 1.0, 1.0, 0.5))
                                             .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                                            .border_thickness(BorderThickness::all(1.0))
+                                            .border_thickness(BorderThickness::all(1.px()))
                                             .corner_radius(CornerRadius::all(8.0))
                                             .clone(),
                                         vec![],
@@ -644,7 +630,7 @@ pub fn example_ui() -> UiNode {
                                         .height(32.px())
                                         .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                                        .border_thickness(BorderThickness::all(1.0))
+                                        .border_thickness(BorderThickness::all(1.px()))
                                         .corner_radius(CornerRadius::all(8.0))
                                         .clone(),
                                     vec![],
@@ -773,7 +759,7 @@ pub fn example_ui() -> UiNode {
                                             .min_width(256.px())
                                             .height(Extent::FitContent)
                                             .max_height(512.px())
-                                            .padding(Padding::all(64.0))
+                                            .padding(Padding::all(64.px()))
                                             .fill_color(Color::rgba(0.0, 1.0, 0.0, 0.5))
                                             .clone(),
                                         vec![],
@@ -822,7 +808,7 @@ pub fn example_ui() -> UiNode {
                                         Modifiers::new()
                                             .fill_color(Color::rgba(0.0, 0.0, 0.0, 0.5))
                                             .corner_radius(CornerRadius::all(8.0))
-                                            .padding(Padding::all(8.0))
+                                            .padding(Padding::all(8.px()))
                                             .clone(),
                                         vec![],
                                     )],

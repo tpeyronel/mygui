@@ -1,3 +1,3 @@
-use super::padding::Padding;
+use super::inset::ExtrinsicInset;
 
-pub type Margin = Padding;
+pub type Margin = ExtrinsicInset;

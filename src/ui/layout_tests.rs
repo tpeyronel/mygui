@@ -63,7 +63,7 @@ fn padding() {
         32.0,
         UiNode::new(
             BlockProps,
-            Modifiers::new().padding(Padding::all(8.0)).clone(),
+            Modifiers::new().padding(Padding::all(8.px())).clone(),
             vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
         ),
         LayoutNode {
@@ -71,7 +71,7 @@ fn padding() {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
                 children_boundary_size: Vec2::new(16.0, 16.0),
-                padding: Padding::all(8.0),
+                padding: Inset::all(8.0),
                 ..Default::default()
             },
             children: vec![LayoutNode {
@@ -92,13 +92,13 @@ fn margin() {
     test_layout(
         32.0,
         32.0,
-        UiNode::new(BlockProps, Modifiers::new().margin(Margin::all(8.0)).clone(), vec![]),
+        UiNode::new(BlockProps, Modifiers::new().margin(Margin::all(8.px())).clone(), vec![]),
         LayoutNode {
             layout: Layout {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
                 children_boundary_size: Vec2::new(16.0, 16.0),
-                margin: Margin::all(8.0),
+                margin: Inset::all(8.0),
                 ..Default::default()
             },
             children: vec![],
@@ -113,7 +113,7 @@ fn full_padding() {
         32.0,
         UiNode::new(
             BlockProps,
-            Modifiers::new().padding(Padding::all(16.0)).clone(),
+            Modifiers::new().padding(Padding::all(16.px())).clone(),
             vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
         ),
         LayoutNode {
@@ -121,7 +121,7 @@ fn full_padding() {
                 margin_position: Vec2::new(0.0, 0.0),
                 margin_size: Vec2::new(32.0, 32.0),
                 children_boundary_size: Vec2::new(0.0, 0.0),
-                padding: Padding::all(16.0),
+                padding: Inset::all(16.0),
                 ..Default::default()
             },
             children: vec![LayoutNode {
@@ -260,7 +260,7 @@ fn self_alignment_with_parent_border_thickness() {
             UiNode::new(
                 BlockProps,
                 // Border thickness of 4.0 makes the parent container equivalent to a 24.0 size container.
-                Modifiers::new().border_thickness(BorderThickness::all(4.0)).clone(),
+                Modifiers::new().border_thickness(BorderThickness::all(4.px())).clone(),
                 vec![UiNode::new(
                     BlockProps,
                     Modifiers::new()
@@ -276,7 +276,7 @@ fn self_alignment_with_parent_border_thickness() {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 32.0),
                     children_boundary_size: Vec2::new(24.0, 24.0),
-                    border_thickness: BorderThickness::all(4.0),
+                    border_thickness: Inset::all(4.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {
@@ -313,7 +313,9 @@ mod blocks {
             32.0,
             UiNode::new(
                 BlockProps,
-                Modifiers::new().padding(Padding::new(1.0, 2.0, 4.0, 8.0)).clone(),
+                Modifiers::new()
+                    .padding(Padding::new(8.px(), 1.px(), 2.px(), 4.px()))
+                    .clone(),
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
             LayoutNode {
@@ -321,7 +323,7 @@ mod blocks {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 32.0),
                     children_boundary_size: Vec2::new(32.0 - 10.0, 32.0 - 5.0),
-                    padding: Padding::new(1.0, 2.0, 4.0, 8.0),
+                    padding: Inset::new(8.0, 1.0, 2.0, 4.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {
@@ -345,7 +347,7 @@ mod blocks {
             UiNode::new(
                 BlockProps,
                 Modifiers::new()
-                    .border_thickness(BorderThickness::new(1.0, 2.0, 4.0, 8.0))
+                    .border_thickness(BorderThickness::new(1.px(), 2.px(), 4.px(), 8.px()))
                     .clone(),
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
@@ -354,7 +356,7 @@ mod blocks {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(32.0, 32.0),
                     children_boundary_size: Vec2::new(32.0 - 5.0, 32.0 - 10.0),
-                    border_thickness: BorderThickness::new(1.0, 2.0, 4.0, 8.0),
+                    border_thickness: Inset::new(1.0, 2.0, 4.0, 8.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {
@@ -471,7 +473,7 @@ mod blocks {
                         Modifiers::new()
                             .width(Extent::fill_parent())
                             .height(Extent::fill_parent())
-                            .border_thickness(BorderThickness::all(8.0))
+                            .border_thickness(BorderThickness::all(8.px()))
                             .clone(),
                         vec![],
                     ),
@@ -480,7 +482,7 @@ mod blocks {
                         Modifiers::new()
                             .width(8.px())
                             .height(64.px())
-                            .border_thickness(BorderThickness::all(8.0))
+                            .border_thickness(BorderThickness::all(8.px()))
                             .self_alignment(Alignment::BottomLeft)
                             .clone(),
                         vec![],
@@ -490,7 +492,7 @@ mod blocks {
                         Modifiers::new()
                             .width(96.px())
                             .height(8.px())
-                            .border_thickness(BorderThickness::all(8.0))
+                            .border_thickness(BorderThickness::all(8.px()))
                             .self_alignment(Alignment::TopRight)
                             .clone(),
                         vec![],
@@ -510,7 +512,7 @@ mod blocks {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(96.0, 64.0),
                             children_boundary_size: Vec2::new(96.0 - 16.0, 64.0 - 16.0),
-                            border_thickness: BorderThickness::all(8.0),
+                            border_thickness: Inset::all(8.0),
                             ..Default::default()
                         },
                         children: vec![],
@@ -520,7 +522,7 @@ mod blocks {
                             margin_position: Vec2::new(0.0, 0.0),
                             margin_size: Vec2::new(8.0, 64.0),
                             children_boundary_size: Vec2::new(0.0, 64.0 - 16.0),
-                            border_thickness: BorderThickness::all(8.0),
+                            border_thickness: Inset::all(8.0),
                             ..Default::default()
                         },
                         children: vec![],
@@ -530,7 +532,7 @@ mod blocks {
                             margin_position: Vec2::new(0.0, 64.0 - 8.0),
                             margin_size: Vec2::new(96.0, 8.0),
                             children_boundary_size: Vec2::new(96.0 - 16.0, 0.0),
-                            border_thickness: BorderThickness::all(8.0),
+                            border_thickness: Inset::all(8.0),
                             ..Default::default()
                         },
                         children: vec![],
@@ -550,7 +552,7 @@ mod blocks {
                 Modifiers::new()
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
-                    .border_thickness(BorderThickness::all(8.0))
+                    .border_thickness(BorderThickness::all(8.px()))
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![
@@ -587,7 +589,7 @@ mod blocks {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(96.0 + 16.0, 64.0 + 16.0),
                     children_boundary_size: Vec2::new(96.0, 64.0),
-                    border_thickness: BorderThickness::all(8.0),
+                    border_thickness: Inset::all(8.0),
                     ..Default::default()
                 },
                 children: vec![
@@ -634,7 +636,7 @@ mod blocks {
                 Modifiers::new()
                     .width(Extent::FitContent)
                     .height(Extent::FitContent)
-                    .padding(Padding::all(8.0))
+                    .padding(Padding::all(8.px()))
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![
@@ -671,7 +673,7 @@ mod blocks {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(96.0 + 16.0, 64.0 + 16.0),
                     children_boundary_size: Vec2::new(96.0, 64.0),
-                    padding: Padding::all(8.0),
+                    padding: Inset::all(8.0),
                     ..Default::default()
                 },
                 children: vec![
@@ -768,7 +770,7 @@ mod columns {
                 vec![
                     UiNode::new(
                         BlockProps,
-                        Modifiers::new().height(24.px()).padding(Padding::all(2.0)).clone(),
+                        Modifiers::new().height(24.px()).padding(Padding::all(2.px())).clone(),
                         vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
                     ),
                     UiNode::new(BlockProps, Modifiers::new().height(48.px()).clone(), vec![]),
@@ -787,7 +789,7 @@ mod columns {
                             margin_position: Vec2::new(0.0, 128.0 - 24.0),
                             margin_size: Vec2::new(32.0, 24.0),
                             children_boundary_size: Vec2::new(32.0 - 4.0, 24.0 - 4.0),
-                            padding: Padding::all(2.0),
+                            padding: Inset::all(2.0),
                             ..Default::default()
                         },
                         children: vec![LayoutNode {
@@ -824,7 +826,7 @@ mod columns {
                 Modifiers::new(),
                 vec![UiNode::new(
                     BlockProps,
-                    Modifiers::new().height(16.px()).margin(Margin::all(2.0)).clone(),
+                    Modifiers::new().height(16.px()).margin(Margin::all(2.px())).clone(),
                     vec![],
                 )],
             ),
@@ -840,7 +842,7 @@ mod columns {
                         margin_position: Vec2::new(0.0, 128.0 - (16.0 + 4.0)),
                         margin_size: Vec2::new(32.0, 16.0 + 4.0),
                         children_boundary_size: Vec2::new(32.0 - 4.0, 16.0),
-                        margin: Margin::all(2.0),
+                        margin: Inset::all(2.0),
                         ..Default::default()
                     },
                     children: vec![],
@@ -918,7 +920,7 @@ mod columns {
                 Modifiers::new()
                     .width(Extent::fill_parent())
                     .height(Extent::FitContent)
-                    .padding(Padding::all(8.0))
+                    .padding(Padding::all(8.px()))
                     .self_alignment(Alignment::BottomLeft)
                     .clone(),
                 vec![UiNode::new(
@@ -932,7 +934,7 @@ mod columns {
                     margin_position: Vec2::new(0.0, 0.0),
                     margin_size: Vec2::new(256.0, 32.0 + 16.0),
                     children_boundary_size: Vec2::new(256.0 - 16.0, 32.0),
-                    padding: Padding::all(8.0),
+                    padding: Inset::all(8.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {
@@ -1006,7 +1008,7 @@ mod columns {
                     Modifiers::new()
                         .width(Extent::fill_parent())
                         .height(Extent::fill_parent())
-                        .margin(Margin::all(4.0))
+                        .margin(Margin::all(4.px()))
                         .clone(),
                     vec![],
                 )],
@@ -1023,7 +1025,7 @@ mod columns {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::ZERO,
                         children_boundary_size: Vec2::ZERO,
-                        margin: Margin::all(4.0),
+                        margin: Inset::all(4.0),
                         ..Default::default()
                     },
                     children: vec![],
@@ -1333,7 +1335,7 @@ mod weight {
                     Modifiers::new()
                         .height(0.px())
                         .weight(1.0)
-                        .margin(Margin::all(4.0)) // This margin should only allow for a height of 0.
+                        .margin(Margin::all(4.px())) // This margin should only allow for a height of 0.
                         .clone(),
                     vec![],
                 )],
@@ -1350,7 +1352,7 @@ mod weight {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::new(50.0, 8.0),
                         children_boundary_size: Vec2::new(50.0 - 8.0, 0.0),
-                        margin: Margin::all(4.0),
+                        margin: Inset::all(4.0),
                         ..Default::default()
                     },
                     children: vec![],
@@ -1376,7 +1378,7 @@ mod weight {
                     Modifiers::new()
                         .height(0.px())
                         .weight(1.0)
-                        .border_thickness(BorderThickness::all(3.0)) // This border thickness should only allow for a height of the child of 2.0.
+                        .border_thickness(BorderThickness::all(3.px())) // This border thickness should only allow for a height of the child of 2.0.
                         .clone(),
                     vec![UiNode::new(
                         BlockProps,
@@ -1400,7 +1402,7 @@ mod weight {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::new(50.0, 8.0),
                         children_boundary_size: Vec2::new(50.0 - 6.0, 8.0 - 6.0),
-                        border_thickness: BorderThickness::all(3.0),
+                        border_thickness: Inset::all(3.0),
                         ..Default::default()
                     },
                     children: vec![LayoutNode {
@@ -1434,7 +1436,7 @@ mod weight {
                     Modifiers::new()
                         .height(0.px())
                         .weight(1.0)
-                        .padding(Padding::all(3.0)) // This padding should only allow for a height of the child of 2.0.
+                        .padding(Padding::all(3.px())) // This padding should only allow for a height of the child of 2.0.
                         .clone(),
                     vec![UiNode::new(
                         BlockProps,
@@ -1458,7 +1460,7 @@ mod weight {
                         margin_position: Vec2::new(0.0, 0.0),
                         margin_size: Vec2::new(50.0, 8.0),
                         children_boundary_size: Vec2::new(50.0 - 6.0, 8.0 - 6.0),
-                        padding: Padding::all(3.0),
+                        padding: Inset::all(3.0),
                         ..Default::default()
                     },
                     children: vec![LayoutNode {
@@ -1556,7 +1558,9 @@ mod rounding {
             32.0,
             UiNode::new(
                 BlockProps,
-                Modifiers::new().border_thickness(BorderThickness::all(3.5)).clone(), // Should all be rounded to 4.0
+                Modifiers::new()
+                    .border_thickness(BorderThickness::all(3.5.px()))
+                    .clone(), // Should all be rounded to 4.0
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
             LayoutNode {
@@ -1564,7 +1568,7 @@ mod rounding {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 32.0),
                     children_boundary_size: Vec2::new(24.0, 24.0),
-                    border_thickness: BorderThickness::all(3.5),
+                    border_thickness: Inset::all(4.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {
@@ -1587,7 +1591,7 @@ mod rounding {
             32.0,
             UiNode::new(
                 BlockProps,
-                Modifiers::new().padding(Padding::all(3.5)).clone(), // Should all be rounded to 4.0
+                Modifiers::new().padding(Padding::all(3.5.px())).clone(), // Should all be rounded to 4.0
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
             LayoutNode {
@@ -1595,7 +1599,7 @@ mod rounding {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 32.0),
                     children_boundary_size: Vec2::new(24.0, 24.0),
-                    padding: Padding::all(3.5),
+                    padding: Inset::all(4.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {
@@ -1618,7 +1622,7 @@ mod rounding {
             32.0,
             UiNode::new(
                 BlockProps,
-                Modifiers::new().margin(Margin::all(3.5)).clone(), // Should all be rounded to 4.0
+                Modifiers::new().margin(Margin::all(3.5.px())).clone(), // Should all be rounded to 4.0
                 vec![UiNode::new(BlockProps, Modifiers::new(), vec![])],
             ),
             LayoutNode {
@@ -1626,7 +1630,7 @@ mod rounding {
                     margin_position: Vec2::ZERO,
                     margin_size: Vec2::new(32.0, 32.0),
                     children_boundary_size: Vec2::new(24.0, 24.0),
-                    margin: Margin::all(3.5),
+                    margin: Inset::all(4.0),
                     ..Default::default()
                 },
                 children: vec![LayoutNode {

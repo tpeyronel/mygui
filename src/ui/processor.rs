@@ -3,6 +3,8 @@ use std::u64;
 
 use super::border_thickness::BorderThickness;
 use super::draw_command::{DrawCommand, ScissorRectangle};
+use super::extent::ExtrinsicExtent;
+use super::inset::Inset;
 use super::margin::Margin;
 use super::measurements_cache::MeasurementsCache;
 use super::padding::Padding;
@@ -89,8 +91,8 @@ impl<'a> UiNodeProcessor<'a> {
         let root_node = UiNode {
             props: Box::new(BlockProps),
             modifiers: Modifiers::new()
-                .width(Extent::Px(boundary_size.x))
-                .height(Extent::Px(boundary_size.y))
+                .width(ExtrinsicExtent::Px(boundary_size.x))
+                .height(ExtrinsicExtent::Px(boundary_size.y))
                 .clone(),
             children: ui_nodes,
         };
@@ -104,9 +106,9 @@ impl<'a> UiNodeProcessor<'a> {
             margin_position: boundary_pos,
             margin_size: boundary_size,
             children_boundary_size: boundary_size,
-            margin: Margin::all(0.0),
-            border_thickness: BorderThickness::all(0.0),
-            padding: Padding::all(0.0),
+            margin: Inset::new(0.0, 0.0, 0.0, 0.0),
+            border_thickness: Inset::new(0.0, 0.0, 0.0, 0.0),
+            padding: Inset::new(0.0, 0.0, 0.0, 0.0),
         };
 
         let root_layout_node = self.compute_layout_rec(&root_node, root_layout);
@@ -219,14 +221,23 @@ impl<'a> UiNodeProcessor<'a> {
     fn do_measure(&mut self, ui_node: &UiNode, boundary_size: Vec2) -> Measurements {
         let modifiers = &ui_node.modifiers;
 
+        let all_insets = AllInsets::new(
+            modifiers.margin,
+            modifiers.border_thickness,
+            modifiers.padding,
+            boundary_size,
+            self.scale_factor,
+        );
+
         let mut width = modifiers.width;
         let mut height = modifiers.height;
 
-        let (mut margin_size, mut children_boundary_size) = self.resolve_extents(ui_node, boundary_size, width, height);
+        let (mut margin_size, mut children_boundary_size) =
+            self.resolve_extents(ui_node, &all_insets, boundary_size, width, height);
 
         if let Some(min_width) = modifiers.min_width {
             let (min_width_margin_size, min_width_children_boundary_size) =
-                self.resolve_extents(ui_node, boundary_size, min_width, height);
+                self.resolve_extents(ui_node, &all_insets, boundary_size, min_width, height);
 
             if margin_size.x < min_width_margin_size.x {
                 width = min_width;
@@ -237,7 +248,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if let Some(min_height) = modifiers.min_height {
             let (min_height_margin_size, min_height_children_boundary_size) =
-                self.resolve_extents(ui_node, boundary_size, width, min_height);
+                self.resolve_extents(ui_node, &all_insets, boundary_size, width, min_height);
 
             if margin_size.y < min_height_margin_size.y {
                 height = min_height;
@@ -248,7 +259,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if let Some(max_width) = modifiers.max_width {
             let (max_width_margin_size, max_width_children_boundary_size) =
-                self.resolve_extents(ui_node, boundary_size, max_width, height);
+                self.resolve_extents(ui_node, &all_insets, boundary_size, max_width, height);
 
             if margin_size.x > max_width_margin_size.x {
                 width = max_width;
@@ -259,7 +270,7 @@ impl<'a> UiNodeProcessor<'a> {
 
         if let Some(max_height) = modifiers.max_height {
             let (max_height_margin_size, max_height_children_boundary_size) =
-                self.resolve_extents(ui_node, boundary_size, width, max_height);
+                self.resolve_extents(ui_node, &all_insets, boundary_size, width, max_height);
 
             if margin_size.y > max_height_margin_size.y {
                 // height = max_height;
@@ -270,49 +281,31 @@ impl<'a> UiNodeProcessor<'a> {
 
         Measurements {
             margin_size,
-            margin: modifiers.margin,
-            border_thickness: modifiers.border_thickness,
-            padding: modifiers.padding,
             children_boundary_size,
+            margin: all_insets.margin,
+            border_thickness: all_insets.border_thickness,
+            padding: all_insets.padding,
         }
     }
 
     fn resolve_extents(
         &mut self,
         ui_node: &UiNode,
+        insets: &AllInsets,
         boundary_size: Vec2,
         width: Extent,
         height: Extent,
     ) -> (Vec2, Vec2) {
-        let modifiers = &ui_node.modifiers;
-
-        let margin_width = match width {
-            Extent::Parent(r) => Some((r.max(0.0) * boundary_size.x).round()),
-            Extent::Px(px) => Some(px.round().max(0.0) + modifiers.margin.delta_size().x),
-            Extent::Dp(dp) => Some(self.dp_to_px(dp).round().max(0.0) + modifiers.margin.delta_size().x),
-            Extent::FitContent => None,
-        };
-
-        let margin_height = match height {
-            Extent::Parent(r) => Some((r.max(0.0) * boundary_size.y).round()),
-            Extent::Px(px) => Some(px.round().max(0.0) + modifiers.margin.delta_size().y),
-            Extent::Dp(dp) => Some(self.dp_to_px(dp).round().max(0.0) + modifiers.margin.delta_size().y),
-            Extent::FitContent => None,
-        };
+        let margin_delta_size = insets.margin.delta_size();
+        let margin_width = width.resolve_if_extrinsic(boundary_size.x, margin_delta_size.x, self.scale_factor);
+        let margin_height = height.resolve_if_extrinsic(boundary_size.y, margin_delta_size.y, self.scale_factor);
 
         let (margin_size, children_boundary_size) = if margin_width.is_none() || margin_height.is_none() {
-            self.measure_fit_content(ui_node, margin_width, margin_height)
+            self.measure_fit_content(ui_node, insets.total_delta_size, margin_width, margin_height)
         } else {
-            (
-                Vec2::new(margin_width.unwrap(), margin_height.unwrap()),
-                Vec2::max(
-                    Vec2::new(margin_width.unwrap(), margin_height.unwrap())
-                        - modifiers.margin.delta_size()
-                        - modifiers.border_thickness.delta_size()
-                        - modifiers.padding.delta_size(),
-                    Vec2::ZERO,
-                ),
-            )
+            let margin_size = Vec2::new(margin_width.unwrap(), margin_height.unwrap());
+            let children_boundary_size = Vec2::max(margin_size - insets.total_delta_size, Vec2::ZERO);
+            (margin_size, children_boundary_size)
         };
 
         margin_width.inspect(|&w| debug_assert_eq!(w, margin_size.x));
@@ -324,14 +317,10 @@ impl<'a> UiNodeProcessor<'a> {
     fn measure_fit_content(
         &mut self,
         ui_node: &UiNode,
+        total_delta_size: Vec2,
         margin_width: Option<f32>,
         margin_height: Option<f32>,
     ) -> (Vec2, Vec2) {
-        let modifiers = &ui_node.modifiers;
-
-        let total_delta_size =
-            modifiers.margin.delta_size() + modifiers.border_thickness.delta_size() + modifiers.padding.delta_size();
-
         let content_width = margin_width.map(|w| (w - total_delta_size.x).max(0.0));
         let content_height = margin_height.map(|h| (h - total_delta_size.y).max(0.0));
 
@@ -418,11 +407,13 @@ impl<'a> UiNodeProcessor<'a> {
                     let (margin_size, children_boundary_size) = match extent_axis {
                         Axis::X => self.measure_fit_content(
                             child,
+                            child_measurements.total_delta_size(),
                             Some(child_measurements.margin_size.x + child_extra_extent),
                             None,
                         ),
                         Axis::Y => self.measure_fit_content(
                             child,
+                            child_measurements.total_delta_size(),
                             None,
                             Some(child_measurements.margin_size.y + child_extra_extent),
                         ),
@@ -448,9 +439,33 @@ impl<'a> UiNodeProcessor<'a> {
     pub fn measure_children(&mut self, parent_size: Vec2, children: &[UiNode]) -> ChildrenMeasurements {
         return ChildrenMeasurements(children.iter().map(|c| self.measure(c, parent_size)).collect());
     }
+}
 
-    fn dp_to_px(&self, dp: f32) -> f32 {
-        self.scale_factor * dp
+struct AllInsets {
+    margin: Inset,
+    border_thickness: Inset,
+    padding: Inset,
+    total_delta_size: Vec2,
+}
+
+impl AllInsets {
+    pub fn new(
+        margin: Margin,
+        border_thickness: BorderThickness,
+        padding: Padding,
+        boundary_size: Vec2,
+        dp_factor: f32,
+    ) -> Self {
+        let margin = margin.resolve(boundary_size, dp_factor);
+        let border_thickness = border_thickness.resolve(boundary_size, dp_factor);
+        let padding = padding.resolve(boundary_size, dp_factor);
+
+        Self {
+            margin,
+            border_thickness,
+            padding,
+            total_delta_size: margin.delta_size() + border_thickness.delta_size() + padding.delta_size(),
+        }
     }
 }
 

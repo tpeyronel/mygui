@@ -4,8 +4,7 @@ use glam::Vec2;
 use crate::{
     color::Color,
     ui::{
-        border_color::BorderColor, border_thickness::BorderThickness, color_mesh_builder::ColorMeshBuilder,
-        corner_radius::CornerRadius, Layout, Modifiers,
+        border_color::BorderColor, color_mesh_builder::ColorMeshBuilder, corner_radius::CornerRadius, Layout, Modifiers,
     },
 };
 
@@ -18,10 +17,9 @@ impl Shape for RoundedRectangleShape {
     fn to_shape_data(&self, layout: &Layout, modifiers: &Modifiers) -> ShapeData {
         let fill_color = &modifiers.fill_color;
         let border_color = &modifiers.border_color;
-        let border_thickness = &modifiers.border_thickness;
         let corner_radius = &modifiers.corner_radius;
 
-        create_rounded_rectangle(layout, fill_color, border_color, border_thickness, corner_radius)
+        create_rounded_rectangle(layout, fill_color, border_color, corner_radius)
     }
 }
 
@@ -29,11 +27,12 @@ fn create_rounded_rectangle(
     layout: &Layout,
     fill_color: &Color,
     border_color: &BorderColor,
-    border_thickness: &BorderThickness,
     corner_radius: &CornerRadius,
 ) -> ShapeData {
     let mut bg_builder = ColorMeshBuilder::new();
     let mut fg_builder = ColorMeshBuilder::new();
+
+    let border_thickness = &layout.border_thickness;
 
     let bl = CornerVertices::new(
         layout.border_position(),
