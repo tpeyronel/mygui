@@ -95,13 +95,18 @@ impl Modifiers {
         self
     }
 
-    pub fn margin(&mut self, margin: Margin) -> &mut Self {
-        self.margin = margin;
+    pub fn margin(&mut self, margin: impl Into<Margin>) -> &mut Self {
+        self.margin = margin.into();
         self
     }
 
-    pub fn padding(&mut self, padding: Padding) -> &mut Self {
-        self.padding = padding;
+    pub fn border_thickness(&mut self, border_thickness: impl Into<BorderThickness>) -> &mut Self {
+        self.border_thickness = border_thickness.into();
+        self
+    }
+
+    pub fn padding(&mut self, padding: impl Into<Padding>) -> &mut Self {
+        self.padding = padding.into();
         self
     }
 
@@ -112,11 +117,6 @@ impl Modifiers {
 
     pub fn border_color(&mut self, border_color: impl Into<BorderColor>) -> &mut Self {
         self.border_color = border_color.into();
-        self
-    }
-
-    pub fn border_thickness(&mut self, border_thickness: BorderThickness) -> &mut Self {
-        self.border_thickness = border_thickness;
         self
     }
 

@@ -71,6 +71,10 @@ impl ExtrinsicInset {
         Self::new(x, x, x, x)
     }
 
+    pub fn hor_ver(horizontal: ExtrinsicExtent, vertical: ExtrinsicExtent) -> Self {
+        Self::new(horizontal, vertical, horizontal, vertical)
+    }
+
     pub fn resolve(&self, boundary_size: Vec2, dp_factor: f32) -> Inset {
         Inset::new(
             self.left.resolve(boundary_size.x, 0.0, dp_factor),
@@ -84,5 +88,11 @@ impl ExtrinsicInset {
 impl Default for ExtrinsicInset {
     fn default() -> Self {
         Self::all(0.px())
+    }
+}
+
+impl From<ExtrinsicExtent> for ExtrinsicInset {
+    fn from(value: ExtrinsicExtent) -> Self {
+        Self::all(value)
     }
 }
