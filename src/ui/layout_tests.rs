@@ -1853,7 +1853,10 @@ mod extent {
 
     use crate::ui::Alignment;
 
-    use super::{test_layout, BlockProps, ExtentExt, Layout, LayoutNode, Modifiers, UiNode};
+    use super::{
+        test_layout, BlockProps, BorderThickness, Extent, ExtentExt, Inset, Layout, LayoutNode, Margin, Modifiers,
+        Padding, UiNode,
+    };
 
     #[test]
     fn extent_parent_100_percent() {
@@ -2069,6 +2072,107 @@ mod extent {
                     margin_size: Vec2::new(0.0, 0.0),
                     children_boundary_size: Vec2::new(0.0, 0.0),
                     ..Default::default()
+                },
+                children: vec![],
+            },
+        )
+    }
+
+    #[test]
+    fn insets_px() {
+        test_layout(
+            100.0,
+            100.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .self_alignment(Alignment::BottomLeft)
+                    .width(Extent::fill_parent())
+                    .height(Extent::fill_parent())
+                    .margin(Margin::new(1.px(), 2.px(), 3.px(), 4.px()))
+                    .border_thickness(BorderThickness::new(5.px(), 6.px(), 7.px(), 8.px()))
+                    .padding(Padding::new(9.px(), 10.px(), 11.px(), 12.px()))
+                    .clone(),
+                vec![],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(100.0, 100.0),
+                    children_boundary_size: Vec2::new(
+                        100.0 - 1.0 - 3.0 - 5.0 - 7.0 - 9.0 - 11.0,
+                        100.0 - 2.0 - 4.0 - 6.0 - 8.0 - 10.0 - 12.0,
+                    ),
+                    margin: Inset::new(1.0, 2.0, 3.0, 4.0),
+                    border_thickness: Inset::new(5.0, 6.0, 7.0, 8.0),
+                    padding: Inset::new(9.0, 10.0, 11.0, 12.0),
+                },
+                children: vec![],
+            },
+        )
+    }
+
+    #[test]
+    fn insets_dp() {
+        test_layout(
+            100.0,
+            100.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .self_alignment(Alignment::BottomLeft)
+                    .width(Extent::fill_parent())
+                    .height(Extent::fill_parent())
+                    .margin(Margin::new(1.dp(), 2.dp(), 3.dp(), 4.dp()))
+                    .border_thickness(BorderThickness::new(5.dp(), 6.dp(), 7.dp(), 8.dp()))
+                    .padding(Padding::new(9.dp(), 10.dp(), 11.dp(), 12.dp()))
+                    .clone(),
+                vec![],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(100.0, 100.0),
+                    children_boundary_size: Vec2::new(
+                        100.0 - 1.0 - 3.0 - 5.0 - 7.0 - 9.0 - 11.0,
+                        100.0 - 2.0 - 4.0 - 6.0 - 8.0 - 10.0 - 12.0,
+                    ),
+                    margin: Inset::new(1.0, 2.0, 3.0, 4.0),
+                    border_thickness: Inset::new(5.0, 6.0, 7.0, 8.0),
+                    padding: Inset::new(9.0, 10.0, 11.0, 12.0),
+                },
+                children: vec![],
+            },
+        )
+    }
+
+    #[test]
+    fn insets_percent() {
+        test_layout(
+            200.0,
+            100.0,
+            UiNode::new(
+                BlockProps,
+                Modifiers::new()
+                    .self_alignment(Alignment::BottomLeft)
+                    // Make sure that width and height aren't taken into account for relative insets.
+                    .width(500.px())
+                    .height(250.px())
+                    // All the following percentages are relative to parent size, in this case (200, 100).
+                    .margin(Margin::all(10.percent()))
+                    .border_thickness(BorderThickness::all(20.percent()))
+                    .padding(Padding::all(30.percent()))
+                    .clone(),
+                vec![],
+            ),
+            LayoutNode {
+                layout: Layout {
+                    margin_position: Vec2::ZERO,
+                    margin_size: Vec2::new(500.0 + 2.0 * 20.0, 250.0 + 2.0 * 10.0),
+                    children_boundary_size: Vec2::new(500.0 - 2.0 * 40.0 - 2.0 * 60.0, 250.0 - 2.0 * 20.0 - 2.0 * 30.0),
+                    margin: Inset::new(20.0, 10.0, 20.0, 10.0),
+                    border_thickness: Inset::new(40.0, 20.0, 40.0, 20.0),
+                    padding: Inset::new(60.0, 30.0, 60.0, 30.0),
                 },
                 children: vec![],
             },
