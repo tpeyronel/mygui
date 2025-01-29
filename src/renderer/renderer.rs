@@ -13,7 +13,7 @@ use crate::{
     ui::{self, draw_command::DrawCommand},
 };
 
-const MSAA_SAMPLE_COUNT: u32 = 8;
+pub const MSAA_SAMPLE_COUNT: u32 = 8;
 const DEPTH_STENCIL_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24PlusStencil8;
 
 macro_rules! vec2_vertex_buffer_layout {

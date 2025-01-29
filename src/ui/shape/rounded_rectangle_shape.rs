@@ -1,8 +1,11 @@
+use std::ops::Sub;
+
 use dyn_partial_eq::DynPartialEq;
 use glam::Vec2;
 
 use crate::{
     color::Color,
+    renderer::renderer::MSAA_SAMPLE_COUNT,
     ui::{
         border_color::BorderColor, color_mesh_builder::ColorMeshBuilder, corner_radius::CornerRadius, Layout, Modifiers,
     },
@@ -266,7 +269,16 @@ fn emit_rectangle_corners(
 }
 
 fn compute_corner_depth(corner_radius: f32) -> u32 {
-    corner_radius.sqrt().log2().round() as u32
+    if corner_radius <= 0.0 {
+        return 0;
+    }
+
+    let max_error_px = 1.0 / (MSAA_SAMPLE_COUNT as f32).sqrt();
+    let min_sides = std::f32::consts::FRAC_PI_4 / f32::acos(1.0 - max_error_px / corner_radius);
+    // We subtract one because depth zero is already 2 sides.
+    let depth = min_sides.log2().ceil().sub(1.0).max(0.0) as u32;
+
+    depth
 }
 
 fn emit_rectangle_corners_rec(
