@@ -4,8 +4,9 @@ use crate::{
     ui::{create_mock_hash_tree_rec, Alignment},
 };
 
-use super::*;
+use super::{extent::ExtentExt, *};
 use glam::Vec2;
+use node::block::BlockProps;
 use pretty_assertions::assert_eq;
 
 fn compute_layout_nodes(position: Vec2, size: Vec2, ui: UiNode) -> Vec<LayoutNode> {
@@ -711,6 +712,8 @@ mod blocks {
 }
 
 mod columns {
+    use node::block::BlockProps;
+
     use crate::ui::node::column::ColumnProps;
 
     use super::*;
@@ -1851,11 +1854,10 @@ mod row_advanced {
 mod extent {
     use glam::Vec2;
 
-    use crate::ui::Alignment;
+    use crate::ui::{extent::ExtentExt, Alignment};
 
     use super::{
-        test_layout, BlockProps, BorderThickness, Extent, ExtentExt, Inset, Layout, LayoutNode, Margin, Modifiers,
-        Padding, UiNode,
+        test_layout, BlockProps, BorderThickness, Extent, Inset, Layout, LayoutNode, Margin, Modifiers, Padding, UiNode,
     };
 
     #[test]
