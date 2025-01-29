@@ -152,13 +152,7 @@ impl ApplicationHandler for App {
                     scale_factor,
                     &mut state.mesh_manager,
                     &mut state.font_engine,
-                    |ui| {
-                        // example_ui(ui);
-                        // test_rectangle_ui(ui);
-                        // test_overflow(ui);
-                        // test_border_color(ui);
-                        test_extent_parent(ui);
-                    },
+                    |ui| main_ui(ui),
                 );
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
                 state.mesh_manager.clear();
@@ -879,4 +873,12 @@ fn main() {
     let mut app = App::new();
 
     event_loop.run_app(&mut app).unwrap();
+}
+
+fn main_ui(ui: &mut Ui<BlockProps>) {
+    example_ui(ui);
+    // test_rectangle_ui(ui);
+    // test_overflow(ui);
+    // test_border_color(ui);
+    // test_extent_parent(ui);
 }
