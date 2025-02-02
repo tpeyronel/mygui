@@ -544,14 +544,22 @@ impl<'a> CommandListBuilder<'a> {
 
                 current_mesh.vertex_count += mesh.vertex_count;
             } else {
-                let completed_batch = self.current_batch.replace(MeshWithShader(mesh, shader)).unwrap();
-                let mesh_id = self.mesh_manager.register_mesh(completed_batch.0);
-                self.commands.push(DrawCommand::BindShader(completed_batch.1));
-                self.commands.push(DrawCommand::DrawMesh(mesh_id));
+                self.flush_batch();
+                self.current_batch = Some(MeshWithShader(mesh, shader));
             }
         } else {
             self.current_batch = Some(MeshWithShader(mesh, shader));
         }
+    }
+
+    fn flush_batch(&mut self) {
+        let Some(completed_batch) = self.current_batch.take() else {
+            return;
+        };
+
+        let mesh_id = self.mesh_manager.register_mesh(completed_batch.0);
+        self.commands.push(DrawCommand::BindShader(completed_batch.1));
+        self.commands.push(DrawCommand::DrawMesh(mesh_id));
     }
 
     pub fn push_scissor_rectangle(&mut self, rectangle: &ScissorRectangle) {
@@ -560,11 +568,14 @@ impl<'a> CommandListBuilder<'a> {
         } else {
             *rectangle
         };
+
+        self.flush_batch();
         self.scissor_stack.push(new_scissor);
         self.commands.push(DrawCommand::SetScissor(new_scissor));
     }
 
     pub fn pop_scissor_rectangle(&mut self) {
+        self.flush_batch();
         self.scissor_stack.pop();
         self.commands.push(DrawCommand::SetScissor(
             self.scissor_stack
@@ -575,12 +586,14 @@ impl<'a> CommandListBuilder<'a> {
     }
 
     pub fn inc_stencil_reference(&mut self) {
+        self.flush_batch();
         self.stencil_reference += 1;
         self.commands
             .push(DrawCommand::SetStencilReference(self.stencil_reference));
     }
 
     pub fn dec_stencil_reference(&mut self) {
+        self.flush_batch();
         self.stencil_reference -= 1;
         self.commands
             .push(DrawCommand::SetStencilReference(self.stencil_reference));
