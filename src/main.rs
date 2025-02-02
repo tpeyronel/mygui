@@ -20,7 +20,7 @@ use ui::{
     extent::{Extent, ExtentExt},
     immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
     node::{block::BlockProps, image::ImageMetadata},
-    Alignment,
+    Alignment, Clip,
 };
 use winit::{
     application::ApplicationHandler,
@@ -395,10 +395,11 @@ fn example_ui(ui: &mut Ui<BlockProps>, image_manager: &mut ImageManager) {
                 |ui| {
                     ui.modifiers()
                         .self_alignment(Alignment::TopRight)
+                        .clip(Clip::InheritAndShape)
                         .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
                         .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
                         .border_thickness(1.px())
-                        .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 24.0));
+                        .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 64.0));
                 },
             );
 
