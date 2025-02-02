@@ -1,5 +1,6 @@
 use std::{
     ops::{Add, Mul},
+    path::Path,
     sync::Arc,
     time::Instant,
 };
@@ -18,7 +19,7 @@ use ui::{
     draw_command::DrawCommand,
     extent::{Extent, ExtentExt},
     immediate::{base_text_field::BaseTextField, context::UiContext, ui::Ui},
-    node::block::BlockProps,
+    node::{block::BlockProps, image::ImageMetadata},
     Alignment,
 };
 use winit::{
@@ -142,8 +143,6 @@ impl ApplicationHandler for App {
 
                 state.font_engine.update(&mut state.image_manager);
 
-                Self::process_image_manager_events(state);
-
                 let window_size = state.window.inner_size();
                 let window_size = Vec2::new(window_size.width as f32, window_size.height as f32);
                 let scale_factor = state.window.scale_factor() as f32;
@@ -152,8 +151,11 @@ impl ApplicationHandler for App {
                     scale_factor,
                     &mut state.mesh_manager,
                     &mut state.font_engine,
-                    |ui| main_ui(ui),
+                    |ui| main_ui(ui, &mut state.image_manager),
                 );
+
+                Self::process_image_manager_events(state);
+
                 state.renderer.render(&state.mesh_manager, &state.draw_data);
                 state.mesh_manager.clear();
 
@@ -339,7 +341,7 @@ fn simple_ui(ui: &mut Ui<BlockProps>) {
     });
 }
 
-fn example_ui(ui: &mut Ui<BlockProps>) {
+fn example_ui(ui: &mut Ui<BlockProps>, image_manager: &mut ImageManager) {
     ui.block(|ui| {
         ui.modifiers()
             .width(Extent::fill_parent())
@@ -382,16 +384,23 @@ fn example_ui(ui: &mut Ui<BlockProps>) {
                     .corner_radius(CornerRadius::all(4.0));
             });
 
-            ui.block(|ui| {
-                ui.modifiers()
-                    .width(80.px())
-                    .height(80.px())
-                    .self_alignment(Alignment::TopRight)
-                    .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
-                    .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
-                    .border_thickness(1.px())
-                    .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 24.0));
-            });
+            let (image_id, image) = image_manager.load_image_by_path(Path::new("./assets/images/container.jpg"));
+
+            ui.image(
+                ImageMetadata {
+                    image_id,
+                    width: image.width(),
+                    height: image.height(),
+                },
+                |ui| {
+                    ui.modifiers()
+                        .self_alignment(Alignment::TopRight)
+                        .fill_color(Color::rgba(1.0, 1.0, 0.0, 0.25))
+                        .border_color(Color::rgba(0.1, 0.1, 0.1, 0.9))
+                        .border_thickness(1.px())
+                        .corner_radius(CornerRadius::new(0.0, 8.0, 16.0, 24.0));
+                },
+            );
 
             ui.block(|ui| {
                 ui.modifiers()
@@ -875,8 +884,8 @@ fn main() {
     event_loop.run_app(&mut app).unwrap();
 }
 
-fn main_ui(ui: &mut Ui<BlockProps>) {
-    example_ui(ui);
+fn main_ui(ui: &mut Ui<BlockProps>, image_manager: &mut ImageManager) {
+    example_ui(ui, image_manager);
     // test_rectangle_ui(ui);
     // test_overflow(ui);
     // test_border_color(ui);
