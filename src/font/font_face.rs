@@ -514,8 +514,8 @@ fn create_font_atlas(
 
     let atlas_image_format = match glyph_pixel_mode {
         GlyphPixelMode::Grayscale => ImageFormat::R8Unorm,
-        GlyphPixelMode::Subpixel => ImageFormat::Rgba8Unorm,
-        GlyphPixelMode::Color => ImageFormat::Rgba8Unorm,
+        GlyphPixelMode::Subpixel => ImageFormat::Rgba8UnormPre,
+        GlyphPixelMode::Color => ImageFormat::Rgba8UnormPre,
     };
 
     let mut glyph_indices = vec![];
@@ -666,7 +666,7 @@ fn copy_to_atlas_at(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32,
             }
         }
         ImageFormat::Rgb8Unorm => {
-            assert_eq!(atlas_image.format(), ImageFormat::Rgba8Unorm);
+            assert_eq!(atlas_image.format(), ImageFormat::Rgba8UnormPre);
 
             for y in 0..glyph_image.height() {
                 for x in 0..glyph_image.width() {
@@ -678,7 +678,7 @@ fn copy_to_atlas_at(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32,
             }
         }
         ImageFormat::Bgra8Unorm => {
-            assert_eq!(atlas_image.format(), ImageFormat::Rgba8Unorm);
+            assert_eq!(atlas_image.format(), ImageFormat::Rgba8UnormPre);
 
             for y in 0..glyph_image.height() {
                 for x in 0..glyph_image.width() {
@@ -693,7 +693,7 @@ fn copy_to_atlas_at(glyph_image: &Image, atlas_image: &mut Image, dst_left: u32,
                 }
             }
         }
-        ImageFormat::Rgba8Unorm => panic!(),
+        _ => panic!(),
     }
 }
 
