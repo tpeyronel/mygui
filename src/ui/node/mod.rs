@@ -7,6 +7,7 @@ use super::{processor::UiNodeProcessor, Layout, Modifiers};
 
 pub mod block;
 pub mod column;
+pub mod image;
 pub mod row;
 pub mod text;
 

@@ -10,8 +10,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     color::Color,
+    image::{AddressMode, FilterMode},
     ui::{
-        node::{block::BlockProps, column::ColumnProps, row::RowProps, text::TextProps, UiNodeProps},
+        node::{
+            block::BlockProps,
+            column::ColumnProps,
+            image::{ImageMetadata, ImageProps, SamplerDescriptor},
+            row::RowProps,
+            text::TextProps,
+            UiNodeProps,
+        },
         Extent, HashNode, Modifiers, UiNode,
     },
 };
@@ -155,6 +163,25 @@ impl<'a, P: UiNodeProps> Ui<'a, P> {
                 .width(Extent::FitContent)
                 .max_width(Extent::fill_parent())
                 .height(Extent::FitContent);
+
+            f(ui);
+        });
+    }
+
+    pub fn image(&mut self, metadata: ImageMetadata, f: impl FnOnce(&mut Ui<ImageProps>)) {
+        let props = ImageProps::new(
+            metadata,
+            SamplerDescriptor {
+                address_mode_u: AddressMode::ClampToEdge,
+                address_mode_v: AddressMode::ClampToEdge,
+                mag_filter: FilterMode::Linear,
+                min_filter: FilterMode::Linear,
+                mipmap_filter: FilterMode::Linear,
+            },
+        );
+
+        self.node(props, |ui| {
+            ui.modifiers().width(Extent::FitContent).height(Extent::FitContent);
 
             f(ui);
         });

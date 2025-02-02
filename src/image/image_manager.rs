@@ -1,4 +1,9 @@
-use std::usize;
+use std::{
+    path::{Path, PathBuf},
+    usize,
+};
+
+use ahash::{HashMap, HashMapExt};
 
 use super::image::Image;
 
@@ -12,6 +17,7 @@ impl ImageId {
 pub struct ImageManager {
     images: Vec<Image>,
     events: Vec<ImageManagerEvent>,
+    images_by_path: HashMap<PathBuf, ImageId>,
 }
 
 impl ImageManager {
@@ -19,6 +25,7 @@ impl ImageManager {
         return Self {
             images: Vec::new(),
             events: Vec::new(),
+            images_by_path: HashMap::new(),
         };
     }
 
@@ -27,6 +34,20 @@ impl ImageManager {
         let id = ImageId(self.images.len() - 1);
         self.events.push(ImageManagerEvent::ImageCreated(id));
         id
+    }
+
+    pub fn load_image_by_path(&mut self, path: &Path) -> (ImageId, &Image) {
+        let image_id = match self.images_by_path.get(path) {
+            Some(&image_id) => image_id,
+            None => {
+                let image = Image::from_path(path);
+                let image_id = self.add_image(image);
+                self.images_by_path.insert(path.to_path_buf(), image_id);
+                image_id
+            }
+        };
+
+        (image_id, self.get_image(image_id))
     }
 
     pub fn get_image(&self, image_id: ImageId) -> &Image {

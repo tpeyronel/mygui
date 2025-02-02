@@ -1,3 +1,7 @@
+use std::path::Path;
+
+use image::ImageReader;
+
 use super::image_format::ImageFormat;
 
 #[derive(Debug, Clone)]
@@ -31,6 +35,60 @@ impl Image {
             pitch,
             format,
         }
+    }
+
+    pub fn from_path(path: &Path) -> Self {
+        unsafe {
+            stb_image::stb_image::stbi_set_flip_vertically_on_load(1);
+        }
+        let image = stb_image::image::load_with_depth(path, 4, true);
+
+        match image {
+            stb_image::image::LoadResult::Error(_) => todo!(),
+            stb_image::image::LoadResult::ImageF32(_) => todo!(),
+            stb_image::image::LoadResult::ImageU8(image) => {
+                assert_eq!(image.depth, 4);
+
+                Image::from_data(
+                    image.data,
+                    image.width as u32,
+                    image.height as u32,
+                    (image.width * 4) as u32,
+                    ImageFormat::Rgba8Srgb,
+                )
+            }
+        }
+    }
+
+    #[allow(unused)]
+    fn from_path_image_rs(path: &Path) -> Self {
+        let image = ImageReader::open(path).expect("TODO").decode().expect("TODO");
+
+        Image::from_dynamic_image(image)
+    }
+
+    fn from_dynamic_image(image: image::DynamicImage) -> Self {
+        let format = match &image {
+            image::DynamicImage::ImageLuma8(_) => ImageFormat::R8Unorm,
+            image::DynamicImage::ImageLumaA8(_) => todo!(),
+            image::DynamicImage::ImageLuma16(_) => todo!(),
+            image::DynamicImage::ImageLumaA16(_) => todo!(),
+            image::DynamicImage::ImageRgb8(_) => ImageFormat::Rgb8Unorm,
+            image::DynamicImage::ImageRgba8(_) => ImageFormat::Rgba8UnormPre,
+            image::DynamicImage::ImageRgb16(_) => todo!(),
+            image::DynamicImage::ImageRgba16(_) => todo!(),
+            image::DynamicImage::ImageRgb32F(_) => todo!(),
+            image::DynamicImage::ImageRgba32F(_) => todo!(),
+            _ => todo!(),
+        };
+
+        let width = image.width();
+        let height = image.height();
+        let bytes = image.into_bytes();
+
+        let image = Image::from_data(bytes, width, height, width * format.bytes_per_pixel(), format);
+
+        image
     }
 
     fn coords_to_index(&self, x: u32, y: u32) -> usize {
@@ -75,7 +133,7 @@ impl Image {
 
     #[allow(unused)]
     pub fn get_rgba(&self, x: u32, y: u32) -> [u8; 4] {
-        assert_eq!(self.format, ImageFormat::Rgba8Unorm);
+        assert_eq!(self.format, ImageFormat::Rgba8UnormPre);
 
         let r_index = self.coords_to_index(x, y);
         [
@@ -88,7 +146,7 @@ impl Image {
 
     #[allow(unused)]
     pub fn set_rgba(&mut self, x: u32, y: u32, value: [u8; 4]) {
-        assert_eq!(self.format, ImageFormat::Rgba8Unorm);
+        assert_eq!(self.format, ImageFormat::Rgba8UnormPre);
 
         let r_index = self.coords_to_index(x, y);
         self.data[r_index] = value[0];
