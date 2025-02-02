@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use glam::{Vec2, Vec4};
 
-use crate::image::image_manager::ImageId;
+use crate::{image::image_manager::ImageId, ui::node::image::SamplerDescriptor};
 
 #[derive(Debug, Clone, Copy)]
 pub struct MeshId(pub usize);
@@ -12,7 +12,7 @@ pub struct Mesh {
     pub vertex_count: u32,
     pub vertex_attributes: HashMap<VertexAttribute, Vec<u8>>,
     pub indices: Vec<u32>,
-    pub image_id: Option<ImageId>,
+    pub image_data: Option<(ImageId, SamplerDescriptor)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

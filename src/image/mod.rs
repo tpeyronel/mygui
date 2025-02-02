@@ -3,7 +3,7 @@ pub mod image_format;
 pub mod image_manager;
 
 #[allow(unused)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AddressMode {
     ClampToEdge,
     Repeat,
@@ -12,7 +12,7 @@ pub enum AddressMode {
 }
 
 #[allow(unused)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FilterMode {
     Nearest,
     Linear,

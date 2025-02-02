@@ -7,6 +7,7 @@ use crate::{
         font_engine::{LaidOutGlyph, TextLayoutOptions},
         font_face::GlyphPixelMode,
     },
+    image::{AddressMode, FilterMode},
     mesh::mesh::Mesh,
     rectangle::Rectangle,
     text::text_position::TextPosition,
@@ -16,7 +17,7 @@ use crate::{
     },
 };
 
-use super::{UiNode, UiNodeProps};
+use super::{image::SamplerDescriptor, UiNode, UiNodeProps};
 
 #[derive(Debug, Clone, PartialEq, DynPartialEq)]
 pub struct TextProps {
@@ -176,10 +177,19 @@ impl TextMeshBuilder {
 
         builder.add_quad(bl, br, tr, tl);
 
-        if let Some(image_id) = builder.image_id {
+        if let Some((image_id, _)) = builder.image_data {
             assert_eq!(image_id, glyph.image_id);
         } else {
-            builder.image_id = Some(glyph.image_id);
+            builder.image_data = Some((
+                glyph.image_id,
+                SamplerDescriptor {
+                    address_mode_u: AddressMode::ClampToEdge,
+                    address_mode_v: AddressMode::ClampToEdge,
+                    mag_filter: FilterMode::Nearest,
+                    min_filter: FilterMode::Nearest,
+                    mipmap_filter: FilterMode::Nearest,
+                },
+            ));
         }
     }
 

@@ -6,18 +6,18 @@ use crate::{
     mesh::mesh::{Mesh, VertexAttribute},
 };
 
-use super::mesh_builder::MeshBuilder;
+use super::{mesh_builder::MeshBuilder, node::image::SamplerDescriptor};
 
 pub struct TextureMeshBuilder {
     builder: MeshBuilder<3>,
-    pub image_id: Option<ImageId>,
+    pub image_data: Option<(ImageId, SamplerDescriptor)>,
 }
 
 impl TextureMeshBuilder {
     pub fn new() -> Self {
         Self {
             builder: MeshBuilder::new(),
-            image_id: None,
+            image_data: None,
         }
     }
 
@@ -41,7 +41,7 @@ impl TextureMeshBuilder {
         let mut mesh = self
             .builder
             .build([VertexAttribute::Position, VertexAttribute::Uv, VertexAttribute::Color]);
-        mesh.image_id = self.image_id;
+        mesh.image_data = self.image_data;
         mesh
     }
 }

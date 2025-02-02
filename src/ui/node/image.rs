@@ -18,7 +18,7 @@ pub struct ImageMetadata {
     pub height: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SamplerDescriptor {
     pub address_mode_u: AddressMode,
     pub address_mode_v: AddressMode,
@@ -70,7 +70,7 @@ impl UiNodeProps for ImageProps {
 
     fn emit_draw_data(&self, processor: &mut UiNodeProcessor<'_>, layout: &Layout) {
         let mut mesh_builder = TextureMeshBuilder::new();
-        mesh_builder.image_id = Some(self.metadata.image_id);
+        mesh_builder.image_data = Some((self.metadata.image_id, self.sampler.clone()));
 
         let content_position = layout.content_position();
         let content_size = layout.content_size();

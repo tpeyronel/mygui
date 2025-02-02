@@ -51,7 +51,7 @@ impl<const N: usize> MeshBuilder<N> {
             vertex_count: self.vertex_count,
             vertex_attributes,
             indices,
-            image_id: None,
+            image_data: None,
         }
     }
 }

@@ -533,7 +533,7 @@ impl<'a> CommandListBuilder<'a> {
         if let Some(current_batch) = self.current_batch.as_mut() {
             let MeshWithShader(current_mesh, current_shader) = current_batch;
 
-            if *current_shader == shader && current_mesh.image_id == mesh.image_id {
+            if *current_shader == shader && current_mesh.image_data == mesh.image_data {
                 assert_eq!(current_mesh.vertex_attributes.len(), mesh.vertex_attributes.len());
                 for (attrib, data) in &mut current_mesh.vertex_attributes {
                     data.extend(&mesh.vertex_attributes[attrib]);

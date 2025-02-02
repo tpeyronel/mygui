@@ -10,7 +10,7 @@ use crate::{
         mesh::{Mesh, MeshId, VertexAttribute},
         mesh_manager::MeshManager,
     },
-    ui::{self, draw_command::DrawCommand},
+    ui::{self, draw_command::DrawCommand, node::image::SamplerDescriptor},
 };
 
 pub const MSAA_SAMPLE_COUNT: u32 = 8;
@@ -60,6 +60,8 @@ pub struct Renderer {
     texture_pipeline: wgpu::RenderPipeline,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     textures: HashMap<ImageId, Texture>,
+    samplers: HashMap<SamplerDescriptor, wgpu::Sampler>,
+    texture_bind_groups: HashMap<(ImageId, SamplerDescriptor), wgpu::BindGroup>,
     global_uniform: GlobalUniform,
     global_uniform_buffer: wgpu::Buffer,
     global_uniform_bind_group: wgpu::BindGroup,
@@ -103,6 +105,7 @@ impl Renderer {
                 required_features: wgpu::Features::BUFFER_BINDING_ARRAY
                     | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY // TODO: apparently not needed?
                     | wgpu::Features::PUSH_CONSTANTS
+                    | wgpu::Features::ADDRESS_MODE_CLAMP_TO_BORDER
                     | wgpu::Features::DUAL_SOURCE_BLENDING
                     | wgpu::Features::POLYGON_MODE_LINE
                     | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
@@ -190,7 +193,7 @@ impl Renderer {
                     binding: 0,
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         view_dimension: wgpu::TextureViewDimension::D2,
                         multisampled: false,
                     },
@@ -199,7 +202,7 @@ impl Renderer {
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
             ],
@@ -605,6 +608,8 @@ impl Renderer {
             texture_pipeline,
             texture_bind_group_layout,
             textures: HashMap::new(),
+            samplers: HashMap::new(),
+            texture_bind_groups: HashMap::new(),
             global_uniform,
             global_uniform_buffer,
             global_uniform_bind_group,
@@ -678,40 +683,56 @@ impl Renderer {
             ..Default::default()
         });
 
-        let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some(&format!("{:?} sampler", image_id)),
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(&format!("{:?} bind group", image_id)),
-            layout: &self.texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&texture_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                },
-            ],
-        });
-
-        let texture = Texture {
-            texture,
-            texture_view,
-            sampler,
-            bind_group,
-        };
+        let texture = Texture { texture, texture_view };
 
         self.textures.insert(image_id, texture);
+    }
+
+    fn get_or_create_sampler<'a>(
+        device: &wgpu::Device,
+        samplers: &'a mut HashMap<SamplerDescriptor, wgpu::Sampler>,
+        sampler_descriptor: &SamplerDescriptor,
+    ) -> &'a wgpu::Sampler {
+        samplers.entry(sampler_descriptor.clone()).or_insert_with(|| {
+            device.create_sampler(&wgpu::SamplerDescriptor {
+                label: None,
+                address_mode_u: sampler_descriptor.address_mode_u.into(),
+                address_mode_v: sampler_descriptor.address_mode_v.into(),
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                mag_filter: sampler_descriptor.mag_filter.into(),
+                min_filter: sampler_descriptor.min_filter.into(),
+                mipmap_filter: sampler_descriptor.mipmap_filter.into(),
+                ..Default::default()
+            })
+        })
+    }
+
+    fn get_or_create_texture_bind_group(
+        &mut self,
+        image_id: ImageId,
+        sampler_descriptor: &SamplerDescriptor,
+    ) -> &wgpu::BindGroup {
+        self.texture_bind_groups
+            .entry((image_id, sampler_descriptor.clone()))
+            .or_insert_with(|| {
+                let texture = self.textures.get(&image_id).unwrap();
+                let sampler = Self::get_or_create_sampler(&self.device, &mut self.samplers, sampler_descriptor);
+
+                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some(&format!("{:?} bind group sampler {:?}", image_id, sampler_descriptor)),
+                    layout: &self.texture_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&texture.texture_view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(sampler),
+                        },
+                    ],
+                })
+            })
     }
 
     fn create_mesh(&self, mesh_id: MeshId, mesh: &Mesh) -> MeshData {
@@ -739,7 +760,7 @@ impl Renderer {
             vertex_buffers,
             index_buffer,
             index_count,
-            image_id: mesh.image_id,
+            image_data: mesh.image_data.clone(),
         };
 
         mesh_data
@@ -848,9 +869,11 @@ impl Renderer {
                                 rpass.set_vertex_buffer(1, mesh_data.vertex_buffers[&VertexAttribute::Uv].slice(..));
                                 rpass.set_vertex_buffer(2, mesh_data.vertex_buffers[&VertexAttribute::Color].slice(..));
 
-                                if let Some(texture_id) = mesh_data.image_id {
-                                    let texture = self.textures.get(&texture_id).expect("TODO");
-                                    rpass.set_bind_group(1, &texture.bind_group, &[]);
+                                if let Some((image_id, sampler_descriptor)) = &mesh_data.image_data {
+                                    let texture_bind_group =
+                                        self.get_or_create_texture_bind_group(*image_id, sampler_descriptor);
+
+                                    rpass.set_bind_group(1, texture_bind_group, &[]);
                                 }
                             }
                         }
@@ -999,9 +1022,6 @@ struct Texture {
     texture: wgpu::Texture,
     #[allow(unused)]
     texture_view: wgpu::TextureView,
-    #[allow(unused)]
-    sampler: wgpu::Sampler,
-    bind_group: wgpu::BindGroup,
 }
 
 #[repr(C)]
@@ -1015,5 +1035,25 @@ struct MeshData {
     vertex_buffers: HashMap<VertexAttribute, wgpu::Buffer>,
     index_buffer: wgpu::Buffer,
     index_count: u32,
-    image_id: Option<ImageId>,
+    image_data: Option<(ImageId, SamplerDescriptor)>,
+}
+
+impl From<crate::image::AddressMode> for wgpu::AddressMode {
+    fn from(value: crate::image::AddressMode) -> Self {
+        match value {
+            crate::image::AddressMode::ClampToEdge => wgpu::AddressMode::ClampToEdge,
+            crate::image::AddressMode::Repeat => wgpu::AddressMode::Repeat,
+            crate::image::AddressMode::MirrorRepeat => wgpu::AddressMode::MirrorRepeat,
+            crate::image::AddressMode::ClampToBorder => wgpu::AddressMode::ClampToBorder,
+        }
+    }
+}
+
+impl From<crate::image::FilterMode> for wgpu::FilterMode {
+    fn from(value: crate::image::FilterMode) -> Self {
+        match value {
+            crate::image::FilterMode::Nearest => wgpu::FilterMode::Nearest,
+            crate::image::FilterMode::Linear => wgpu::FilterMode::Linear,
+        }
+    }
 }
