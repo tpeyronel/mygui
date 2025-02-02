@@ -69,4 +69,23 @@ impl ScissorRectangle {
     pub fn height(&self) -> u32 {
         self.top.saturating_sub(self.bottom)
     }
+
+    pub fn to_x_y_width_height_clamp(&self, framebuffer_width: u32, framebuffer_height: u32) -> (u32, u32, u32, u32) {
+        let x = self.x();
+        let y = self.y();
+        let width = self.width();
+        let height = self.height();
+
+        // Flip Y coordinate, as scissor (0, 0) is top-left.
+        let y = framebuffer_height.saturating_sub(y).saturating_sub(height);
+
+        let x = x.min(framebuffer_width);
+
+        let max_width = framebuffer_width - x;
+        let max_height = framebuffer_height - y;
+        let width = width.min(max_width);
+        let height = height.min(max_height);
+
+        (x, y, width, height)
+    }
 }

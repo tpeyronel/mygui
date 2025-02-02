@@ -798,6 +798,9 @@ impl Renderer {
                 occlusion_query_set: None,
             });
 
+            rpass.set_stencil_reference(0);
+            rpass.set_scissor_rect(0, 0, self.config.width, self.config.height);
+
             rpass.set_bind_group(0, &self.global_uniform_bind_group, &[]);
 
             let mut current_shader = None;
@@ -805,28 +808,18 @@ impl Renderer {
             for cmd in command_list {
                 match cmd {
                     DrawCommand::BindShader(shader) => {
-                        match *shader {
-                            ui::draw_command::Shader::Shape => {
-                                rpass.set_pipeline(&self.color_pipeline);
-                            }
-                            ui::draw_command::Shader::ShapeClip => {
-                                rpass.set_pipeline(&self.clip_inc_pipeline);
-                            }
-                            ui::draw_command::Shader::ShapeClipRevert => {
-                                rpass.set_pipeline(&self.clip_dec_pipeline);
-                            }
-                            ui::draw_command::Shader::Texture => {
-                                rpass.set_pipeline(&self.texture_pipeline);
-                            }
-                            ui::draw_command::Shader::TextGrayscale => {
-                                rpass.set_pipeline(&self.text_grayscale_pipeline);
-                            }
-                            ui::draw_command::Shader::TextSubpixel => {
-                                rpass.set_pipeline(&self.text_subpixel_pipeline);
-                            }
-                        }
+                        let pipeline = match *shader {
+                            ui::draw_command::Shader::Shape => &self.color_pipeline,
+                            ui::draw_command::Shader::ShapeClip => &self.clip_inc_pipeline,
+                            ui::draw_command::Shader::ShapeClipRevert => &self.clip_dec_pipeline,
+                            ui::draw_command::Shader::Texture => &self.texture_pipeline,
+                            ui::draw_command::Shader::TextGrayscale => &self.text_grayscale_pipeline,
+                            ui::draw_command::Shader::TextSubpixel => &self.text_subpixel_pipeline,
+                        };
 
                         current_shader = Some(*shader);
+
+                        rpass.set_pipeline(pipeline);
                     }
                     DrawCommand::DrawMesh(mesh_id) => {
                         let mesh_data = &mesh_data[mesh_id.0];
@@ -869,21 +862,8 @@ impl Renderer {
                         rpass.set_stencil_reference(*reference);
                     }
                     DrawCommand::SetScissor(rectangle) => {
-                        let x = rectangle.x();
-                        let y = rectangle.y();
-                        let width = rectangle.width();
-                        let height = rectangle.height();
-
-                        // Flip Y coordinate, as scissor (0, 0) is top-left.
-                        let y = self.config.height.saturating_sub(y).saturating_sub(height);
-
-                        let x = x.min(self.config.width);
-
-                        let max_width = self.config.width - x;
-                        let max_height = self.config.height - y;
-                        let width = width.min(max_width);
-                        let height = height.min(max_height);
-
+                        let (x, y, width, height) =
+                            rectangle.to_x_y_width_height_clamp(self.config.width, self.config.height);
                         rpass.set_scissor_rect(x, y, width, height);
                     }
                 }
